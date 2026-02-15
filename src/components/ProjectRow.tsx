@@ -1,77 +1,342 @@
 "use client";
 
+import { C, STACK_META } from "@/types";
+import type { Project } from "@/types";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Project, Event } from "@/types";
-import UpvoteButton from "./UpvoteButton";
-import Avatar from "./Avatar";
 
-interface ProjectRowProps {
-  project: Project & { eventData?: Event };
-  hasVoted: boolean;
-  rank?: number;
+function CompanyTag({ name, color }: { name: string; color: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 10,
+        color: color,
+        background: `${color}10`,
+        padding: "1px 6px",
+        borderRadius: 4,
+        border: `1px solid ${color}20`,
+        fontFamily: "var(--mono)",
+        fontWeight: 500,
+      }}
+    >
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 2,
+          background: color,
+        }}
+      />
+      {name}
+    </span>
+  );
 }
 
-export default function ProjectRow({ project, hasVoted, rank }: ProjectRowProps) {
+function BuilderCycler({ project }: { project: Project }) {
+  const team = [
+    {
+      name: project.builder.name,
+      company: project.builder.company,
+      color: project.builder.companyColor,
+    },
+    ...project.collabs.map((c) => ({
+      name: c.name,
+      company: c.company,
+      color: c.companyColor,
+    })),
+  ];
+  const [idx, setIdx] = useState(0);
+  const [animState, setAnimState] = useState<"in" | "out">("in");
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (team.length <= 1) return;
+    timerRef.current = setInterval(() => {
+      setAnimState("out");
+      setTimeout(() => {
+        setIdx((i) => (i + 1) % team.length);
+        setAnimState("in");
+      }, 200);
+    }, 3000);
+    return () => clearInterval(timerRef.current);
+  }, [team.length]);
+
+  const current = team[idx];
+
   return (
-    <Link
-      href={`/projects/${project._id}`}
-      className="flex items-center gap-4 px-6 py-4 border-b border-border-light hover:bg-surface transition-colors"
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        minHeight: 20,
+        overflow: "hidden",
+      }}
     >
-      {rank !== undefined && (
-        <span className="text-sm font-mono text-secondary w-5 text-right shrink-0">
-          {rank}
+      <div
+        key={idx}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          animation:
+            animState === "in"
+              ? "slideUp 0.25s ease-out"
+              : "slideOut 0.2s ease-in forwards",
+        }}
+      >
+        {current?.company && current?.color && (
+          <CompanyTag name={current.company} color={current.color} />
+        )}
+        <span style={{ fontSize: 12, color: C.textSec }}>{current?.name}</span>
+      </div>
+      {team.length > 1 && (
+        <span
+          style={{
+            fontSize: 9,
+            color: C.textMute,
+            fontFamily: "var(--mono)",
+          }}
+        >
+          +{team.length - 1}
         </span>
       )}
-      <UpvoteButton
-        projectId={project._id}
-        weightedScore={project.weightedScore}
-        rawVotes={project.rawVotes}
-        hasVoted={hasVoted}
-      />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="font-semibold text-dark text-sm">{project.name}</h3>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-surface border border-border text-secondary">
-            {project.category}
-          </span>
-        </div>
-        <p className="text-sm text-secondary mt-0.5 truncate">
-          {project.tagline}
-        </p>
-        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          <div className="flex items-center -space-x-1.5">
-            {project.team.map((member) => (
-              <Avatar
-                key={member.memberId}
-                name={member.name}
-                size="xs"
-              />
-            ))}
+    </div>
+  );
+}
+
+export default function ProjectCard({ project }: { project: Project }) {
+  return (
+    <Link
+      href={`/projects/${project.id}`}
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
+      <div
+        className="animate-fadeUp"
+        style={{
+          background: C.surface,
+          borderRadius: 12,
+          border: `1px solid ${project.featured ? C.goldBorder : C.border}`,
+          overflow: "hidden",
+          cursor: "pointer",
+          transition: "all 0.2s",
+          position: "relative",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = C.textMute;
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = project.featured
+            ? C.goldBorder
+            : C.border;
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+      >
+        {project.featured && (
+          <div
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              background: C.goldSoft,
+              border: `1px solid ${C.goldBorder}`,
+              borderRadius: 6,
+              padding: "2px 8px",
+              fontSize: 10,
+              color: C.gold,
+              fontWeight: 600,
+              fontFamily: "var(--mono)",
+              zIndex: 2,
+            }}
+          >
+            &#x2726; Featured
           </div>
-          <span className="text-xs text-secondary">
-            {project.team.map((m) => m.name).join(", ")}
-          </span>
-          {project.eventData && (
-            <>
-              <span className="text-xs text-secondary">&middot;</span>
+        )}
+
+        <div
+          style={{
+            height: 100,
+            background: `linear-gradient(135deg, ${project.heroColor}15, ${project.heroColor}08)`,
+            borderBottom: `1px solid ${C.borderLight}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              background: `linear-gradient(135deg, ${project.heroColor}, ${project.heroColor}CC)`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontSize: 18,
+              fontWeight: 700,
+              fontFamily: "var(--serif)",
+              boxShadow: `0 4px 12px ${project.heroColor}30`,
+            }}
+          >
+            {project.name[0]}
+          </div>
+        </div>
+
+        <div style={{ padding: "14px 16px 16px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: 6,
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "var(--serif)",
+                fontSize: 17,
+                fontWeight: 600,
+                margin: 0,
+                color: C.text,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {project.name}
+            </h3>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+                background: C.surfaceWarm,
+                borderRadius: 6,
+                padding: "3px 8px",
+                border: `1px solid ${C.borderLight}`,
+              }}
+            >
+              <span style={{ fontSize: 10, color: C.textMute }}>&#9650;</span>
               <span
-                className="text-xs font-medium"
-                style={{ color: project.eventData.color }}
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: C.text,
+                }}
               >
-                {project.eventData.name}
+                {project.weighted}
               </span>
-            </>
-          )}
-          {project.traction && (
-            <>
-              <span className="text-xs text-secondary">&middot;</span>
-              <span className="text-xs text-secondary">
-                {project.traction.users && String(project.traction.users)}
-                {project.traction.users && project.traction.revenue && " · "}
-                {project.traction.revenue}
+            </div>
+          </div>
+
+          <p
+            style={{
+              fontSize: 13,
+              color: C.textSec,
+              margin: "0 0 12px",
+              lineHeight: 1.5,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {project.tagline}
+          </p>
+
+          <BuilderCycler project={project} />
+
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+              marginTop: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            {project.stack.slice(0, 3).map((tech) => {
+              const meta = STACK_META[tech];
+              return (
+                <span
+                  key={tech}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 10,
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    background: meta ? `${meta.bg}12` : C.surfaceWarm,
+                    border: `1px solid ${C.borderLight}`,
+                    color: C.textSec,
+                    fontFamily: "var(--mono)",
+                  }}
+                >
+                  {meta && (
+                    <span
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 3,
+                        background: meta.bg,
+                        color: meta.color,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 8,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {meta.icon}
+                    </span>
+                  )}
+                  {tech}
+                </span>
+              );
+            })}
+            {project.stack.length > 3 && (
+              <span
+                style={{
+                  fontSize: 10,
+                  color: C.textMute,
+                  fontFamily: "var(--mono)",
+                  padding: "2px 4px",
+                }}
+              >
+                +{project.stack.length - 3}
               </span>
-            </>
-          )}
+            )}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 12,
+              paddingTop: 10,
+              borderTop: `1px solid ${C.borderLight}`,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                color: C.textMute,
+                fontFamily: "var(--mono)",
+              }}
+            >
+              {project.buildathon || "Community"}
+            </span>
+            <span style={{ fontSize: 11, color: C.textMute }}>
+              {project.date}
+            </span>
+          </div>
         </div>
       </div>
     </Link>

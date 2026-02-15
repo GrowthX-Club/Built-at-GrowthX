@@ -1,13 +1,13 @@
 # Built at GrowthX
 
-A Product Hunt-style platform where GrowthX community members showcase products they build at buildathons, cohort programs, or independently. The community votes with weighted influence based on role.
+Discover what the GrowthX community is shipping. A showcase platform for products built at buildathons, cohort programs, and independently by GrowthX members.
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router), React Server Components
-- **Styling**: Tailwind CSS
-- **Database**: MongoDB (in-memory store with seed data for development)
-- **Fonts**: DM Sans (body), JetBrains Mono (numbers/scores)
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Inline styles with CSS custom properties, Tailwind CSS utilities
+- **Typography**: Newsreader (serif headings), DM Sans (body), DM Mono (code/numbers)
+- **Data**: In-memory store with seed data (MongoDB-ready architecture)
 
 ## Getting Started
 
@@ -18,43 +18,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the platform.
 
-The app comes pre-seeded with mock data (15 projects, 12 members, 7 events) so it's functional immediately.
+## Features
 
-## Features (Phase 1)
+- **Built** - Browse shipped projects in a 3-column card grid with hero colors, tech stack pills, builder cycling animations, and featured badges
+- **Building** - Work-in-progress projects with status indicators (idea/prototyping/beta), build logs, and help-wanted requests
+- **Builders** - Leaderboard ranked by reputation with role badges (Builder, Host, Founder, Member)
+- **Cities** - Where the community is building, with builder counts and growth trends
+- **Discussion** - Threaded conversations with custom emoji reactions (ship_it, take_my_money, built_different, and more)
+- **Project Detail** - Full project pages with gradient hero, gallery, tech stack, and team cards
+- **Submit** - Project submission modal
 
-- **Project Listings**: Browse projects with weighted scores, search, and sort by trending/newest
-- **Project Details**: Full descriptions, build logs, team profiles, vote breakdowns, and comments
-- **Weighted Voting**: Role-based vote multipliers (builder 5x, host 4x, founder 3x, member 2x, non-member 1x)
-- **Events**: Browse buildathons, cohorts, and community events. Projects can optionally belong to events
-- **Builder Leaderboard**: Reputation rankings with time filters
-- **City Leaderboard**: Cross-city rankings with score bars
-- **Timeline**: Weekly project submission bar chart
-- **Member Profiles**: All shipped projects, builder score, role tags
-- **Submit Flow**: Project submission with team tagging and event selection
-- **Auth**: Demo auth with member selection (production: GrowthX SSO)
-- **Comments**: Threaded feedback on projects
+## Design
 
-## Project Structure
+- Warm palette: `#F8F7F4` background, `#181710` text, `#B8962E` gold accents
+- Serif headings (Newsreader) for an editorial feel
+- Monospace numbers (DM Mono) for scores and stats
+- Company tags with colored indicators
+- Animated builder cycling on project cards
 
-```
-src/
-  app/                    # Next.js App Router pages
-    api/                  # API routes (projects, votes, comments, events, members, etc.)
-    projects/[id]/        # Project detail page
-    events/               # Events grid
-    builders/             # Builder leaderboard
-    cities/               # City leaderboard
-    timeline/             # Weekly submission chart
-    members/[id]/         # Member profile
-  components/             # Reusable UI components
-  lib/                    # Data store, MongoDB client, auth, seed data
-  types/                  # TypeScript types and constants
-```
+## Data
 
-## Data Model
-
-- **Project** (primary entity) - can exist independently or belong to an event
-- **Event** - container for buildathons, cohorts, host clubs
-- **Member** - GrowthX community member with role and reputation
-- **Vote** - one per member per project, weighted by role
-- **Comment** - threaded feedback on projects
+Pre-seeded with 6 shipped projects, 4 building projects, 10 builders, 11 cities, and 4 discussion threads.

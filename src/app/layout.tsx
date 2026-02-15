@@ -1,8 +1,6 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 
 export const metadata: Metadata = {
   title: "Built at GrowthX",
@@ -24,14 +22,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans bg-white text-dark antialiased">
-        <Header />
-        <Navigation />
-        <main>{children}</main>
+      <body className="font-sans bg-bg text-text antialiased">
+        {children}
       </body>
     </html>
   );

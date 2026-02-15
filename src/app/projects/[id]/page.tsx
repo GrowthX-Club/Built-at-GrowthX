@@ -3,200 +3,146 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Project, Event, ROLE_WEIGHTS, ROLE_COLORS } from "@/types";
-import UpvoteButton from "@/components/UpvoteButton";
+import { C, STACK_META, type Project } from "@/types";
 import Avatar from "@/components/Avatar";
-import CommentSection from "@/components/CommentSection";
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const id = params.id as string;
-
-  const [project, setProject] = useState<(Project & { eventData?: Event }) | null>(null);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState<Project | null>(null);
 
   useEffect(() => {
-    fetch("/api/projects")
+    fetch(`/api/projects/${params.id}`)
       .then((r) => r.json())
-      .then((data) => {
-        const p = data.projects.find((proj: Project) => proj._id === id);
-        if (p) {
-          setProject(p);
-          setHasVoted(data.votedIds.includes(id));
-        }
-        setLoading(false);
-      });
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto px-6 py-12 text-center text-secondary text-sm">
-        Loading...
-      </div>
-    );
-  }
+      .then((d) => setProject(d.project));
+  }, [params.id]);
 
   if (!project) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-12 text-center text-secondary text-sm">
-        Project not found
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ color: C.textMute, fontSize: 14 }}>Loading...</span>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-6">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-sm text-secondary hover:text-dark transition-colors mb-6"
-      >
-        <svg viewBox="0 0 16 16" className="w-4 h-4">
-          <path d="M10.5 3L5.5 8L10.5 13" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        </svg>
-        Back to projects
-      </Link>
+    <div style={{ minHeight: "100vh", background: C.bg }}>
+      {/* Header */}
+      <header style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "0 24px", height: 56, display: "flex", alignItems: "center", gap: 16, position: "sticky", top: 0, zIndex: 100 }}>
+        <Link href="/" style={{ textDecoration: "none", color: C.textSec, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+          &larr; Back
+        </Link>
+        <span style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text }}>{project.name}</span>
+        {project.featured && (
+          <span style={{ fontSize: 10, color: C.gold, background: C.goldSoft, border: `1px solid ${C.goldBorder}`, padding: "2px 8px", borderRadius: 6, fontFamily: "var(--mono)", fontWeight: 600 }}>
+            &#x2726; Featured
+          </span>
+        )}
+      </header>
 
-      <div className="flex items-start gap-5 mb-8">
-        <UpvoteButton
-          projectId={project._id}
-          weightedScore={project.weightedScore}
-          rawVotes={project.rawVotes}
-          hasVoted={hasVoted}
-          size="lg"
-        />
-        <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-dark">{project.name}</h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-surface border border-border text-secondary">
-              {project.category}
-            </span>
-          </div>
-          <p className="text-secondary mt-1">{project.tagline}</p>
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
-            {project.eventData && (
-              <span
-                className="text-xs font-medium"
-                style={{ color: project.eventData.color }}
-              >
-                {project.eventData.name}
-              </span>
-            )}
-            {project.productUrl && (
-              <a
-                href={project.productUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-orange hover:text-orange-600 font-medium"
-              >
-                Visit product &rarr;
-              </a>
-            )}
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px 60px" }}>
+        {/* Hero */}
+        <div style={{ height: 160, borderRadius: 16, background: `linear-gradient(135deg, ${project.heroColor}20, ${project.heroColor}08)`, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 14, background: `linear-gradient(135deg, ${project.heroColor}, ${project.heroColor}CC)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 28, fontWeight: 700, fontFamily: "var(--serif)", boxShadow: `0 8px 24px ${project.heroColor}30` }}>
+            {project.name[0]}
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          {project.description && (
-            <div>
-              <h2 className="text-sm font-semibold text-dark mb-2">About</h2>
-              <p className="text-sm text-dark/80 leading-relaxed">
-                {project.description}
-              </p>
-            </div>
-          )}
-
-          {project.buildLog && (
-            <div>
-              <h2 className="text-sm font-semibold text-dark mb-2">
-                Build Log
-              </h2>
-              <div className="bg-surface border border-border rounded-lg p-4">
-                <p className="text-sm text-dark/80 leading-relaxed whitespace-pre-wrap">
-                  {project.buildLog}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <CommentSection projectId={project._id} />
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-sm font-semibold text-dark mb-3">Team</h2>
-            <div className="space-y-3">
-              {project.team.map((member) => (
-                <Link
-                  key={member.memberId}
-                  href={`/members/${member.memberId}`}
-                  className="flex items-center gap-3 hover:bg-surface rounded-lg p-2 -m-2 transition-colors"
-                >
-                  <Avatar name={member.name} size="md" />
-                  <div>
-                    <div className="text-sm font-medium text-dark">
-                      {member.name}
-                    </div>
-                    <div className="text-xs text-secondary">{member.role}</div>
-                  </div>
-                </Link>
-              ))}
+        {/* Title & meta */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
+            <h1 style={{ fontFamily: "var(--serif)", fontSize: 32, fontWeight: 600, color: C.text, margin: 0, letterSpacing: "-0.02em" }}>{project.name}</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, background: C.surfaceWarm, borderRadius: 8, padding: "6px 12px", border: `1px solid ${C.borderLight}` }}>
+              <span style={{ fontSize: 12, color: C.textMute }}>&#9650;</span>
+              <span style={{ fontFamily: "var(--mono)", fontSize: 18, fontWeight: 700, color: C.text }}>{project.weighted}</span>
+              <span style={{ fontFamily: "var(--mono)", fontSize: 12, color: C.textMute, marginLeft: 4 }}>{project.raw} votes</span>
             </div>
           </div>
+          <p style={{ fontSize: 17, color: C.textSec, lineHeight: 1.6, margin: "0 0 12px" }}>{project.tagline}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {project.buildathon && (
+              <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--mono)", background: C.surfaceWarm, padding: "3px 10px", borderRadius: 6, border: `1px solid ${C.borderLight}` }}>{project.buildathon}</span>
+            )}
+            <span style={{ fontSize: 12, color: C.textMute }}>{project.date}</span>
+            <span style={{ fontSize: 12, color: C.textMute, background: C.surfaceWarm, padding: "2px 8px", borderRadius: 4, border: `1px solid ${C.borderLight}` }}>{project.category}</span>
+          </div>
+        </div>
 
-          {project.traction && (
-            <div>
-              <h2 className="text-sm font-semibold text-dark mb-3">
-                Traction
-              </h2>
-              <div className="bg-surface border border-border rounded-lg p-4 space-y-2">
-                {project.traction.users && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-secondary">Users</span>
-                    <span className="font-mono font-medium text-dark">
-                      {String(project.traction.users)}
-                    </span>
-                  </div>
-                )}
-                {project.traction.revenue && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-secondary">Revenue</span>
-                    <span className="font-mono font-medium text-dark">
-                      {project.traction.revenue}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+        {/* Description */}
+        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24, marginBottom: 16 }}>
+          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px" }}>About</h2>
+          <p style={{ fontSize: 15, color: C.text, lineHeight: 1.7, margin: 0 }}>{project.description}</p>
+        </div>
 
-          <div>
-            <h2 className="text-sm font-semibold text-dark mb-3">
-              Vote Breakdown
-            </h2>
-            <div className="bg-surface border border-border rounded-lg p-4 space-y-2">
-              {Object.entries(ROLE_WEIGHTS).map(([role, weight]) => (
-                <div key={role} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: ROLE_COLORS[role] }}
-                    />
-                    <span className="text-dark capitalize">{role}</span>
-                  </div>
-                  <span className="font-mono text-secondary text-xs">
-                    {weight}x
-                  </span>
+        {/* Gallery */}
+        {project.gallery.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(project.gallery.length, 3)}, 1fr)`, gap: 12, marginBottom: 16 }}>
+            {project.gallery.map((item, i) => (
+              <div key={i} style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${C.border}` }}>
+                <div style={{ height: 120, background: `linear-gradient(135deg, ${item.colors[0]}, ${item.colors[1] || item.colors[0]})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontFamily: "var(--mono)" }}>{item.type}</span>
                 </div>
-              ))}
-              <div className="border-t border-border pt-2 mt-2 flex justify-between text-sm">
-                <span className="font-medium text-dark">Total</span>
-                <span className="font-mono font-bold text-dark">
-                  {project.weightedScore}
+                <div style={{ padding: "8px 12px", background: C.surface }}>
+                  <span style={{ fontSize: 12, color: C.textSec }}>{item.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tech stack */}
+        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24, marginBottom: 16 }}>
+          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px" }}>Tech Stack</h2>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {project.stack.map((tech) => {
+              const meta = STACK_META[tech];
+              return (
+                <span key={tech} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, padding: "6px 12px", borderRadius: 8, background: meta ? `${meta.bg}10` : C.surfaceWarm, border: `1px solid ${C.borderLight}`, color: C.text, fontFamily: "var(--mono)" }}>
+                  {meta && (
+                    <span style={{ width: 20, height: 20, borderRadius: 4, background: meta.bg, color: meta.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>{meta.icon}</span>
+                  )}
+                  {tech}
                 </span>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Built by */}
+        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24 }}>
+          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 16px" }}>Built by</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Primary builder */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: C.surfaceWarm, borderRadius: 10, border: `1px solid ${C.borderLight}` }}>
+              <Avatar initials={project.builder.avatar} size={40} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{project.builder.name}</span>
+                  {project.builder.company && project.builder.companyColor && (
+                    <span style={{ fontSize: 11, color: project.builder.companyColor, fontFamily: "var(--mono)", background: `${project.builder.companyColor}10`, padding: "1px 6px", borderRadius: 4, border: `1px solid ${project.builder.companyColor}20` }}>
+                      {project.builder.company}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: 12, color: C.textSec }}>{project.builder.title} &middot; {project.builder.city}</span>
               </div>
             </div>
+            {/* Collabs */}
+            {project.collabs.map((c, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderRadius: 10, border: `1px solid ${C.borderLight}` }}>
+                <Avatar initials={c.avatar} size={36} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{c.name}</span>
+                    {c.company && c.companyColor && (
+                      <span style={{ fontSize: 11, color: c.companyColor, fontFamily: "var(--mono)", background: `${c.companyColor}10`, padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.companyColor}20` }}>
+                        {c.company}
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 12, color: C.textSec }}>{c.title}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

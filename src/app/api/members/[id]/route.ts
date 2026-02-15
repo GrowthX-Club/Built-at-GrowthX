@@ -1,13 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { store } from "@/lib/store";
+import { NextResponse } from "next/server";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const member = store.getMember(params.id);
-  if (!member) {
-    return NextResponse.json({ error: "Member not found" }, { status: 404 });
-  }
-  return NextResponse.json({ member });
+export async function GET() {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
 }
