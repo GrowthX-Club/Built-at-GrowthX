@@ -113,10 +113,12 @@ export default function ProjectCard({
   project,
   hasVoted = false,
   onVote,
+  onUnauthClick,
 }: {
   project: Project;
   hasVoted?: boolean;
   onVote?: (projectId: number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
+  onUnauthClick?: () => void;
 }) {
   return (
     <Link
@@ -225,6 +227,7 @@ export default function ProjectCard({
               raw={project.raw}
               hasVoted={hasVoted}
               onVote={onVote}
+              onUnauthClick={onUnauthClick}
             />
           </div>
 

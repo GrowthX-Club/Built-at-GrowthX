@@ -9,6 +9,7 @@ interface UpvoteButtonProps {
   raw?: number;
   hasVoted: boolean;
   onVote?: (projectId: number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
+  onUnauthClick?: () => void;
 }
 
 export default function UpvoteButton({
@@ -16,6 +17,7 @@ export default function UpvoteButton({
   weighted: initialWeighted,
   hasVoted: initialVoted,
   onVote,
+  onUnauthClick,
 }: UpvoteButtonProps) {
   const [voted, setVoted] = useState(initialVoted);
   const [weighted, setWeighted] = useState(initialWeighted);
@@ -24,7 +26,11 @@ export default function UpvoteButton({
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (loading || !onVote) return;
+    if (!onVote) {
+      onUnauthClick?.();
+      return;
+    }
+    if (loading) return;
 
     setLoading(true);
     try {
@@ -49,7 +55,7 @@ export default function UpvoteButton({
         borderRadius: 6,
         padding: "3px 8px",
         border: `1px solid ${voted ? C.goldBorder : C.borderLight}`,
-        cursor: onVote ? "pointer" : "default",
+        cursor: "pointer",
         transition: "all 0.15s",
         opacity: loading ? 0.6 : 1,
         fontFamily: "var(--mono)",

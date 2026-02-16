@@ -15,6 +15,7 @@ import Header from "@/components/Header";
 import Navigation, { type TabKey } from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectRow";
 import SubmitModal from "@/components/SubmitModal";
+import SignInPicker from "@/components/SignInPicker";
 import Avatar from "@/components/Avatar";
 
 function StatusDot({ status }: { status: string }) {
@@ -146,6 +147,7 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
 export default function HomePage() {
   const [tab, setTab] = useState<TabKey>("built");
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [votedIds, setVotedIds] = useState<number[]>([]);
   const [building, setBuilding] = useState<BuildingProject[]>([]);
@@ -237,6 +239,7 @@ export default function HomePage() {
                   project={p}
                   hasVoted={votedIds.includes(p.id)}
                   onVote={user ? handleVote : undefined}
+                  onUnauthClick={!user ? () => setShowSignIn(true) : undefined}
                 />
               ))}
             </div>
@@ -357,6 +360,17 @@ export default function HomePage() {
         <SubmitModal
           onClose={() => setShowSubmit(false)}
           onSuccess={loadProjects}
+        />
+      )}
+
+      {showSignIn && (
+        <SignInPicker
+          builders={builders}
+          onSignIn={(name) => {
+            handleSignIn(name);
+            setShowSignIn(false);
+          }}
+          onClose={() => setShowSignIn(false)}
         />
       )}
     </div>

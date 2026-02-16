@@ -6,15 +6,18 @@ import Link from "next/link";
 import { C, STACK_META, ROLES, type Project, type Comment, type BuilderProfile } from "@/types";
 import Avatar from "@/components/Avatar";
 import UpvoteButton from "@/components/UpvoteButton";
+import SignInPicker from "@/components/SignInPicker";
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const [project, setProject] = useState<Project | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
+  const [builders, setBuilders] = useState<BuilderProfile[]>([]);
   const [newComment, setNewComment] = useState("");
   const [posting, setPosting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   useEffect(() => {
     fetch(`/api/projects/${params.id}`)
@@ -26,6 +29,9 @@ export default function ProjectDetailPage() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => setUser(d.user));
+    fetch("/api/members")
+      .then((r) => r.json())
+      .then((d) => setBuilders(d.builders));
     fetch("/api/projects")
       .then((r) => r.json())
       .then((d) => {
@@ -33,6 +39,23 @@ export default function ProjectDetailPage() {
         setHasVoted(voted.includes(Number(params.id)));
       });
   }, [params.id]);
+
+  const handleSignIn = async (name: string) => {
+    const res = await fetch("/api/auth/me", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const d = await res.json();
+    setUser(d.user);
+    // Refresh voted state
+    fetch("/api/projects")
+      .then((r) => r.json())
+      .then((data) => {
+        const voted = data.votedIds || [];
+        setHasVoted(voted.includes(Number(params.id)));
+      });
+  };
 
   const handleVote = async (projectId: number) => {
     if (!user) return null;
@@ -110,6 +133,7 @@ export default function ProjectDetailPage() {
               raw={project.raw}
               hasVoted={hasVoted}
               onVote={user ? handleVote : undefined}
+              onUnauthClick={!user ? () => setShowSignIn(true) : undefined}
             />
           </div>
           <p style={{ fontSize: 17, color: C.textSec, lineHeight: 1.6, margin: "0 0 12px" }}>{project.tagline}</p>
@@ -280,6 +304,17 @@ export default function ProjectDetailPage() {
           )}
         </div>
       </div>
+
+      {showSignIn && (
+        <SignInPicker
+          builders={builders}
+          onSignIn={(name) => {
+            handleSignIn(name);
+            setShowSignIn(false);
+          }}
+          onClose={() => setShowSignIn(false)}
+        />
+      )}
     </div>
   );
 }
