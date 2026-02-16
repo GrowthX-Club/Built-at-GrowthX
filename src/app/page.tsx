@@ -13,7 +13,8 @@ import {
 } from "@/types";
 import Header from "@/components/Header";
 import Navigation, { type TabKey } from "@/components/Navigation";
-import ProjectCard from "@/components/ProjectRow";
+import ProjectRow from "@/components/ProjectRow";
+import { HostPickCard } from "@/components/ProjectRow";
 import SubmitModal from "@/components/SubmitModal";
 import SignInPicker from "@/components/SignInPicker";
 import Avatar from "@/components/Avatar";
@@ -230,11 +231,33 @@ export default function HomePage() {
       <Navigation active={tab} onChange={setTab} />
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 24px 60px" }}>
-        {tab === "built" && (
-          <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-              {projects.map((p) => (
-                <ProjectCard
+        {tab === "built" && (() => {
+          const featured = projects.filter((p) => p.featured);
+          const rest = projects.filter((p) => !p.featured);
+          return (
+            <div>
+              {/* Hero heading */}
+              <div style={{ marginBottom: 28 }}>
+                <h1
+                  style={{
+                    fontFamily: "var(--serif)",
+                    fontSize: 28,
+                    fontWeight: 700,
+                    color: C.text,
+                    margin: 0,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  What the community shipped
+                </h1>
+                <p style={{ fontSize: 15, color: C.textSec, margin: "6px 0 0", lineHeight: 1.5 }}>
+                  The best products built by GrowthX members, ranked by the community.
+                </p>
+              </div>
+
+              {/* Host Pick */}
+              {featured.map((p) => (
+                <HostPickCard
                   key={p.id}
                   project={p}
                   hasVoted={votedIds.includes(p.id)}
@@ -242,15 +265,40 @@ export default function HomePage() {
                   onUnauthClick={!user ? () => setShowSignIn(true) : undefined}
                 />
               ))}
+
+              {/* Project list */}
+              {rest.length > 0 && (
+                <div
+                  style={{
+                    background: C.surface,
+                    borderRadius: 12,
+                    border: `1px solid ${C.border}`,
+                    overflow: "hidden",
+                  }}
+                >
+                  {rest.map((p, i) => (
+                    <ProjectRow
+                      key={p.id}
+                      project={p}
+                      hasVoted={votedIds.includes(p.id)}
+                      onVote={user ? handleVote : undefined}
+                      onUnauthClick={!user ? () => setShowSignIn(true) : undefined}
+                      isLast={i === rest.length - 1}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Discussion */}
+              <div style={{ marginTop: 40 }}>
+                <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: C.text, marginBottom: 16 }}>Discussion</h2>
+                {threads.map((thread) => (
+                  <ThreadCard key={thread.id} thread={thread} />
+                ))}
+              </div>
             </div>
-            <div style={{ marginTop: 40 }}>
-              <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: C.text, marginBottom: 16 }}>Discussion</h2>
-              {threads.map((thread) => (
-                <ThreadCard key={thread.id} thread={thread} />
-              ))}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {tab === "building" && (
           <div>
