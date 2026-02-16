@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   C,
   ROLES,
@@ -15,6 +15,7 @@ import Header from "@/components/Header";
 import Navigation, { type TabKey } from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectRow";
 import SubmitModal from "@/components/SubmitModal";
+import SignInPicker from "@/components/SignInPicker";
 import Avatar from "@/components/Avatar";
 
 function StatusDot({ status }: { status: string }) {
@@ -92,54 +93,15 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
         <Avatar initials={thread.author.avatar} role={thread.author.role} />
         <div style={{ flex: 1 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
-            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
-              {thread.author.name}
-            </span>
-            <span
-              style={{
-                fontSize: 10,
-                color: roleInfo.color,
-                background: roleInfo.bg,
-                padding: "1px 6px",
-                borderRadius: 4,
-                fontWeight: 500,
-              }}
-            >
-              {roleInfo.label}
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{thread.author.name}</span>
+            <span style={{ fontSize: 10, color: roleInfo.color, background: roleInfo.bg, padding: "1px 6px", borderRadius: 4, fontWeight: 500 }}>{roleInfo.label}</span>
             {thread.author.company && thread.author.companyColor && (
-              <span
-                style={{
-                  fontSize: 10,
-                  color: thread.author.companyColor,
-                  fontFamily: "var(--mono)",
-                }}
-              >
-                {thread.author.company}
-              </span>
+              <span style={{ fontSize: 10, color: thread.author.companyColor, fontFamily: "var(--mono)" }}>{thread.author.company}</span>
             )}
-            <span style={{ fontSize: 11, color: C.textMute }}>
-              {thread.time}
-            </span>
+            <span style={{ fontSize: 11, color: C.textMute }}>{thread.time}</span>
           </div>
-          <p
-            style={{
-              fontSize: 14,
-              color: C.text,
-              lineHeight: 1.6,
-              margin: "8px 0 10px",
-            }}
-          >
-            {thread.content}
-          </p>
+          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.6, margin: "8px 0 10px" }}>{thread.content}</p>
           <ReactionBar reactions={thread.reactions} />
         </div>
       </div>
@@ -148,105 +110,27 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
         <div>
           <button
             onClick={() => setExpanded(!expanded)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: 12,
-              color: C.textSec,
-              cursor: "pointer",
-              padding: "4px 0",
-              fontFamily: "var(--sans)",
-              fontWeight: 500,
-            }}
+            style={{ background: "none", border: "none", fontSize: 12, color: C.textSec, cursor: "pointer", padding: "4px 0", fontFamily: "var(--sans)", fontWeight: 500 }}
           >
-            {expanded
-              ? "Hide replies"
-              : `${thread.replies.length} ${thread.replies.length === 1 ? "reply" : "replies"}`}
+            {expanded ? "Hide replies" : `${thread.replies.length} ${thread.replies.length === 1 ? "reply" : "replies"}`}
           </button>
           {expanded && (
-            <div
-              style={{
-                marginTop: 12,
-                paddingTop: 12,
-                borderTop: `1px solid ${C.borderLight}`,
-              }}
-            >
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.borderLight}` }}>
               {thread.replies.map((reply, i) => {
                 const rRole = ROLES[reply.author.role] || ROLES.member;
                 return (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      marginBottom: 14,
-                      paddingLeft: 16,
-                    }}
-                  >
-                    <Avatar
-                      initials={reply.author.avatar}
-                      size={28}
-                      role={reply.author.role}
-                    />
+                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: 14, paddingLeft: 16 }}>
+                    <Avatar initials={reply.author.avatar} size={28} role={reply.author.role} />
                     <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: C.text,
-                          }}
-                        >
-                          {reply.author.name}
-                        </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{reply.author.name}</span>
                         {reply.author.isCreator && (
-                          <span
-                            style={{
-                              fontSize: 9,
-                              color: C.gold,
-                              background: C.goldSoft,
-                              border: `1px solid ${C.goldBorder}`,
-                              padding: "0 5px",
-                              borderRadius: 3,
-                              fontFamily: "var(--mono)",
-                              fontWeight: 600,
-                            }}
-                          >
-                            OP
-                          </span>
+                          <span style={{ fontSize: 9, color: C.gold, background: C.goldSoft, border: `1px solid ${C.goldBorder}`, padding: "0 5px", borderRadius: 3, fontFamily: "var(--mono)", fontWeight: 600 }}>OP</span>
                         )}
-                        <span
-                          style={{
-                            fontSize: 10,
-                            color: rRole.color,
-                            background: rRole.bg,
-                            padding: "1px 5px",
-                            borderRadius: 3,
-                          }}
-                        >
-                          {rRole.label}
-                        </span>
-                        <span style={{ fontSize: 11, color: C.textMute }}>
-                          {reply.time}
-                        </span>
+                        <span style={{ fontSize: 10, color: rRole.color, background: rRole.bg, padding: "1px 5px", borderRadius: 3 }}>{rRole.label}</span>
+                        <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
                       </div>
-                      <p
-                        style={{
-                          fontSize: 13,
-                          color: C.text,
-                          lineHeight: 1.5,
-                          margin: "4px 0 6px",
-                        }}
-                      >
-                        {reply.content}
-                      </p>
+                      <p style={{ fontSize: 13, color: C.text, lineHeight: 1.5, margin: "4px 0 6px" }}>{reply.content}</p>
                       <ReactionBar reactions={reply.reactions} />
                     </div>
                   </div>
@@ -263,23 +147,86 @@ function ThreadCard({ thread }: { thread: ThreadData }) {
 export default function HomePage() {
   const [tab, setTab] = useState<TabKey>("built");
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [votedIds, setVotedIds] = useState<number[]>([]);
   const [building, setBuilding] = useState<BuildingProject[]>([]);
   const [builders, setBuilders] = useState<BuilderProfile[]>([]);
   const [cities, setCities] = useState<CityData[]>([]);
   const [threads, setThreads] = useState<ThreadData[]>([]);
+  const [user, setUser] = useState<BuilderProfile | null>(null);
+
+  const loadProjects = useCallback(() => {
+    fetch("/api/projects")
+      .then((r) => r.json())
+      .then((d) => {
+        setProjects(d.projects);
+        setVotedIds(d.votedIds || []);
+      });
+  }, []);
+
+  const loadUser = useCallback(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setUser(d.user));
+  }, []);
 
   useEffect(() => {
-    fetch("/api/projects").then((r) => r.json()).then((d) => setProjects(d.projects));
+    loadProjects();
+    loadUser();
     fetch("/api/building").then((r) => r.json()).then((d) => setBuilding(d.building));
     fetch("/api/members").then((r) => r.json()).then((d) => setBuilders(d.builders));
     fetch("/api/cities").then((r) => r.json()).then((d) => setCities(d.cities));
     fetch("/api/threads").then((r) => r.json()).then((d) => setThreads(d.threads));
-  }, []);
+  }, [loadProjects, loadUser]);
+
+  const handleSignIn = async (name: string) => {
+    const res = await fetch("/api/auth/me", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const d = await res.json();
+    setUser(d.user);
+    loadProjects();
+  };
+
+  const handleSignOut = async () => {
+    await fetch("/api/auth/me", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: null }),
+    });
+    setUser(null);
+    setVotedIds([]);
+  };
+
+  const handleVote = async (projectId: number) => {
+    if (!user) return null;
+    const res = await fetch("/api/votes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId }),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    if (result.voted) {
+      setVotedIds((ids) => [...ids, projectId]);
+    } else {
+      setVotedIds((ids) => ids.filter((id) => id !== projectId));
+    }
+    return result;
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg }}>
-      <Header onSubmit={() => setShowSubmit(true)} />
+      <Header
+        onSubmit={() => setShowSubmit(true)}
+        user={user}
+        onSignIn={handleSignIn}
+        onSignOut={handleSignOut}
+        builders={builders}
+      />
       <Navigation active={tab} onChange={setTab} />
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 24px 60px" }}>
@@ -287,13 +234,17 @@ export default function HomePage() {
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
               {projects.map((p) => (
-                <ProjectCard key={p.id} project={p} />
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  hasVoted={votedIds.includes(p.id)}
+                  onVote={user ? handleVote : undefined}
+                  onUnauthClick={!user ? () => setShowSignIn(true) : undefined}
+                />
               ))}
             </div>
             <div style={{ marginTop: 40 }}>
-              <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: C.text, marginBottom: 16 }}>
-                Discussion
-              </h2>
+              <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: C.text, marginBottom: 16 }}>Discussion</h2>
               {threads.map((thread) => (
                 <ThreadCard key={thread.id} thread={thread} />
               ))}
@@ -303,12 +254,8 @@ export default function HomePage() {
 
         {tab === "building" && (
           <div>
-            <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: C.text, marginBottom: 4 }}>
-              Currently Building
-            </h2>
-            <p style={{ fontSize: 14, color: C.textSec, marginBottom: 20 }}>
-              Work in progress from the community
-            </p>
+            <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 600, color: C.text, marginBottom: 4 }}>Currently Building</h2>
+            <p style={{ fontSize: 14, color: C.textSec, marginBottom: 20 }}>Work in progress from the community</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {building.map((b) => {
                 const roleInfo = ROLES[b.builder.role] || ROLES.member;
@@ -409,7 +356,23 @@ export default function HomePage() {
         )}
       </div>
 
-      {showSubmit && <SubmitModal onClose={() => setShowSubmit(false)} />}
+      {showSubmit && (
+        <SubmitModal
+          onClose={() => setShowSubmit(false)}
+          onSuccess={loadProjects}
+        />
+      )}
+
+      {showSignIn && (
+        <SignInPicker
+          builders={builders}
+          onSignIn={(name) => {
+            handleSignIn(name);
+            setShowSignIn(false);
+          }}
+          onClose={() => setShowSignIn(false)}
+        />
+      )}
     </div>
   );
 }

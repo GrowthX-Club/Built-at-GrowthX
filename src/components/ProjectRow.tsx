@@ -4,6 +4,7 @@ import { C, STACK_META } from "@/types";
 import type { Project } from "@/types";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import UpvoteButton from "./UpvoteButton";
 
 function CompanyTag({ name, color }: { name: string; color: string }) {
   return (
@@ -108,7 +109,17 @@ function BuilderCycler({ project }: { project: Project }) {
   );
 }
 
-export default function ProjectCard({ project }: { project: Project }) {
+export default function ProjectCard({
+  project,
+  hasVoted = false,
+  onVote,
+  onUnauthClick,
+}: {
+  project: Project;
+  hasVoted?: boolean;
+  onVote?: (projectId: number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
+  onUnauthClick?: () => void;
+}) {
   return (
     <Link
       href={`/projects/${project.id}`}
@@ -210,29 +221,14 @@ export default function ProjectCard({ project }: { project: Project }) {
             >
               {project.name}
             </h3>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 3,
-                background: C.surfaceWarm,
-                borderRadius: 6,
-                padding: "3px 8px",
-                border: `1px solid ${C.borderLight}`,
-              }}
-            >
-              <span style={{ fontSize: 10, color: C.textMute }}>&#9650;</span>
-              <span
-                style={{
-                  fontFamily: "var(--mono)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: C.text,
-                }}
-              >
-                {project.weighted}
-              </span>
-            </div>
+            <UpvoteButton
+              projectId={project.id}
+              weighted={project.weighted}
+              raw={project.raw}
+              hasVoted={hasVoted}
+              onVote={onVote}
+              onUnauthClick={onUnauthClick}
+            />
           </div>
 
           <p
