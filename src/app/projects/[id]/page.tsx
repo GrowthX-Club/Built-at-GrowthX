@@ -3,18 +3,72 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { C, STACK_META, type Project } from "@/types";
+import { C, STACK_META, ROLES, type Project, type Comment, type BuilderProfile } from "@/types";
 import Avatar from "@/components/Avatar";
+import UpvoteButton from "@/components/UpvoteButton";
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const [project, setProject] = useState<Project | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [user, setUser] = useState<BuilderProfile | null>(null);
+  const [newComment, setNewComment] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [hasVoted, setHasVoted] = useState(false);
 
   useEffect(() => {
     fetch(`/api/projects/${params.id}`)
       .then((r) => r.json())
       .then((d) => setProject(d.project));
+    fetch(`/api/comments?projectId=${params.id}`)
+      .then((r) => r.json())
+      .then((d) => setComments(d.comments || []));
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setUser(d.user));
+    fetch("/api/projects")
+      .then((r) => r.json())
+      .then((d) => {
+        const voted = d.votedIds || [];
+        setHasVoted(voted.includes(Number(params.id)));
+      });
   }, [params.id]);
+
+  const handleVote = async (projectId: number) => {
+    if (!user) return null;
+    const res = await fetch("/api/votes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId }),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    setHasVoted(result.voted);
+    setProject((p) =>
+      p ? { ...p, weighted: result.weighted, raw: result.raw } : p
+    );
+    return result;
+  };
+
+  const handlePostComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || posting) return;
+    setPosting(true);
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: Number(params.id), content: newComment.trim() }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setComments((c) => [...c, d.comment]);
+        setNewComment("");
+      }
+    } finally {
+      setPosting(false);
+    }
+  };
 
   if (!project) {
     return (
@@ -26,7 +80,6 @@ export default function ProjectDetailPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg }}>
-      {/* Header */}
       <header style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "0 24px", height: 56, display: "flex", alignItems: "center", gap: 16, position: "sticky", top: 0, zIndex: 100 }}>
         <Link href="/" style={{ textDecoration: "none", color: C.textSec, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
           &larr; Back
@@ -51,11 +104,13 @@ export default function ProjectDetailPage() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
             <h1 style={{ fontFamily: "var(--serif)", fontSize: 32, fontWeight: 600, color: C.text, margin: 0, letterSpacing: "-0.02em" }}>{project.name}</h1>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, background: C.surfaceWarm, borderRadius: 8, padding: "6px 12px", border: `1px solid ${C.borderLight}` }}>
-              <span style={{ fontSize: 12, color: C.textMute }}>&#9650;</span>
-              <span style={{ fontFamily: "var(--mono)", fontSize: 18, fontWeight: 700, color: C.text }}>{project.weighted}</span>
-              <span style={{ fontFamily: "var(--mono)", fontSize: 12, color: C.textMute, marginLeft: 4 }}>{project.raw} votes</span>
-            </div>
+            <UpvoteButton
+              projectId={project.id}
+              weighted={project.weighted}
+              raw={project.raw}
+              hasVoted={hasVoted}
+              onVote={user ? handleVote : undefined}
+            />
           </div>
           <p style={{ fontSize: 17, color: C.textSec, lineHeight: 1.6, margin: "0 0 12px" }}>{project.tagline}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -108,10 +163,9 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Built by */}
-        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24 }}>
+        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24, marginBottom: 16 }}>
           <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 16px" }}>Built by</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {/* Primary builder */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: C.surfaceWarm, borderRadius: 10, border: `1px solid ${C.borderLight}` }}>
               <Avatar initials={project.builder.avatar} size={40} />
               <div style={{ flex: 1 }}>
@@ -126,7 +180,6 @@ export default function ProjectDetailPage() {
                 <span style={{ fontSize: 12, color: C.textSec }}>{project.builder.title} &middot; {project.builder.city}</span>
               </div>
             </div>
-            {/* Collabs */}
             {project.collabs.map((c, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderRadius: 10, border: `1px solid ${C.borderLight}` }}>
                 <Avatar initials={c.avatar} size={36} />
@@ -144,6 +197,87 @@ export default function ProjectDetailPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Comments */}
+        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24 }}>
+          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 16px" }}>
+            Comments {comments.length > 0 && <span style={{ fontFamily: "var(--mono)", fontSize: 14, color: C.textMute }}>({comments.length})</span>}
+          </h2>
+
+          {comments.length === 0 && !user && (
+            <p style={{ fontSize: 14, color: C.textMute, margin: 0 }}>No comments yet. Sign in to be the first!</p>
+          )}
+          {comments.length === 0 && user && (
+            <p style={{ fontSize: 14, color: C.textMute, margin: "0 0 16px" }}>No comments yet. Be the first!</p>
+          )}
+
+          {comments.map((c) => {
+            const roleInfo = ROLES[c.authorRole] || ROLES.member;
+            return (
+              <div key={c.id} style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                <Avatar initials={c.authorAvatar} size={32} role={c.authorRole} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{c.authorName}</span>
+                    <span style={{ fontSize: 10, color: roleInfo.color, background: roleInfo.bg, padding: "1px 5px", borderRadius: 3 }}>{roleInfo.label}</span>
+                    <span style={{ fontSize: 11, color: C.textMute }}>
+                      {new Date(c.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 14, color: C.text, lineHeight: 1.5, margin: 0 }}>{c.content}</p>
+                </div>
+              </div>
+            );
+          })}
+
+          {user && (
+            <form onSubmit={handlePostComment} style={{ marginTop: comments.length > 0 ? 16 : 0, paddingTop: comments.length > 0 ? 16 : 0, borderTop: comments.length > 0 ? `1px solid ${C.borderLight}` : "none" }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <Avatar initials={user.avatar} size={32} role={user.role} />
+                <div style={{ flex: 1 }}>
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    rows={2}
+                    style={{
+                      width: "100%",
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 8,
+                      padding: "10px 12px",
+                      fontSize: 14,
+                      color: C.text,
+                      background: C.surfaceWarm,
+                      outline: "none",
+                      fontFamily: "var(--sans)",
+                      resize: "none",
+                    }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                    <button
+                      type="submit"
+                      disabled={posting || !newComment.trim()}
+                      style={{
+                        background: C.accent,
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "6px 16px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "var(--sans)",
+                        opacity: posting || !newComment.trim() ? 0.5 : 1,
+                      }}
+                    >
+                      {posting ? "Posting..." : "Comment"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

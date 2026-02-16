@@ -160,12 +160,29 @@ export interface ThreadData {
   replies: ThreadReply[];
 }
 
-export interface TractionUpdate {
-  date: string;
-  text: string;
-  icon: string;
-  latest?: boolean;
+export interface Comment {
+  id: string;
+  projectId: number;
+  authorName: string;
+  authorAvatar: string;
+  authorRole: string;
+  content: string;
+  parentId: string | null;
+  createdAt: string;
 }
+
+export interface Vote {
+  projectId: number;
+  builderName: string;
+  weight: number;
+}
+
+export const ROLE_WEIGHTS: Record<string, number> = {
+  founder: 5,
+  host: 4,
+  builder: 3,
+  member: 2,
+};
 
 // Stack metadata for tech icons
 export const STACK_META: Record<string, { icon: string; bg: string; color: string }> = {
