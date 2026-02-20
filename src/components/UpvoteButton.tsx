@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { C } from "@/types";
 
+function fmt(n: number) {
+  return n >= 1000 ? n.toLocaleString() : String(n);
+}
+
 interface UpvoteButtonProps {
   projectId: number;
   weighted: number;
@@ -10,6 +14,7 @@ interface UpvoteButtonProps {
   hasVoted: boolean;
   onVote?: (projectId: number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
   onUnauthClick?: () => void;
+  size?: "default" | "large";
 }
 
 export default function UpvoteButton({
@@ -18,10 +23,13 @@ export default function UpvoteButton({
   hasVoted: initialVoted,
   onVote,
   onUnauthClick,
+  size = "default",
 }: UpvoteButtonProps) {
   const [voted, setVoted] = useState(initialVoted);
   const [weighted, setWeighted] = useState(initialWeighted);
   const [loading, setLoading] = useState(false);
+
+  const isLarge = size === "large";
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -49,11 +57,12 @@ export default function UpvoteButton({
       onClick={handleClick}
       style={{
         display: "flex",
+        flexDirection: isLarge ? "column" : "row",
         alignItems: "center",
-        gap: 3,
+        gap: isLarge ? 2 : 3,
         background: voted ? `${C.gold}10` : C.surfaceWarm,
-        borderRadius: 6,
-        padding: "3px 8px",
+        borderRadius: isLarge ? 10 : 6,
+        padding: isLarge ? "10px 18px" : "3px 8px",
         border: `1px solid ${voted ? C.goldBorder : C.borderLight}`,
         cursor: "pointer",
         transition: "all 0.15s",
@@ -61,15 +70,15 @@ export default function UpvoteButton({
         fontFamily: "var(--mono)",
       }}
     >
-      <span style={{ fontSize: 10, color: voted ? C.gold : C.textMute }}>&#9650;</span>
+      <span style={{ fontSize: isLarge ? 14 : 10, color: voted ? C.gold : C.textMute }}>&#9650;</span>
       <span
         style={{
-          fontSize: 13,
+          fontSize: isLarge ? 18 : 13,
           fontWeight: 600,
           color: voted ? C.gold : C.text,
         }}
       >
-        {weighted}
+        {fmt(weighted)}
       </span>
     </button>
   );
