@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { C } from "@/types";
-import { gxApi } from "@/lib/api";
+import { gxApi, setToken } from "@/lib/api";
 
 type Step = "phone" | "otp";
 
@@ -76,7 +76,10 @@ export default function LoginPage() {
         otpRefs.current[0]?.focus();
         return;
       }
-      // Login successful — cookies are set by gx-backend
+      // Store JWT token from response
+      if (data.token) {
+        setToken(data.token);
+      }
       router.push("/");
     } catch {
       setError("Could not reach server");
