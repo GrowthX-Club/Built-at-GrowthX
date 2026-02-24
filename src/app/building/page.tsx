@@ -10,7 +10,7 @@ import {
   normalizeBuildingProject,
   normalizeUser,
 } from "@/types";
-import { bxApi } from "@/lib/api";
+import { bxApi, clearToken } from "@/lib/api";
 
 // ---- Inline Components ----
 
@@ -86,7 +86,8 @@ export default function BuildingPage() {
   const handleSignIn = () => { router.push("/login"); };
 
   const handleSignOut = async () => {
-    await bxApi("/logout", { method: "POST" });
+    await bxApi("/logout", { method: "POST" }).catch(() => {});
+    clearToken();
     setUser(null);
     setShowProfileMenu(false);
   };

@@ -489,3 +489,63 @@ export const STACK_META: Record<string, { icon: string; bg: string; color: strin
   "React Native": { icon: "\u{269B}", bg: "#61DAFB", color: "#222" },
   "WhatsApp Business API": { icon: "W", bg: "#25D366", color: "#fff" },
 };
+
+// Stack name → logo.dev domain mapping
+const STACK_DOMAINS: Record<string, string> = {
+  "Next.js": "nextjs.org",
+  "Claude API": "anthropic.com",
+  "Supabase": "supabase.com",
+  "Vercel": "vercel.com",
+  "React": "react.dev",
+  "Node.js": "nodejs.org",
+  "Razorpay": "razorpay.com",
+  "PostgreSQL": "postgresql.org",
+  "Python": "python.org",
+  "Whisper": "openai.com",
+  "GPT-4": "openai.com",
+  "FastAPI": "fastapi.tiangolo.com",
+  "TensorFlow": "tensorflow.org",
+  "Flutter": "flutter.dev",
+  "Firebase": "firebase.google.com",
+  "Google Maps API": "google.com",
+  "React Native": "reactnative.dev",
+  "WhatsApp Business API": "whatsapp.com",
+  "TypeScript": "typescriptlang.org",
+  "JavaScript": "javascript.com",
+  "Tailwind CSS": "tailwindcss.com",
+  "MongoDB": "mongodb.com",
+  "Redis": "redis.io",
+  "Docker": "docker.com",
+  "AWS": "aws.amazon.com",
+  "Stripe": "stripe.com",
+  "Figma": "figma.com",
+  "GitHub": "github.com",
+  "OpenAI": "openai.com",
+  "Prisma": "prisma.io",
+  "GraphQL": "graphql.org",
+  "Express": "expressjs.com",
+  "Vue.js": "vuejs.org",
+  "Angular": "angular.io",
+  "Svelte": "svelte.dev",
+  "Django": "djangoproject.com",
+  "Ruby on Rails": "rubyonrails.org",
+  "Go": "go.dev",
+  "Rust": "rust-lang.org",
+  "Kotlin": "kotlinlang.org",
+  "Swift": "swift.org",
+  "Cloudflare": "cloudflare.com",
+  "Twilio": "twilio.com",
+  "Slack API": "slack.com",
+  "Notion API": "notion.so",
+  "Linear": "linear.app",
+  "Framer": "framer.com",
+};
+
+/** Generate a logo.dev URL for a tech stack item */
+export function getStackLogoUrl(stackName: string): string {
+  if (!stackName) return '';
+  // Use known mapping first, fall back to best-effort domain guess
+  const domain = STACK_DOMAINS[stackName]
+    || stackName.toLowerCase().replace(/\s*(api|sdk|\.js|\.ts)$/i, '').replace(/[^a-z0-9]/g, '') + '.com';
+  return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=64`;
+}

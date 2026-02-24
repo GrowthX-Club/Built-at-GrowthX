@@ -16,6 +16,8 @@ import {
   normalizeUser,
   normalizeThread,
   getCompanyLogoUrl,
+  getStackLogoUrl,
+  STACK_META,
 } from "@/types";
 import { bxApi } from "@/lib/api";
 
@@ -265,27 +267,6 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
     </div>
   );
 }
-
-const STACK_META: Record<string, { icon: string; bg: string; color: string }> = {
-  "Next.js": { icon: "N", bg: "#000", color: "#fff" },
-  "Claude API": { icon: "C", bg: "#D4A27F", color: "#fff" },
-  "Supabase": { icon: "S", bg: "#3ECF8E", color: "#fff" },
-  "Vercel": { icon: "\u25B2", bg: "#000", color: "#fff" },
-  "React": { icon: "\u269B", bg: "#61DAFB", color: "#222" },
-  "Node.js": { icon: "N", bg: "#339933", color: "#fff" },
-  "Razorpay": { icon: "R", bg: "#0C2451", color: "#fff" },
-  "PostgreSQL": { icon: "P", bg: "#336791", color: "#fff" },
-  "Python": { icon: "Py", bg: "#3776AB", color: "#FFD43B" },
-  "Whisper": { icon: "W", bg: "#412991", color: "#fff" },
-  "GPT-4": { icon: "G", bg: "#10A37F", color: "#fff" },
-  "FastAPI": { icon: "F", bg: "#009688", color: "#fff" },
-  "TensorFlow": { icon: "TF", bg: "#FF6F00", color: "#fff" },
-  "Flutter": { icon: "F", bg: "#02569B", color: "#fff" },
-  "Firebase": { icon: "\uD83D\uDD25", bg: "#FFCA28", color: "#333" },
-  "Google Maps API": { icon: "G", bg: "#4285F4", color: "#fff" },
-  "React Native": { icon: "\u269B", bg: "#61DAFB", color: "#222" },
-  "WhatsApp Business API": { icon: "W", bg: "#25D366", color: "#fff" },
-};
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -614,6 +595,7 @@ export default function ProjectDetailPage() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {p.stack.map((t, i) => {
                 const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: "#fff" };
+                const logoUrl = getStackLogoUrl(t);
                 return (
                   <div key={i} style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
@@ -630,7 +612,22 @@ export default function ProjectDetailPage() {
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 9.5, fontWeight: 750, fontFamily: "var(--sans)",
                       flexShrink: 0, letterSpacing: "-0.02em",
-                    }}>{meta.icon}</div>
+                      position: "relative", overflow: "hidden",
+                    }}>
+                      {meta.icon}
+                      {logoUrl && (
+                        <img
+                          src={logoUrl}
+                          alt={t}
+                          style={{
+                            position: "absolute", top: 0, left: 0,
+                            width: 22, height: 22, borderRadius: 6,
+                            objectFit: "contain", background: "#fff",
+                          }}
+                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      )}
+                    </div>
                     <span style={{ fontSize: 13, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
                   </div>
                 );
