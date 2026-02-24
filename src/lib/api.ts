@@ -1,16 +1,14 @@
-// All API calls go through Next.js rewrites (see next.config.mjs)
-// /api/bx/* → gx-backend /bx/*
-// This avoids CORS issues and keeps the backend URL hidden from the client.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export function bxApi(path: string, init?: RequestInit) {
-  return fetch(`/api/bx${path}`, {
+  return fetch(`${API_BASE}/bx${path}`, {
     credentials: "include",
     ...init,
   });
 }
 
 export function gxApi(path: string, init?: RequestInit) {
-  return fetch(`/api${path}`, {
+  return fetch(`${API_BASE}${path}`, {
     credentials: "include",
     ...init,
   });
