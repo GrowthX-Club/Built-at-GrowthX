@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { C } from "@/types";
+import { bxApi } from "@/lib/api";
 
 interface SubmitModalProps {
   onClose: () => void;
@@ -26,7 +27,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/projects", {
+      const res = await bxApi("/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -8,11 +8,11 @@ function fmt(n: number) {
 }
 
 interface UpvoteButtonProps {
-  projectId: number;
+  projectId: string | number;
   weighted: number;
   raw?: number;
   hasVoted: boolean;
-  onVote?: (projectId: number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
+  onVote?: (projectId: string | number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
   onUnauthClick?: () => void;
   size?: "default" | "large";
 }

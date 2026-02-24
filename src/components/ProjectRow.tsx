@@ -44,7 +44,7 @@ export function HostPickCard({
 }: {
   project: Project;
   hasVoted?: boolean;
-  onVote?: (projectId: number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
+  onVote?: (projectId: string | number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
   onUnauthClick?: () => void;
 }) {
   return (
@@ -236,7 +236,7 @@ export default function ProjectRow({
 }: {
   project: Project;
   hasVoted?: boolean;
-  onVote?: (projectId: number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
+  onVote?: (projectId: string | number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
   onUnauthClick?: () => void;
   isLast?: boolean;
 }) {

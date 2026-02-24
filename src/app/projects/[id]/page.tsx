@@ -1,320 +1,836 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { C, STACK_META, ROLES, type Project, type Comment, type BuilderProfile } from "@/types";
-import Avatar from "@/components/Avatar";
-import UpvoteButton from "@/components/UpvoteButton";
-import SignInPicker from "@/components/SignInPicker";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  C,
+  ROLES,
+  CUSTOM_EMOJIS,
+  type Project,
+  type BuilderProfile,
+  type ThreadData,
+  type Reaction,
+  type Comment,
+  normalizeComment,
+  normalizeProject,
+  normalizeUser,
+  normalizeThread,
+  getCompanyLogoUrl,
+} from "@/types";
+import { bxApi } from "@/lib/api";
+
+function timeAgo(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function Av({ initials, size = 32, highlight, role }: { initials: string; size?: number; highlight?: boolean; role?: string }) {
+  const r = role ? ROLES[role] : undefined;
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size,
+      background: highlight ? C.accent : (r?.bg || C.accentSoft),
+      color: highlight ? C.bg : (r?.color || C.textSec),
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: Math.round(size * 0.36), fontWeight: 650,
+      fontFamily: "var(--sans)", letterSpacing: "0.01em",
+      border: highlight ? `2px solid ${C.gold}` : `1px solid ${C.borderLight}`,
+      flexShrink: 0,
+    }}>
+      {initials}
+    </div>
+  );
+}
+
+function Badge({ role, size = "sm" }: { role: string; size?: "sm" | "md" }) {
+  const r = ROLES[role];
+  if (!r) return null;
+  const s = size === "sm" ? { fs: 9.5, px: 6, py: 2 } : { fs: 10.5, px: 8, py: 3 };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 3,
+      fontSize: s.fs, fontWeight: 650, letterSpacing: "0.04em",
+      padding: `${s.py}px ${s.px}px`, borderRadius: 4,
+      color: r.color, background: r.bg,
+      fontFamily: "var(--sans)", textTransform: "uppercase", lineHeight: 1,
+    }}>
+      {r.label}
+    </span>
+  );
+}
+
+function CompanyTag({ title, company, companyColor }: { title?: string; company?: string; companyColor?: string }) {
+  if (!company) return null;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450,
+    }}>
+      {title && <span>{title}</span>}
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+        <span style={{
+          width: 14, height: 14, borderRadius: 4,
+          background: companyColor || C.accent,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          fontSize: 7, fontWeight: 800, color: "#fff",
+          fontFamily: "var(--sans)", letterSpacing: "-0.02em", flexShrink: 0,
+          overflow: "hidden", position: "relative",
+        }}>
+          {company[0]}
+          <img src={getCompanyLogoUrl(company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        </span>
+        <span style={{ fontWeight: 520, color: C.textSec }}>{company}</span>
+      </span>
+    </span>
+  );
+}
+
+function Reactions({ reactions: initialReactions, onReact }: { reactions: Reaction[]; onReact?: (emojiCode: string) => void }) {
+  const [local, setLocal] = useState(initialReactions.map(r => ({ ...r })));
+  const [picker, setPicker] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLocal(initialReactions.map(r => ({ ...r })));
+  }, [initialReactions]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setPicker(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleToggle = (emojiCode: string) => {
+    setLocal(prev => prev.map(x => x.emoji.code === emojiCode ? { ...x, mine: !x.mine, count: x.mine ? x.count - 1 : x.count + 1 } : x));
+    onReact?.(emojiCode);
+  };
+
+  const handlePick = (e: typeof CUSTOM_EMOJIS[number]) => {
+    const exists = local.find(x => x.emoji.code === e.code);
+    if (exists) {
+      if (!exists.mine) {
+        setLocal(prev => prev.map(x => x.emoji.code === e.code ? { ...x, mine: true, count: x.count + 1 } : x));
+      }
+    } else {
+      setLocal(prev => [...prev, { emoji: e, count: 1, mine: true }]);
+    }
+    setPicker(false);
+    onReact?.(e.code);
+  };
+
+  return (
+    <div ref={ref} style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center", position: "relative" }}>
+      {local.map((r, i) => (
+        <button key={i} onClick={() => handleToggle(r.emoji.code)} style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          padding: "4px 10px", borderRadius: 20,
+          border: r.mine ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
+          background: r.mine ? C.accentSoft : C.surface,
+          cursor: "pointer", fontSize: 13, fontFamily: "var(--sans)",
+          color: C.text, transition: "all 0.12s",
+        }}>
+          <span style={{ fontSize: 14, color: r.emoji.special ? C.gold : "inherit", fontWeight: r.emoji.special ? 700 : 400 }}>{r.emoji.display}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
+        </button>
+      ))}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setPicker(!picker)} style={{
+          width: 30, height: 30, borderRadius: 20,
+          border: `1px dashed ${C.border}`, background: "transparent",
+          cursor: "pointer", fontSize: 14, color: C.textMute,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all 0.12s",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMute; }}
+        >+</button>
+        {picker && (
+          <div style={{
+            position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+            padding: 10, background: C.surface,
+            border: `1px solid ${C.border}`, borderRadius: 14,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+            display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 2,
+            zIndex: 100, minWidth: 220,
+          }}>
+            {CUSTOM_EMOJIS.map((e, i) => (
+              <button key={i} onClick={() => handlePick(e)} title={e.label} style={{
+                padding: 7, borderRadius: 8, border: "none",
+                background: "transparent", cursor: "pointer",
+                fontSize: 18, transition: "all 0.1s",
+                color: e.special ? C.gold : "inherit",
+                fontWeight: e.special ? 700 : 400,
+              }}
+              onMouseEnter={ev => (ev.target as HTMLElement).style.background = C.accentSoft}
+              onMouseLeave={ev => (ev.target as HTMLElement).style.background = "transparent"}
+              >
+                {e.display}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ThreadBlock({ thread }: { thread: ThreadData }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
+      <div style={{ display: "flex", gap: 14 }}>
+        <Av initials={thread.author.avatar} size={38} role={thread.author.role} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>{thread.author.name}</span>
+            <CompanyTag title={thread.author.title} company={thread.author.company} companyColor={thread.author.companyColor} />
+            <Badge role={thread.author.role} />
+            <span style={{ fontSize: 12, color: C.textMute }}>{thread.time}</span>
+          </div>
+          <p style={{ fontSize: 15, lineHeight: 1.65, color: C.text, fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400 }}>{thread.content}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <Reactions reactions={thread.reactions} />
+            {thread.replies.length > 0 && (
+              <button onClick={() => setOpen(!open)} style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "5px 12px", borderRadius: 8,
+                border: "none", background: open ? C.accentSoft : "transparent",
+                cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                color: C.blue, fontFamily: "var(--sans)",
+              }}>
+                {thread.replies.length} {thread.replies.length === 1 ? "reply" : "replies"}
+                <span style={{ fontSize: 9, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>{"\u25BC"}</span>
+              </button>
+            )}
+            {thread.replies.length === 0 && (
+              <button style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", fontSize: 12, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)" }}>Reply</button>
+            )}
+          </div>
+          {open && (
+            <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: 20, marginLeft: 2 }}>
+              {thread.replies.map((reply, i) => (
+                <div key={i} style={{ padding: "16px 0", borderBottom: i < thread.replies.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
+                  {reply.author.isCreator ? (
+                    <div style={{
+                      background: `linear-gradient(90deg, ${C.goldSoft} 0%, transparent 100%)`,
+                      margin: "-16px -16px 0 -20px", padding: "16px 16px 16px 20px",
+                      borderRadius: "0 10px 10px 0",
+                    }}>
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <Av initials={reply.author.avatar} size={30} highlight role={reply.author.role} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
+                            <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
+                            <span style={{ fontSize: 8.5, fontWeight: 750, padding: "2px 6px", borderRadius: 3, background: C.accent, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase" }}>OP</span>
+                            <Badge role={reply.author.role} />
+                            <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
+                          </div>
+                          <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
+                          <Reactions reactions={reply.reactions} />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <Av initials={reply.author.avatar} size={30} role={reply.author.role} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
+                          <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
+                          <Badge role={reply.author.role} />
+                          <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
+                        </div>
+                        <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
+                        <Reactions reactions={reply.reactions} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const STACK_META: Record<string, { icon: string; bg: string; color: string }> = {
+  "Next.js": { icon: "N", bg: "#000", color: "#fff" },
+  "Claude API": { icon: "C", bg: "#D4A27F", color: "#fff" },
+  "Supabase": { icon: "S", bg: "#3ECF8E", color: "#fff" },
+  "Vercel": { icon: "\u25B2", bg: "#000", color: "#fff" },
+  "React": { icon: "\u269B", bg: "#61DAFB", color: "#222" },
+  "Node.js": { icon: "N", bg: "#339933", color: "#fff" },
+  "Razorpay": { icon: "R", bg: "#0C2451", color: "#fff" },
+  "PostgreSQL": { icon: "P", bg: "#336791", color: "#fff" },
+  "Python": { icon: "Py", bg: "#3776AB", color: "#FFD43B" },
+  "Whisper": { icon: "W", bg: "#412991", color: "#fff" },
+  "GPT-4": { icon: "G", bg: "#10A37F", color: "#fff" },
+  "FastAPI": { icon: "F", bg: "#009688", color: "#fff" },
+  "TensorFlow": { icon: "TF", bg: "#FF6F00", color: "#fff" },
+  "Flutter": { icon: "F", bg: "#02569B", color: "#fff" },
+  "Firebase": { icon: "\uD83D\uDD25", bg: "#FFCA28", color: "#333" },
+  "Google Maps API": { icon: "G", bg: "#4285F4", color: "#fff" },
+  "React Native": { icon: "\u269B", bg: "#61DAFB", color: "#222" },
+  "WhatsApp Business API": { icon: "W", bg: "#25D366", color: "#fff" },
+};
 
 export default function ProjectDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
-  const [builders, setBuilders] = useState<BuilderProfile[]>([]);
-  const [newComment, setNewComment] = useState("");
-  const [posting, setPosting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [comment, setComment] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
-    fetch(`/api/projects/${params.id}`)
-      .then((r) => r.json())
-      .then((d) => setProject(d.project));
-    fetch(`/api/comments?projectId=${params.id}`)
-      .then((r) => r.json())
-      .then((d) => setComments(d.comments || []));
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setUser(d.user));
-    fetch("/api/members")
-      .then((r) => r.json())
-      .then((d) => setBuilders(d.builders));
-    fetch("/api/projects")
+    bxApi(`/projects/${params.id}`)
       .then((r) => r.json())
       .then((d) => {
-        const voted = d.votedIds || [];
-        setHasVoted(voted.includes(Number(params.id)));
+        if (!d.project) return;
+        setProject(normalizeProject(d.project));
+      });
+    bxApi("/threads")
+      .then((r) => r.json())
+      .then((d) => setThreads((d.threads || []).map((t: Record<string, unknown>) => normalizeThread(t))));
+    bxApi(`/comments?projectId=${params.id}`)
+      .then((r) => r.json())
+      .then((d) => setComments((d.comments || []).map(normalizeComment)));
+    bxApi("/me")
+      .then((r) => r.json())
+      .then((d) => setUser(normalizeUser(d.user)));
+    bxApi("/projects")
+      .then((r) => r.json())
+      .then((d) => {
+        const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
+        setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
       });
   }, [params.id]);
 
-  const handleSignIn = async (name: string) => {
-    const res = await fetch("/api/auth/me", {
+  const handleVote = async () => {
+    if (!user) return;
+    const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ projectId: params.id }),
     });
-    const d = await res.json();
-    setUser(d.user);
-    // Refresh voted state
-    fetch("/api/projects")
-      .then((r) => r.json())
-      .then((data) => {
-        const voted = data.votedIds || [];
-        setHasVoted(voted.includes(Number(params.id)));
-      });
-  };
-
-  const handleVote = async (projectId: number) => {
-    if (!user) return null;
-    const res = await fetch("/api/votes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId }),
-    });
-    if (!res.ok) return null;
+    if (!res.ok) return;
     const result = await res.json();
     setHasVoted(result.voted);
-    setProject((p) =>
-      p ? { ...p, weighted: result.weighted, raw: result.raw } : p
-    );
-    return result;
+    const w = result.weighted ?? result.weighted_votes ?? result.weightedVotes ?? 0;
+    const r = result.raw ?? result.raw_votes ?? result.rawVotes ?? 0;
+    setProject((p) => p ? { ...p, weighted: w, raw: r } : p);
   };
 
-  const handlePostComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim() || posting) return;
-    setPosting(true);
+  const handlePostComment = async () => {
+    if (!comment.trim() || !user || postingComment) return;
+    setPostingComment(true);
     try {
-      const res = await fetch("/api/comments", {
+      const res = await bxApi("/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: Number(params.id), content: newComment.trim() }),
+        body: JSON.stringify({ projectId: params.id, content: comment.trim() }),
       });
       if (res.ok) {
-        const d = await res.json();
-        setComments((c) => [...c, d.comment]);
-        setNewComment("");
+        setComment("");
+        reloadComments();
       }
     } finally {
-      setPosting(false);
+      setPostingComment(false);
     }
   };
+
+  const reloadComments = () => {
+    bxApi(`/comments?projectId=${params.id}`)
+      .then((r) => r.json())
+      .then((d) => setComments((d.comments || []).map(normalizeComment)));
+  };
+
+  const handleReact = async (commentId: string, emojiCode: string) => {
+    if (!user) return;
+    const res = await bxApi(`/comments/${commentId}/react`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emojiCode }),
+    });
+    if (res.ok) reloadComments();
+  };
+
+  const handlePostReply = async (parentId: string) => {
+    if (!replyText.trim() || !user || postingComment) return;
+    setPostingComment(true);
+    try {
+      const res = await bxApi("/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: params.id, content: replyText.trim(), parentId }),
+      });
+      if (res.ok) {
+        setReplyText("");
+        setReplyingTo(null);
+        reloadComments();
+      }
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const buildCommentTree = (allComments: Comment[]) => {
+    const roots = allComments.filter(c => !c.parentId);
+    const replies = allComments.filter(c => c.parentId);
+    return roots.map(root => ({
+      root,
+      replies: replies.filter(r => r.parentId === root.id),
+    }));
+  };
+
+  const commentTree = buildCommentTree(comments);
 
   if (!project) {
     return (
       <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: C.textMute, fontSize: 14 }}>Loading...</span>
+        <span style={{ color: C.textMute, fontSize: 14, fontFamily: "var(--sans)" }}>Loading...</span>
       </div>
     );
   }
 
+  const p = project;
+
   return (
-    <div style={{ minHeight: "100vh", background: C.bg }}>
-      <header style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "0 24px", height: 56, display: "flex", alignItems: "center", gap: 16, position: "sticky", top: 0, zIndex: 100 }}>
-        <Link href="/" style={{ textDecoration: "none", color: C.textSec, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-          &larr; Back
-        </Link>
-        <span style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text }}>{project.name}</span>
-        {project.featured && (
-          <span style={{ fontSize: 10, color: C.gold, background: C.goldSoft, border: `1px solid ${C.goldBorder}`, padding: "2px 8px", borderRadius: 6, fontFamily: "var(--mono)", fontWeight: 600 }}>
-            &#x2726; Featured
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
+        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
+      }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: 20 }}>
+          <button onClick={() => router.push("/")} style={{
+            border: "none", background: "none", cursor: "pointer",
+            fontSize: 13.5, color: C.textSec, fontFamily: "var(--sans)",
+            fontWeight: 500, display: "flex", alignItems: "center", gap: 6,
+            padding: 0, transition: "color 0.12s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = C.text}
+          onMouseLeave={e => e.currentTarget.style.color = C.textSec}
+          >
+            {"\u2190"} Back to Built
+          </button>
+          <span style={{
+            fontSize: 14, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            flex: 1, textAlign: "center",
+          }}>
+            {p.name}
           </span>
-        )}
-      </header>
-
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 24px 60px" }}>
-        {/* Hero */}
-        <div style={{ height: 160, borderRadius: 16, background: `linear-gradient(135deg, ${project.heroColor}20, ${project.heroColor}08)`, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-          <div style={{ width: 64, height: 64, borderRadius: 14, background: `linear-gradient(135deg, ${project.heroColor}, ${project.heroColor}CC)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 28, fontWeight: 700, fontFamily: "var(--serif)", boxShadow: `0 8px 24px ${project.heroColor}30` }}>
-            {project.name[0]}
-          </div>
-        </div>
-
-        {/* Title & meta */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
-            <h1 style={{ fontFamily: "var(--serif)", fontSize: 32, fontWeight: 600, color: C.text, margin: 0, letterSpacing: "-0.02em" }}>{project.name}</h1>
-            <UpvoteButton
-              projectId={project.id}
-              weighted={project.weighted}
-              raw={project.raw}
-              hasVoted={hasVoted}
-              onVote={user ? handleVote : undefined}
-              onUnauthClick={!user ? () => setShowSignIn(true) : undefined}
-            />
-          </div>
-          <p style={{ fontSize: 17, color: C.textSec, lineHeight: 1.6, margin: "0 0 12px" }}>{project.tagline}</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {project.buildathon && (
-              <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--mono)", background: C.surfaceWarm, padding: "3px 10px", borderRadius: 6, border: `1px solid ${C.borderLight}` }}>{project.buildathon}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <button onClick={handleVote} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 14px", borderRadius: 8,
+              border: hasVoted ? `1.5px solid ${C.gold}` : `1.5px solid ${C.accent}`,
+              background: hasVoted ? C.goldSoft : C.surface,
+              cursor: "pointer", fontSize: 13, fontWeight: 650,
+              fontFamily: "var(--sans)", color: hasVoted ? C.gold : C.text, transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = C.bg; }}}
+            onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}}
+            >
+              <span style={{ fontSize: 14, lineHeight: 1 }}>{"\u25B3"}</span>
+              {p.weighted.toLocaleString()}
+            </button>
+            {p.url && (
+              <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
+                padding: "6px 16px", borderRadius: 8,
+                border: "none", background: C.accent, color: "#fff",
+                fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                fontFamily: "var(--sans)", transition: "opacity 0.15s",
+                textDecoration: "none", display: "inline-flex", alignItems: "center",
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+              >
+                Try it {"\u2192"}
+              </a>
             )}
-            <span style={{ fontSize: 12, color: C.textMute }}>{project.date}</span>
-            <span style={{ fontSize: 12, color: C.textMute, background: C.surfaceWarm, padding: "2px 8px", borderRadius: 4, border: `1px solid ${C.borderLight}` }}>{project.category}</span>
           </div>
         </div>
+      </nav>
 
-        {/* Description */}
-        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24, marginBottom: 16 }}>
-          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px" }}>About</h2>
-          <p style={{ fontSize: 15, color: C.text, lineHeight: 1.7, margin: 0 }}>{project.description}</p>
-        </div>
-
-        {/* Gallery */}
-        {project.gallery.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(project.gallery.length, 3)}, 1fr)`, gap: 12, marginBottom: 16 }}>
-            {project.gallery.map((item, i) => (
-              <div key={i} style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${C.border}` }}>
-                <div style={{ height: 120, background: `linear-gradient(135deg, ${item.colors[0]}, ${item.colors[1] || item.colors[0]})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, fontFamily: "var(--mono)" }}>{item.type}</span>
-                </div>
-                <div style={{ padding: "8px 12px", background: C.surface }}>
-                  <span style={{ fontSize: 12, color: C.textSec }}>{item.label}</span>
-                </div>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px" }}>
+        {/* Hero */}
+        <div className="fade-up" style={{ marginBottom: 32 }}>
+          <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+            <div style={{ flex: 1, paddingTop: 2 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
+                <h1 style={{ fontSize: 36, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
+                {p.featured && (
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
+                    background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
+                    letterSpacing: "0.06em", textTransform: "uppercase",
+                  }}>{"\u2726"} Featured</span>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Tech stack */}
-        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24, marginBottom: 16 }}>
-          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px" }}>Tech Stack</h2>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {project.stack.map((tech) => {
-              const meta = STACK_META[tech];
-              return (
-                <span key={tech} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, padding: "6px 12px", borderRadius: 8, background: meta ? `${meta.bg}10` : C.surfaceWarm, border: `1px solid ${C.borderLight}`, color: C.text, fontFamily: "var(--mono)" }}>
-                  {meta && (
-                    <span style={{ width: 20, height: 20, borderRadius: 4, background: meta.bg, color: meta.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>{meta.icon}</span>
-                  )}
-                  {tech}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Built by */}
-        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24, marginBottom: 16 }}>
-          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 16px" }}>Built by</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: C.surfaceWarm, borderRadius: 10, border: `1px solid ${C.borderLight}` }}>
-              <Avatar initials={project.builder.avatar} size={40} />
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{project.builder.name}</span>
-                  {project.builder.company && project.builder.companyColor && (
-                    <span style={{ fontSize: 11, color: project.builder.companyColor, fontFamily: "var(--mono)", background: `${project.builder.companyColor}10`, padding: "1px 6px", borderRadius: 4, border: `1px solid ${project.builder.companyColor}20` }}>
-                      {project.builder.company}
-                    </span>
-                  )}
-                </div>
-                <span style={{ fontSize: 12, color: C.textSec }}>{project.builder.title} &middot; {project.builder.city}</span>
+              <p style={{ fontSize: 18, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 10px" }}>{p.tagline}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
+                <span>{p.date}</span>
+                {p.buildathon && (
+                  <>
+                    <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>
+                    <span>{p.buildathon}</span>
+                  </>
+                )}
               </div>
             </div>
-            {project.collabs.map((c, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderRadius: 10, border: `1px solid ${C.borderLight}` }}>
-                <Avatar initials={c.avatar} size={36} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{c.name}</span>
-                    {c.company && c.companyColor && (
-                      <span style={{ fontSize: 11, color: c.companyColor, fontFamily: "var(--mono)", background: `${c.companyColor}10`, padding: "1px 6px", borderRadius: 4, border: `1px solid ${c.companyColor}20` }}>
-                        {c.company}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: 12, color: C.textSec }}>{c.title}</span>
-                </div>
-              </div>
-            ))}
+            <div style={{ flexShrink: 0, display: "flex", gap: 8 }}>
+              <button onClick={handleVote} style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "10px 20px", borderRadius: 10,
+                border: hasVoted ? `1.5px solid ${C.gold}` : `1.5px solid ${C.accent}`,
+                background: hasVoted ? C.goldSoft : C.surface,
+                cursor: "pointer", fontSize: 16, fontWeight: 650,
+                fontFamily: "var(--sans)", color: hasVoted ? C.gold : C.text, transition: "all 0.15s",
+              }}
+              onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = C.bg; }}}
+              onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{"\u25B3"}</span>
+                {p.weighted.toLocaleString()}
+              </button>
+              {p.url && (
+                <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
+                  padding: "10px 24px", borderRadius: 10,
+                  border: "none", background: C.accent, color: "#fff",
+                  fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+                  fontFamily: "var(--sans)", transition: "opacity 0.15s",
+                  textDecoration: "none", display: "inline-flex", alignItems: "center",
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  Try it {"\u2192"}
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Comments */}
-        <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, padding: 24 }}>
-          <h2 style={{ fontFamily: "var(--serif)", fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 16px" }}>
-            Comments {comments.length > 0 && <span style={{ fontFamily: "var(--mono)", fontSize: 14, color: C.textMute }}>({comments.length})</span>}
-          </h2>
+        {/* Product info */}
+        <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: C.text, fontFamily: "var(--sans)", fontWeight: 400, margin: "0 0 28px", maxWidth: 620 }}>{p.description}</p>
 
-          {comments.length === 0 && !user && (
-            <p style={{ fontSize: 14, color: C.textMute, margin: 0 }}>No comments yet. Sign in to be the first!</p>
-          )}
-          {comments.length === 0 && user && (
-            <p style={{ fontSize: 14, color: C.textMute, margin: "0 0 16px" }}>No comments yet. Be the first!</p>
-          )}
-
-          {comments.map((c) => {
-            const roleInfo = ROLES[c.authorRole] || ROLES.member;
-            return (
-              <div key={c.id} style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                <Avatar initials={c.authorAvatar} size={32} role={c.authorRole} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{c.authorName}</span>
-                    <span style={{ fontSize: 10, color: roleInfo.color, background: roleInfo.bg, padding: "1px 5px", borderRadius: 3 }}>{roleInfo.label}</span>
-                    <span style={{ fontSize: 11, color: C.textMute }}>
-                      {new Date(c.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </span>
+          {/* Built by */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Built by</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "10px 16px", borderRadius: 12,
+                background: C.surface, border: `1px solid ${C.border}`,
+                cursor: "pointer", transition: "border-color 0.12s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
+              onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+              >
+                <Av initials={p.builder.avatar} size={34} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
+                    <span>{p.builder.title}</span>
+                    {p.builder.company && (
+                      <>
+                        <span style={{
+                          width: 14, height: 14, borderRadius: 4,
+                          background: p.builder.companyColor || C.accent,
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 7, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
+                          overflow: "hidden", position: "relative",
+                        }}>
+                          {p.builder.company[0]}
+                          <img src={getCompanyLogoUrl(p.builder.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                        </span>
+                        <span style={{ fontWeight: 520, color: C.textSec }}>{p.builder.company}</span>
+                      </>
+                    )}
+                    <span style={{ opacity: 0.35, margin: "0 2px" }}>{"\u00B7"}</span>
+                    <span>{p.builder.city}</span>
                   </div>
-                  <p style={{ fontSize: 14, color: C.text, lineHeight: 1.5, margin: 0 }}>{c.content}</p>
+                </div>
+              </div>
+              {p.collabs.map((c, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 16px", borderRadius: 12,
+                  background: C.surface, border: `1px solid ${C.border}`,
+                  cursor: "pointer", transition: "border-color 0.12s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
+                onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+                >
+                  <Av initials={c.avatar} size={30} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
+                    {c.title && c.company && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
+                        <span>{c.title}</span>
+                        <span style={{
+                          width: 13, height: 13, borderRadius: 3,
+                          background: c.companyColor || C.accent,
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 6.5, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
+                          overflow: "hidden", position: "relative",
+                        }}>
+                          {c.company[0]}
+                          <img src={getCompanyLogoUrl(c.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                        </span>
+                        <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Tech stack */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {p.stack.map((t, i) => {
+                const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: "#fff" };
+                return (
+                  <div key={i} style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "6px 16px 6px 8px", borderRadius: 40,
+                    background: C.surface, border: `1px solid ${C.border}`,
+                    cursor: "pointer", transition: "all 0.12s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}
+                  >
+                    <div style={{
+                      width: 22, height: 22, borderRadius: 6,
+                      background: meta.bg, color: meta.color,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 9.5, fontWeight: 750, fontFamily: "var(--sans)",
+                      flexShrink: 0, letterSpacing: "-0.02em",
+                    }}>{meta.icon}</div>
+                    <span style={{ fontSize: 13, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* DISCUSSION */}
+        <div className="fade-up stagger-3" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 400, color: C.text, fontFamily: "var(--serif)" }}>Discussion</h2>
+          </div>
+
+          <div style={{
+            display: "flex", gap: 14, padding: "18px 20px",
+            background: C.surface, border: `1px solid ${C.border}`,
+            borderRadius: 14, marginBottom: 4,
+          }}>
+            <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+              <textarea
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder={user ? "Ask a question or share your thoughts..." : "Sign in to comment"}
+                disabled={!user}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostComment(); }}}
+                style={{
+                  width: "100%", padding: "11px 16px", borderRadius: 10,
+                  border: `1px solid ${C.borderLight}`, fontSize: 14.5,
+                  color: C.text, fontFamily: "var(--sans)",
+                  background: "transparent", outline: "none",
+                  resize: "none", minHeight: 44, lineHeight: 1.5,
+                }}
+              />
+              {comment.trim() && (
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={handlePostComment}
+                    disabled={postingComment}
+                    style={{
+                      padding: "7px 18px", borderRadius: 8,
+                      border: "none", background: C.accent, color: "#fff",
+                      fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                      fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
+                    }}
+                  >
+                    {postingComment ? "Posting..." : "Post"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Comments — threaded */}
+          {commentTree.map(({ root, replies }) => {
+            const rootInitials = root.authorAvatar || (root.authorName ? root.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
+            const isRootOP = p.builder?.name && root.authorName === p.builder.name;
+            return (
+              <div key={root.id} style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
+                <div style={{ display: "flex", gap: 14 }}>
+                  <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
+                        {root.authorName || "Anonymous"}
+                      </span>
+                      <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} />
+                      {isRootOP && (
+                        <span style={{ fontSize: 8.5, fontWeight: 750, padding: "2px 6px", borderRadius: 3, background: C.accent, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase" }}>OP</span>
+                      )}
+                      <Badge role={root.authorRole || "member"} />
+                      <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
+                        {timeAgo(root.createdAt)}
+                      </span>
+                    </div>
+                    <p style={{
+                      fontSize: 15, lineHeight: 1.65, color: C.text,
+                      fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400,
+                      whiteSpace: "pre-wrap",
+                    }}>
+                      {root.content}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                      <Reactions reactions={root.reactions} onReact={(code) => handleReact(root.id, code)} />
+                      {replies.length > 0 && (
+                        <button onClick={() => setReplyingTo(replyingTo === root.id ? null : root.id)} style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "5px 12px", borderRadius: 8,
+                          border: "none", background: replyingTo === root.id ? C.accentSoft : "transparent",
+                          cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                          color: C.blue, fontFamily: "var(--sans)",
+                        }}>
+                          {replies.length} {replies.length === 1 ? "reply" : "replies"}
+                          <span style={{ fontSize: 9, transform: replyingTo === root.id ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>{"\u25BC"}</span>
+                        </button>
+                      )}
+                      {replies.length === 0 && (
+                        <button onClick={() => setReplyingTo(replyingTo === root.id ? null : root.id)} style={{
+                          padding: "5px 12px", borderRadius: 8, border: "none",
+                          background: "transparent", cursor: "pointer",
+                          fontSize: 12, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)",
+                        }}>Reply</button>
+                      )}
+                    </div>
+
+                    {/* Nested replies */}
+                    {(replyingTo === root.id || replies.length > 0) && replyingTo === root.id && (
+                      <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: 20, marginLeft: 2 }}>
+                        {replies.map((reply, i) => {
+                          const replyInitials = reply.authorAvatar || (reply.authorName ? reply.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
+                          const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
+                          return (
+                            <div key={reply.id} style={{ padding: "16px 0", borderBottom: i < replies.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
+                              {isReplyOP ? (
+                                <div style={{
+                                  background: `linear-gradient(90deg, ${C.goldSoft} 0%, transparent 100%)`,
+                                  margin: "-16px -16px 0 -20px", padding: "16px 16px 16px 20px",
+                                  borderRadius: "0 10px 10px 0",
+                                }}>
+                                  <div style={{ display: "flex", gap: 10 }}>
+                                    <Av initials={replyInitials} size={30} highlight role={reply.authorRole || "member"} />
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                                        <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
+                                        <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} />
+                                        <span style={{ fontSize: 8.5, fontWeight: 750, padding: "2px 6px", borderRadius: 3, background: C.accent, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase" }}>OP</span>
+                                        <Badge role={reply.authorRole || "member"} />
+                                        <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                                      </div>
+                                      <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
+                                      <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ display: "flex", gap: 10 }}>
+                                  <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} />
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                                      <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
+                                      <CompanyTag title={reply.authorTitle} company={reply.authorCompany} companyColor={reply.authorCompanyColor} />
+                                      <Badge role={reply.authorRole || "member"} />
+                                      <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                                    </div>
+                                    <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
+                                    <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {/* Reply compose */}
+                        {user && (
+                          <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
+                            <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} />
+                            <div style={{ flex: 1, display: "flex", gap: 8 }}>
+                              <input
+                                value={replyText}
+                                onChange={e => setReplyText(e.target.value)}
+                                placeholder="Write a reply..."
+                                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostReply(root.id); }}}
+                                style={{
+                                  flex: 1, padding: "8px 14px", borderRadius: 8,
+                                  border: `1px solid ${C.borderLight}`, fontSize: 13.5,
+                                  color: C.text, fontFamily: "var(--sans)",
+                                  background: "transparent", outline: "none",
+                                }}
+                              />
+                              {replyText.trim() && (
+                                <button
+                                  onClick={() => handlePostReply(root.id)}
+                                  disabled={postingComment}
+                                  style={{
+                                    padding: "7px 14px", borderRadius: 8,
+                                    border: "none", background: C.accent, color: "#fff",
+                                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                                    fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  Reply
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
 
-          {user && (
-            <form onSubmit={handlePostComment} style={{ marginTop: comments.length > 0 ? 16 : 0, paddingTop: comments.length > 0 ? 16 : 0, borderTop: comments.length > 0 ? `1px solid ${C.borderLight}` : "none" }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                <Avatar initials={user.avatar} size={32} role={user.role} />
-                <div style={{ flex: 1 }}>
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    rows={2}
-                    style={{
-                      width: "100%",
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 8,
-                      padding: "10px 12px",
-                      fontSize: 14,
-                      color: C.text,
-                      background: C.surfaceWarm,
-                      outline: "none",
-                      fontFamily: "var(--sans)",
-                      resize: "none",
-                    }}
-                  />
-                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-                    <button
-                      type="submit"
-                      disabled={posting || !newComment.trim()}
-                      style={{
-                        background: C.accent,
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "6px 16px",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        fontFamily: "var(--sans)",
-                        opacity: posting || !newComment.trim() ? 0.5 : 1,
-                      }}
-                    >
-                      {posting ? "Posting..." : "Comment"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </form>
-          )}
+          {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
       </div>
-
-      {showSignIn && (
-        <SignInPicker
-          builders={builders}
-          onSignIn={(name) => {
-            handleSignIn(name);
-            setShowSignIn(false);
-          }}
-          onClose={() => setShowSignIn(false)}
-        />
-      )}
     </div>
   );
 }
