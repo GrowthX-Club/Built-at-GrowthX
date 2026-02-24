@@ -54,6 +54,7 @@ export const ROLES: Record<string, { label: string; color: string; bg: string }>
 export interface Builder {
   name: string;
   avatar: string;
+  avatarUrl?: string;
   city: string;
   title?: string;
   company?: string;
@@ -61,7 +62,9 @@ export interface Builder {
 }
 
 export interface Collab {
+  _id?: string;
   avatar: string;
+  avatarUrl?: string;
   name: string;
   title?: string;
   company?: string;
@@ -75,7 +78,8 @@ export interface GalleryItem {
 }
 
 export interface Project {
-  id: number;
+  id: string | number;
+  _id?: string;
   name: string;
   tagline: string;
   description: string;
@@ -90,13 +94,14 @@ export interface Project {
   featured: boolean;
   date: string;
   gallery: GalleryItem[];
+  url?: string;
 }
 
 export interface BuildingProject {
-  id: number;
+  id: string | number;
   name: string;
   tagline: string;
-  builder: { name: string; avatar: string; role: string; city: string };
+  builder: { name: string; avatar: string; avatarUrl?: string; role: string; city: string };
   status: "idea" | "prototyping" | "beta";
   watchers: number;
   log: string;
@@ -105,13 +110,20 @@ export interface BuildingProject {
 }
 
 export interface BuilderProfile {
+  _id?: string;
   name: string;
   avatar: string;
+  avatarUrl?: string;
   role: string;
   city: string;
   rep: number;
   shipped: number;
   bio: string;
+  company?: string;
+  companyColor?: string;
+  currentFunction?: string;
+  linkedin?: string;
+  twitter?: string;
 }
 
 export interface CityData {
@@ -162,13 +174,285 @@ export interface ThreadData {
 
 export interface Comment {
   id: string;
-  projectId: number;
+  projectId: string | number;
   authorName: string;
   authorAvatar: string;
   authorRole: string;
+  authorTitle: string;
+  authorCompany: string;
+  authorCompanyColor: string;
   content: string;
   parentId: string | null;
   createdAt: string;
+  reactions: Reaction[];
+}
+
+// ---- Company logo via logo.dev ----
+
+const LOGO_DEV_TOKEN = 'pk_RqfvqsxqSGSajjqEOE8sTQ';
+
+/** Generate a logo.dev URL from a company name (best-effort domain guess) */
+export function getCompanyLogoUrl(company: string): string {
+  if (!company) return '';
+  // Strip common suffixes and normalize to a plausible domain
+  const cleaned = company
+    .replace(/\s*(Inc\.?|Ltd\.?|Pvt\.?|LLC|Corp\.?|Technologies|Tech|Limited|Private|&\s*Co\.?)$/i, '')
+    .trim();
+  const domain = cleaned.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
+  return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=64`;
+}
+
+// ---- Normalizers for gx-backend response shapes ----
+
+function generateCompanyColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const colors = ['#0C2451', '#5B21B6', '#92400E', '#166534', '#1E40AF', '#7C3AED', '#B45309', '#047857'];
+  return colors[Math.abs(hash) % colors.length];
+}
+
+// Extract flat user fields from a gx-backend populated user object
+function formatPopulatedUser(u: Record<string, unknown>): {
+  name: string; initials: string; avatarUrl: string | undefined;
+  company: string; companyColor: string; role: string; city: string;
+} {
+  const nameObj = u?.name as Record<string, string> | undefined;
+  const first = nameObj?.first || '';
+  const last = nameObj?.last || '';
+  const name = `${first} ${last}`.trim() || 'Anonymous';
+  const initials = (first.charAt(0) + last.charAt(0)).toUpperCase() || '?';
+  const avatarUrl = (u?.display_picture as string) || undefined;
+  const onboarding = u?.onboarding as Record<string, unknown> | undefined;
+  const enrollment = onboarding?.enrollment as Record<string, unknown> | undefined;
+  const appForm = enrollment?.application_form as Record<string, string> | undefined;
+  const company = appForm?.company || '';
+  const role = appForm?.role || '';
+  const addresses = u?.addresses as Record<string, unknown> | undefined;
+  const defaultAddr = addresses?.default_address as Record<string, string> | undefined;
+  const talent = u?.talent as Record<string, unknown> | undefined;
+  const prefLoc = Array.isArray(talent?.preferred_location) ? talent.preferred_location[0] as Record<string, string> | undefined : undefined;
+  const city = defaultAddr?.city || prefLoc?.city || '';
+  const companyColor = company ? generateCompanyColor(company) : '';
+  return { name, initials, avatarUrl, company, companyColor, role, city };
+}
+
+function normalizeReactions(raw: unknown[]): Reaction[] {
+  return raw.map((item) => {
+    const r = item as Record<string, unknown>;
+    return {
+    emoji: {
+      code: (r.emoji_code ?? '') as string,
+      display: (r.emoji_display ?? '') as string,
+      label: (r.emoji_label ?? '') as string,
+      special: (r.emoji_special ?? false) as boolean,
+    },
+    count: (r.count ?? 0) as number,
+    mine: (r.mine ?? false) as boolean,
+  };
+  });
+}
+
+/** Normalize a backend project (with populated creator/collabs) to frontend Project shape */
+export function normalizeProject(p: Record<string, unknown>): Project {
+  // Handle populated creator object
+  const creatorRaw = p.creator as Record<string, unknown> | string | undefined;
+  let builder: Builder;
+  if (creatorRaw && typeof creatorRaw === 'object' && (creatorRaw as Record<string, unknown>).name) {
+    const u = formatPopulatedUser(creatorRaw as Record<string, unknown>);
+    builder = {
+      name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
+      city: u.city, title: u.role || undefined,
+      company: u.company || undefined, companyColor: u.companyColor || undefined,
+    };
+  } else if (p.builder && typeof p.builder === 'object') {
+    // Already in flat builder shape (e.g. from local state)
+    builder = p.builder as Builder;
+  } else {
+    builder = { name: 'Anonymous', avatar: '?', city: '' };
+  }
+
+  // Handle populated collabs array
+  const rawCollabs = Array.isArray(p.collabs) ? p.collabs : [];
+  const collabs: Collab[] = rawCollabs.map((c: Record<string, unknown>) => {
+    if (c && typeof c === 'object' && c.name && typeof c.name === 'object') {
+      // Populated user object
+      const u = formatPopulatedUser(c);
+      return {
+        _id: (c._id ?? '') as string,
+        name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
+        title: u.role || undefined, company: u.company || undefined,
+        companyColor: u.companyColor || undefined,
+      };
+    }
+    // Already flat collab shape — could be an ObjectId string
+    if (typeof c === 'string') return { _id: c, name: '', avatar: '' } as Collab;
+    return c as unknown as Collab;
+  });
+
+  return {
+    id: (p.id ?? p._id ?? '') as string,
+    _id: p._id as string | undefined,
+    name: (p.name ?? '') as string,
+    tagline: (p.tagline ?? '') as string,
+    description: (p.description ?? '') as string,
+    builder,
+    collabs,
+    weighted: (p.weighted ?? p.weighted_votes ?? 0) as number,
+    raw: (p.raw ?? p.raw_votes ?? 0) as number,
+    category: (p.category ?? '') as string,
+    stack: (p.stack ?? []) as string[],
+    buildathon: (p.buildathon ?? null) as string | null,
+    heroColor: ((p.heroColor ?? p.hero_color ?? '#2255CC') as string),
+    featured: (p.featured ?? false) as boolean,
+    date: (p.date ?? '') as string,
+    gallery: (p.gallery ?? []) as GalleryItem[],
+    url: (p.url as string) || undefined,
+  };
+}
+
+/** Normalize backend /me response to BuilderProfile */
+export function normalizeUser(u: Record<string, unknown> | null): BuilderProfile | null {
+  if (!u) return null;
+  return {
+    _id: (u._id ?? '') as string,
+    name: (u.name ?? 'Anonymous') as string,
+    avatar: (u.initials ?? u.avatar ?? '?') as string,
+    avatarUrl: (u.avatar_url ?? undefined) as string | undefined,
+    role: 'member', // platform role — backend doesn't distinguish yet
+    city: (u.city ?? '') as string,
+    rep: (u.rep ?? 0) as number,
+    shipped: (u.shipped ?? 0) as number,
+    bio: (u.bio ?? '') as string,
+    company: (u.company ?? undefined) as string | undefined,
+    companyColor: ((u.companyColor ?? u.company_color ?? (u.company ? generateCompanyColor(u.company as string) : undefined)) as string | undefined),
+    currentFunction: (u.current_function ?? u.currentFunction ?? undefined) as string | undefined,
+    linkedin: (u.linkedin ?? undefined) as string | undefined,
+    twitter: (u.twitter ?? undefined) as string | undefined,
+  };
+}
+
+/** Normalize backend building project (has populated creator instead of flat builder) */
+export function normalizeBuildingProject(p: Record<string, unknown>): BuildingProject {
+  const creatorRaw = p.creator as Record<string, unknown> | undefined;
+  let builder: BuildingProject['builder'];
+  if (creatorRaw && typeof creatorRaw === 'object' && (creatorRaw as Record<string, unknown>).name && typeof (creatorRaw as Record<string, unknown>).name === 'object') {
+    const u = formatPopulatedUser(creatorRaw);
+    builder = { name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl, role: 'member', city: u.city };
+  } else if (p.builder && typeof p.builder === 'object') {
+    builder = p.builder as BuildingProject['builder'];
+  } else {
+    builder = { name: 'Anonymous', avatar: '?', role: 'member', city: '' };
+  }
+
+  return {
+    id: (p.id ?? p._id ?? '') as string | number,
+    name: (p.name ?? '') as string,
+    tagline: (p.tagline ?? '') as string,
+    builder,
+    status: (p.status ?? 'idea') as BuildingProject['status'],
+    watchers: (p.watchers ?? 0) as number,
+    log: (p.log ?? '') as string,
+    logDate: ((p.logDate ?? p.log_date ?? '') as string),
+    help: (p.help ?? null) as string | null,
+  };
+}
+
+/** Normalize backend thread (snake_case → camelCase, reaction shape) */
+export function normalizeThread(t: Record<string, unknown>): ThreadData {
+  const rawAuthor = t.author as Record<string, unknown> | undefined;
+  const author = {
+    name: (rawAuthor?.name ?? '') as string,
+    avatar: (rawAuthor?.avatar ?? '') as string,
+    role: (rawAuthor?.role ?? 'member') as string,
+    rep: (rawAuthor?.rep ?? 0) as number,
+    title: (rawAuthor?.title ?? undefined) as string | undefined,
+    company: (rawAuthor?.company ?? undefined) as string | undefined,
+    companyColor: ((rawAuthor?.companyColor ?? rawAuthor?.company_color ?? undefined) as string | undefined),
+  };
+
+  const rawReactions = Array.isArray(t.reactions) ? t.reactions : [];
+  const rawReplies = Array.isArray(t.replies) ? t.replies : [];
+
+  return {
+    id: (t.id ?? t._id ?? '') as string,
+    author,
+    content: (t.content ?? '') as string,
+    time: (t.time ?? '') as string,
+    reactions: normalizeReactions(rawReactions),
+    replies: rawReplies.map((r: Record<string, unknown>) => {
+      const ra = r.author as Record<string, unknown> | undefined;
+      return {
+        author: {
+          name: (ra?.name ?? '') as string,
+          avatar: (ra?.avatar ?? '') as string,
+          role: (ra?.role ?? 'member') as string,
+          isCreator: (ra?.isCreator ?? ra?.is_creator ?? false) as boolean,
+          title: (ra?.title ?? undefined) as string | undefined,
+          company: (ra?.company ?? undefined) as string | undefined,
+          companyColor: ((ra?.companyColor ?? ra?.company_color ?? undefined) as string | undefined),
+        },
+        content: (r.content ?? '') as string,
+        time: (r.time ?? '') as string,
+        reactions: normalizeReactions(Array.isArray(r.reactions) ? r.reactions : []),
+      };
+    }),
+  };
+}
+
+/** Normalize a backend member to BuilderProfile (from /members endpoint) */
+export function normalizeMember(m: Record<string, unknown>): BuilderProfile {
+  return {
+    _id: (m._id ?? '') as string,
+    name: (m.name ?? 'Anonymous') as string,
+    avatar: (m.initials ?? m.avatar ?? '?') as string,
+    avatarUrl: (m.avatar_url ?? undefined) as string | undefined,
+    role: 'member', // platform role not available from backend yet
+    city: (m.city ?? '') as string,
+    rep: (m.rep ?? 0) as number,
+    shipped: (m.shipped ?? 0) as number,
+    bio: (m.bio ?? '') as string,
+    company: (m.company ?? undefined) as string | undefined,
+    companyColor: ((m.companyColor ?? m.company_color ?? (m.company ? generateCompanyColor(m.company as string) : undefined)) as string | undefined),
+  };
+}
+
+export function normalizeComment(c: Record<string, unknown>): Comment {
+  const rawReactions = Array.isArray(c.reactions) ? c.reactions : [];
+
+  // Handle populated author object from backend
+  const authorRaw = c.author as Record<string, unknown> | undefined;
+  let authorName = (c.authorName ?? c.author_name ?? "Anonymous") as string;
+  let authorAvatar = (c.authorAvatar ?? c.author_avatar ?? "") as string;
+  let authorRole = (c.authorRole ?? c.author_role ?? "member") as string;
+  let authorTitle = (c.authorTitle ?? c.author_title ?? "") as string;
+  let authorCompany = (c.authorCompany ?? c.author_company ?? "") as string;
+  let authorCompanyColor = (c.authorCompanyColor ?? c.author_company_color ?? "") as string;
+
+  if (authorRaw && typeof authorRaw === 'object' && authorRaw.name && typeof authorRaw.name === 'object') {
+    // Populated gx-backend user object
+    const u = formatPopulatedUser(authorRaw);
+    authorName = u.name;
+    authorAvatar = u.initials;
+    authorRole = 'member';
+    authorTitle = u.role;
+    authorCompany = u.company;
+    authorCompanyColor = u.companyColor;
+  }
+
+  return {
+    id: (c.id ?? c._id ?? "") as string,
+    projectId: (c.projectId ?? c.project_id ?? "") as string,
+    authorName,
+    authorAvatar,
+    authorRole,
+    authorTitle,
+    authorCompany,
+    authorCompanyColor,
+    content: (c.content ?? "") as string,
+    parentId: (c.parentId ?? c.parent_id ?? null) as string | null,
+    createdAt: (c.createdAt ?? c.created_at ?? c.updatedAt ?? c.updated_at ?? "") as string,
+    reactions: normalizeReactions(rawReactions),
+  };
 }
 
 export interface Vote {
