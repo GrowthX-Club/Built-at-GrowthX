@@ -17,6 +17,9 @@ export const C = {
   greenSoft: "#EDF7F0",
   blue: "#2255CC",
   blueSoft: "#EEF3FF",
+  brand: "#0080FF",
+  brandSoft: "#EBF4FF",
+  brandBorder: "#99CCFF",
 };
 
 // ---- Custom emoji reactions ----

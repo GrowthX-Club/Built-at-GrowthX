@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   C,
   ROLES,
+  STACK_META,
   type Project,
   type BuilderProfile,
   normalizeProject,
   normalizeUser,
   getCompanyLogoUrl,
+  getStackLogoUrl,
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 
@@ -158,6 +160,7 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
 // ---- Main ----
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showSubmit, setShowSubmit] = useState(false);
   const [submitStep, setSubmitStep] = useState(0);
   const [submitData, setSubmitData] = useState({
@@ -166,10 +169,13 @@ export default function HomePage() {
     collabs: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string }[], collabInput: "",
     url: "",
   });
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
+  const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
@@ -206,6 +212,16 @@ export default function HomePage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("submit") === "1" && user) {
+      setShowSubmit(true);
+      setSubmitStep(0);
+      setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+      setSubmitError("");
+      router.replace("/", { scroll: false });
+    }
+  }, [searchParams, user, router]);
 
   const searchCollabs = (query: string) => {
     if (collabSearchTimer.current) clearTimeout(collabSearchTimer.current);
@@ -260,6 +276,8 @@ export default function HomePage() {
       handleSignIn();
       return;
     }
+    setVoteAnimId(projectId);
+    setTimeout(() => setVoteAnimId(null), 550);
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -282,22 +300,66 @@ export default function HomePage() {
       handleSignIn();
       return;
     }
-    const res = await bxApi("/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: submitData.name.trim(),
-        tagline: submitData.tagline.trim(),
-        description: submitData.description.trim(),
-        category: "AI",
-        stack: submitData.stack,
-        url: submitData.url?.trim() || undefined,
-        collabs: submitData.collabs.map(c => c._id),
-      }),
-    });
-    if (res.ok) {
-      setShowSubmit(false);
-      loadProjects();
+    setSubmitError("");
+
+    // Client-side validation
+    if (!submitData.name.trim()) {
+      setSubmitError("Project name is required.");
+      setSubmitStep(0);
+      return;
+    }
+    if (!submitData.tagline.trim()) {
+      setSubmitError("Tagline is required.");
+      setSubmitStep(0);
+      return;
+    }
+    if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) {
+      setSubmitError("Please enter a valid URL starting with http:// or https://");
+      setSubmitStep(0);
+      return;
+    }
+    if (submitData.stack.length === 0) {
+      setSubmitError("Add at least one tech stack item.");
+      setSubmitStep(2);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await bxApi("/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: submitData.name.trim(),
+          tagline: submitData.tagline.trim(),
+          description: submitData.description.trim(),
+          category: "AI",
+          stack: submitData.stack,
+          url: submitData.url?.trim() || undefined,
+          collabs: submitData.collabs.map(c => c._id),
+        }),
+      });
+      if (res.ok) {
+        setShowSubmit(false);
+        setSubmitStep(0);
+        setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+        setSubmitError("");
+        loadProjects();
+      } else {
+        const data = await res.json().catch(() => null);
+        const msg = data?.message || data?.error;
+        if (res.status === 401) {
+          setSubmitError("Your session has expired. Please log in again.");
+        } else if (res.status === 400 && msg) {
+          setSubmitError(msg);
+        } else {
+          setSubmitError(msg || "Something went wrong. Please try again.");
+        }
+      }
+    } catch {
+      setSubmitError("Network error. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -355,9 +417,10 @@ export default function HomePage() {
               setShowSubmit(true);
               setSubmitStep(0);
               setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+              setSubmitError("");
             }}
             >
-              Submit project
+              Submit your project
             </button>
             {user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
@@ -514,15 +577,28 @@ export default function HomePage() {
                 style={{
                   flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
                   padding: "7px 14px", borderRadius: 10,
-                  border: votedIds.includes(p.id) ? `1px solid ${C.goldBorder}` : `1px solid ${C.border}`,
-                  background: votedIds.includes(p.id) ? C.goldSoft : C.surface,
+                  border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                  background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
                   fontSize: 15, fontWeight: 650,
-                  color: votedIds.includes(p.id) ? C.gold : C.text,
+                  color: votedIds.includes(p.id) ? C.brand : C.text,
                   fontFamily: "var(--sans)",
                   cursor: "pointer",
+                  transition: "border 0.25s, background 0.25s, color 0.25s",
+                  position: "relative", overflow: "visible",
                 }}>
-                <span style={{ fontSize: 15, opacity: 0.5 }}>{"\u25B3"}</span>
+                <span
+                  className={voteAnimId === p.id ? "vote-arrow-fly" : ""}
+                  style={{
+                    fontSize: 15,
+                    opacity: votedIds.includes(p.id) ? 1 : 0.45,
+                    display: "inline-block",
+                    transition: "opacity 0.2s",
+                  }}
+                >{"\u25B3"}</span>
                 {p.weighted.toLocaleString()}
+                <div className={`vote-confetti${voteAnimId === p.id ? " active" : ""}`}>
+                  <span /><span /><span /><span /><span /><span /><span /><span /><span /><span />
+                </div>
               </div>
             </div>
           ))}
@@ -701,51 +777,178 @@ export default function HomePage() {
               {submitStep === 2 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                   <div>
-                    <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 10 }}>
                       Tech stack
                     </div>
-                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+
+                    {/* Selected stack */}
+                    {submitData.stack.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                        {submitData.stack.map((s, si) => {
+                          const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                          const logoUrl = getStackLogoUrl(s);
+                          return (
+                            <span key={si} style={{
+                              display: "inline-flex", alignItems: "center", gap: 7,
+                              padding: "5px 10px 5px 6px", borderRadius: 20,
+                              background: C.surface, border: `1.5px solid ${C.accent}`,
+                              fontSize: 12.5, color: C.text, fontWeight: 500,
+                              fontFamily: "var(--sans)",
+                            }}>
+                              <span style={{
+                                width: 20, height: 20, borderRadius: 5,
+                                background: meta.bg, color: meta.color,
+                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                fontSize: 8.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                flexShrink: 0, letterSpacing: "-0.02em",
+                                position: "relative", overflow: "hidden",
+                              }}>
+                                {meta.icon}
+                                {logoUrl && (
+                                  <img
+                                    src={logoUrl}
+                                    alt={s}
+                                    style={{
+                                      position: "absolute", top: 0, left: 0,
+                                      width: 20, height: 20, borderRadius: 5,
+                                      objectFit: "contain", background: "#fff",
+                                    }}
+                                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                  />
+                                )}
+                              </span>
+                              {s}
+                              <span
+                                onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, stack: d.stack.filter((_, idx) => idx !== si) })); }}
+                                style={{
+                                  cursor: "pointer", fontSize: 13, color: C.textMute,
+                                  lineHeight: 1, marginLeft: 2,
+                                  transition: "color 0.1s",
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = C.textMute; }}
+                              >{"\u00D7"}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Quick-pick suggestions */}
+                    {(() => {
+                      const suggestions = [
+                        "Next.js", "React", "Python", "Node.js", "TypeScript",
+                        "Claude API", "OpenAI", "Supabase", "Firebase", "MongoDB",
+                        "PostgreSQL", "Tailwind CSS", "Flutter", "FastAPI", "Vercel",
+                        "AWS", "Docker", "Stripe", "Prisma", "Go",
+                      ];
+                      const available = suggestions.filter(s => !submitData.stack.includes(s));
+                      if (available.length === 0) return null;
+                      return (
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
+                            Popular — tap to add
+                          </div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                            {available.map(s => {
+                              const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                              const logoUrl = getStackLogoUrl(s);
+                              return (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => setSubmitData(d => ({ ...d, stack: [...d.stack, s] }))}
+                                  style={{
+                                    display: "inline-flex", alignItems: "center", gap: 6,
+                                    padding: "4px 10px 4px 5px", borderRadius: 20,
+                                    background: C.bg, border: `1px solid ${C.borderLight}`,
+                                    fontSize: 12, color: C.textSec, fontWeight: 450,
+                                    fontFamily: "var(--sans)", cursor: "pointer",
+                                    transition: "all 0.15s",
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; e.currentTarget.style.background = C.surface; }}
+                                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.color = C.textSec; e.currentTarget.style.background = C.bg; }}
+                                >
+                                  <span style={{
+                                    width: 18, height: 18, borderRadius: 4,
+                                    background: meta.bg, color: meta.color,
+                                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                    fontSize: 7.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                    flexShrink: 0, letterSpacing: "-0.02em",
+                                    position: "relative", overflow: "hidden",
+                                  }}>
+                                    {meta.icon}
+                                    {logoUrl && (
+                                      <img
+                                        src={logoUrl}
+                                        alt={s}
+                                        style={{
+                                          position: "absolute", top: 0, left: 0,
+                                          width: 18, height: 18, borderRadius: 4,
+                                          objectFit: "contain", background: "#fff",
+                                        }}
+                                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                      />
+                                    )}
+                                  </span>
+                                  {s}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Custom input */}
+                    <div style={{ display: "flex", gap: 8 }}>
                       <input
                         className="submit-input"
-                        placeholder="e.g. Next.js, Supabase, Claude API"
+                        placeholder="Or type a custom one..."
                         value={submitData.stackInput}
                         onChange={e => setSubmitData(d => ({ ...d, stackInput: e.target.value }))}
                         onKeyDown={e => {
                           if (e.key === "Enter" && submitData.stackInput.trim()) {
-                            setSubmitData(d => ({
-                              ...d,
-                              stack: [...d.stack, d.stackInput.trim()],
-                              stackInput: "",
-                            }));
+                            const val = submitData.stackInput.trim();
+                            if (!submitData.stack.includes(val)) {
+                              setSubmitData(d => ({
+                                ...d,
+                                stack: [...d.stack, val],
+                                stackInput: "",
+                              }));
+                            } else {
+                              setSubmitData(d => ({ ...d, stackInput: "" }));
+                            }
                           }
                         }}
+                        style={{ flex: 1 }}
                         autoFocus
                       />
+                      {submitData.stackInput.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const val = submitData.stackInput.trim();
+                            if (val && !submitData.stack.includes(val)) {
+                              setSubmitData(d => ({ ...d, stack: [...d.stack, val], stackInput: "" }));
+                            } else {
+                              setSubmitData(d => ({ ...d, stackInput: "" }));
+                            }
+                          }}
+                          style={{
+                            padding: "0 14px", borderRadius: 8,
+                            border: "none", background: C.accent,
+                            fontSize: 12, fontWeight: 600, color: "#fff",
+                            cursor: "pointer", fontFamily: "var(--sans)",
+                            whiteSpace: "nowrap", transition: "opacity 0.12s",
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+                          onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+                        >Add</button>
+                      )}
                     </div>
-                    {submitData.stack.length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                        {submitData.stack.map((s, si) => (
-                          <span key={si} style={{
-                            display: "inline-flex", alignItems: "center", gap: 6,
-                            padding: "5px 10px 5px 12px", borderRadius: 8,
-                            background: C.accentSoft, border: `1px solid ${C.borderLight}`,
-                            fontSize: 12.5, color: C.text, fontWeight: 480,
-                            fontFamily: "var(--sans)",
-                          }}>
-                            {s}
-                            <span
-                              onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, stack: d.stack.filter((_, idx) => idx !== si) })); }}
-                              style={{
-                                cursor: "pointer", fontSize: 14, color: C.textMute,
-                                lineHeight: 1, marginTop: -1,
-                              }}
-                            >{"\u00D7"}</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
-                      Press enter to add
+                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
+                      Press enter or click Add
                     </div>
                   </div>
 
@@ -841,42 +1044,65 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Error message */}
+              {submitError && (
+                <div style={{
+                  marginTop: 16, padding: "10px 14px", borderRadius: 10,
+                  background: "#FEF2F2", border: "1px solid #FECACA",
+                  fontSize: 13, color: "#B91C1C", fontFamily: "var(--sans)",
+                  fontWeight: 450, lineHeight: 1.45,
+                }}>
+                  {submitError}
+                </div>
+              )}
+
               {/* Navigation */}
               <div style={{
                 display: "flex", justifyContent: "space-between",
-                alignItems: "center", marginTop: 28,
+                alignItems: "center", marginTop: submitError ? 16 : 28,
               }}>
                 {submitStep > 0 ? (
-                  <button onClick={() => setSubmitStep(s => s - 1)} style={{
+                  <button onClick={() => { setSubmitError(""); setSubmitStep(s => s - 1); }} disabled={submitting} style={{
                     padding: "9px 20px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: "transparent",
                     fontSize: 13, fontWeight: 500, color: C.textSec,
-                    cursor: "pointer", fontFamily: "var(--sans)",
-                    transition: "all 0.12s",
+                    cursor: submitting ? "default" : "pointer", fontFamily: "var(--sans)",
+                    transition: "all 0.12s", opacity: submitting ? 0.5 : 1,
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
+                  onMouseEnter={e => { if (!submitting) { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; } }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
                   >Back</button>
                 ) : <div />}
 
                 <button
                   onClick={() => {
-                    if (submitStep < 2) setSubmitStep(s => s + 1);
-                    else handleSubmitProject();
+                    setSubmitError("");
+                    if (submitStep === 0) {
+                      if (!submitData.name.trim()) { setSubmitError("Project name is required."); return; }
+                      if (!submitData.tagline.trim()) { setSubmitError("Tagline is required."); return; }
+                      if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) { setSubmitError("Please enter a valid URL starting with http:// or https://"); return; }
+                      setSubmitStep(1);
+                    } else if (submitStep === 1) {
+                      setSubmitStep(2);
+                    } else {
+                      if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }
+                      handleSubmitProject();
+                    }
                   }}
-                  disabled={submitStep === 0 && !submitData.name.trim()}
+                  disabled={(submitStep === 0 && !submitData.name.trim()) || submitting}
                   style={{
                     padding: "9px 24px", borderRadius: 10,
                     border: "none",
-                    background: (submitStep === 0 && !submitData.name.trim()) ? C.borderLight : C.accent,
+                    background: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.borderLight : C.accent,
                     fontSize: 13, fontWeight: 600,
-                    color: (submitStep === 0 && !submitData.name.trim()) ? C.textMute : "#fff",
-                    cursor: (submitStep === 0 && !submitData.name.trim()) ? "default" : "pointer",
+                    color: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.textMute : "#fff",
+                    cursor: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? "default" : "pointer",
                     fontFamily: "var(--sans)",
                     transition: "all 0.15s",
+                    opacity: submitting ? 0.7 : 1,
                   }}
                 >
-                  {submitStep === 2 ? "Submit" : "Continue"}
+                  {submitting ? "Submitting\u2026" : submitStep === 2 ? "Submit" : "Continue"}
                 </button>
               </div>
             </div>

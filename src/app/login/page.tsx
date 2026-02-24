@@ -4,8 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { C } from "@/types";
 import { gxApi, setToken } from "@/lib/api";
+import { useCaptcha } from "@/hooks/useCaptcha";
 
 type Step = "phone" | "otp";
+type CaptchaVersion = "v2" | "v3";
+
+const CAPTCHA_SITE_KEYS = {
+  v3: "6LdwUNUlAAAAAB1mZxFvzL7qRyt0LieKgUpzrDKW",
+  v2: "6LehQ-snAAAAABH9UY_05XxOOH-cQ8RqrqyJ4bpO",
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,7 +23,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [captchaVersion, setCaptchaVersion] = useState<CaptchaVersion>("v3");
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const { withCaptcha, enableCallback, resetCaptcha } = useCaptcha({
+    action: `MEMBER_LOGIN_${captchaVersion.toUpperCase()}`,
+    version: captchaVersion,
+    siteKeys: CAPTCHA_SITE_KEYS,
+  });
 
   // Resend countdown
   useEffect(() => {
@@ -27,7 +41,7 @@ export default function LoginPage() {
 
   const fullPhone = `${countryCode}.${phone.replace(/\D/g, "")}`;
 
-  const handleSendOtp = async () => {
+  const handleSendOtp = withCaptcha(async (captcha: { token: string; action: string }) => {
     if (!phone.trim() || phone.replace(/\D/g, "").length < 8) {
       setError("Enter a valid phone number");
       return;
@@ -35,13 +49,28 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await gxApi("/cauth/send_mobile_otp", {
+      const res = await gxApi("/cauth/send_otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: fullPhone }),
+        body: JSON.stringify({
+          phone: fullPhone,
+          token: captcha.token,
+          action: captcha.action,
+          variant: captchaVersion,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (data.error_code === "TOKEN_V3_LOW_SCORE") {
+          setCaptchaVersion("v2");
+          setError("Please complete the verification below");
+          return;
+        }
+        if (data.error_code === "TOKEN_V2_LOW_SCORE") {
+          resetCaptcha();
+          setError("Verification failed, please try again");
+          return;
+        }
         setError(data.message || "Failed to send OTP");
         return;
       }
@@ -53,7 +82,7 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
+  });
 
   const handleVerifyOtp = async (code: string) => {
     setLoading(true);
@@ -76,7 +105,6 @@ export default function LoginPage() {
         otpRefs.current[0]?.focus();
         return;
       }
-      // Store JWT token from response
       if (data.token) {
         setToken(data.token);
       }
@@ -98,7 +126,6 @@ export default function LoginPage() {
       otpRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when all 4 digits entered
     if (value && index === 3) {
       const code = next.join("");
       if (code.length === 4) {
@@ -131,18 +158,33 @@ export default function LoginPage() {
     }
   };
 
-  const handleResend = async () => {
+  const handleResend = withCaptcha(async (captcha: { token: string; action: string }) => {
     if (resendTimer > 0) return;
     setError("");
     setLoading(true);
     try {
-      const res = await gxApi("/cauth/retry_mobile_otp", {
+      const res = await gxApi("/cauth/retry_otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: fullPhone }),
+        body: JSON.stringify({
+          phone: fullPhone,
+          token: captcha.token,
+          action: captcha.action,
+          variant: captchaVersion,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (data.error_code === "TOKEN_V3_LOW_SCORE") {
+          setCaptchaVersion("v2");
+          setError("Please complete the verification below");
+          return;
+        }
+        if (data.error_code === "TOKEN_V2_LOW_SCORE") {
+          resetCaptcha();
+          setError("Verification failed, please try again");
+          return;
+        }
         setError(data.message || "Failed to resend OTP");
         return;
       }
@@ -154,7 +196,9 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
+  });
+
+  const sendDisabled = loading || !enableCallback;
 
   return (
     <div style={{
@@ -203,7 +247,7 @@ export default function LoginPage() {
               }}>
                 Phone number
               </label>
-              <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
                 <select
                   value={countryCode}
                   onChange={e => setCountryCode(e.target.value)}
@@ -226,7 +270,7 @@ export default function LoginPage() {
                   onChange={e => setPhone(e.target.value)}
                   placeholder="9876543210"
                   autoFocus
-                  onKeyDown={e => { if (e.key === "Enter") handleSendOtp(); }}
+                  onKeyDown={e => { if (e.key === "Enter" && !sendDisabled) handleSendOtp(); }}
                   style={{
                     flex: 1, padding: "12px 14px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.bg,
@@ -235,14 +279,22 @@ export default function LoginPage() {
                   }}
                 />
               </div>
+
+              {/* reCAPTCHA v2 checkbox container */}
+              {captchaVersion === "v2" && (
+                <div style={{ marginBottom: 20, display: "flex", justifyContent: "center" }}>
+                  <div id="grecaptcha-checkbox" />
+                </div>
+              )}
+
               <button
                 onClick={handleSendOtp}
-                disabled={loading}
+                disabled={sendDisabled}
                 style={{
                   width: "100%", padding: "13px 20px", borderRadius: 10,
                   border: "none", background: C.accent, color: "#fff",
-                  fontSize: 14, fontWeight: 600, cursor: loading ? "default" : "pointer",
-                  fontFamily: "var(--sans)", opacity: loading ? 0.7 : 1,
+                  fontSize: 14, fontWeight: 600, cursor: sendDisabled ? "default" : "pointer",
+                  fontFamily: "var(--sans)", opacity: sendDisabled ? 0.5 : 1,
                   transition: "opacity 0.15s",
                 }}
               >
