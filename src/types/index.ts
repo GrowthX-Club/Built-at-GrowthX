@@ -181,6 +181,7 @@ export interface Comment {
   projectId: string | number;
   authorName: string;
   authorAvatar: string;
+  authorAvatarUrl?: string;
   authorRole: string;
   authorTitle: string;
   authorCompany: string;
@@ -432,12 +433,14 @@ export function normalizeComment(c: Record<string, unknown>): Comment {
   let authorTitle = (c.authorTitle ?? c.author_title ?? "") as string;
   let authorCompany = (c.authorCompany ?? c.author_company ?? "") as string;
   let authorCompanyColor = (c.authorCompanyColor ?? c.author_company_color ?? "") as string;
+  let authorAvatarUrl = (c.authorAvatarUrl ?? c.author_avatar_url ?? undefined) as string | undefined;
 
   if (authorRaw && typeof authorRaw === 'object' && authorRaw.name && typeof authorRaw.name === 'object') {
     // Populated gx-backend user object
     const u = formatPopulatedUser(authorRaw);
     authorName = u.name;
     authorAvatar = u.initials;
+    authorAvatarUrl = u.avatarUrl;
     authorRole = 'member';
     authorTitle = u.role;
     authorCompany = u.company;
@@ -449,6 +452,7 @@ export function normalizeComment(c: Record<string, unknown>): Comment {
     projectId: (c.projectId ?? c.project_id ?? "") as string,
     authorName,
     authorAvatar,
+    authorAvatarUrl,
     authorRole,
     authorTitle,
     authorCompany,

@@ -610,11 +610,7 @@ export default function ProjectDetailPage() {
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "10px 16px", borderRadius: 12,
                 background: C.surface, border: `1px solid ${C.border}`,
-                cursor: "pointer", transition: "border-color 0.12s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
-              onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
-              >
+              }}>
                 <Av initials={p.builder.avatar} size={34} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
@@ -645,11 +641,7 @@ export default function ProjectDetailPage() {
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 16px", borderRadius: 12,
                   background: C.surface, border: `1px solid ${C.border}`,
-                  cursor: "pointer", transition: "border-color 0.12s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
-                onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
-                >
+                }}>
                   <Av initials={c.avatar} size={30} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
@@ -687,11 +679,7 @@ export default function ProjectDetailPage() {
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "6px 16px 6px 8px", borderRadius: 40,
                     background: C.surface, border: `1px solid ${C.border}`,
-                    cursor: "pointer", transition: "all 0.12s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}
-                  >
+                  }}>
                     <div style={{
                       width: 22, height: 22, borderRadius: 6,
                       background: meta.bg, color: meta.color,
@@ -779,7 +767,7 @@ export default function ProjectDetailPage() {
             return (
               <div key={root.id} style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
                 <div style={{ display: "flex", gap: 14 }}>
-                  <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} />
+                  <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
@@ -842,7 +830,7 @@ export default function ProjectDetailPage() {
                                   borderRadius: "0 10px 10px 0",
                                 }}>
                                   <div style={{ display: "flex", gap: 10 }}>
-                                    <Av initials={replyInitials} size={30} highlight role={reply.authorRole || "member"} />
+                                    <Av initials={replyInitials} size={30} highlight role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                                     <div style={{ flex: 1 }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                         <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
@@ -858,7 +846,7 @@ export default function ProjectDetailPage() {
                                 </div>
                               ) : (
                                 <div style={{ display: "flex", gap: 10 }}>
-                                  <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} />
+                                  <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                                   <div style={{ flex: 1 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                       <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
