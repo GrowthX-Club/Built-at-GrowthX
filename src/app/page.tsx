@@ -53,27 +53,27 @@ function BuilderItem({ b }: { b: { name: string; company: string; companyColor: 
   return (
     <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{
+        fontSize: 13, fontWeight: 600, color: C.text,
+        fontFamily: "var(--sans)", marginBottom: 2, lineHeight: 1.2,
+      }}>
+        {b.name}
+      </div>
+      <div style={{
         display: "flex", alignItems: "center", gap: 4,
-        fontSize: 13, fontFamily: "var(--sans)", marginBottom: 2,
+        fontSize: 11.5, fontFamily: "var(--sans)",
       }}>
         <span style={{
-          width: 14, height: 14, borderRadius: 4,
+          width: 12, height: 12, borderRadius: 3,
           background: b.companyColor || C.accent,
           display: "inline-flex", alignItems: "center", justifyContent: "center",
-          fontSize: 7, fontWeight: 800, color: "#fff",
+          fontSize: 6, fontWeight: 800, color: "#fff",
           fontFamily: "var(--sans)", flexShrink: 0,
           overflow: "hidden", position: "relative",
         }}>
           {b.company[0]}
           {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
         </span>
-        <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
-      </div>
-      <div style={{
-        fontSize: 11.5, fontWeight: 400, color: C.textMute,
-        fontFamily: "var(--sans)", lineHeight: 1.2,
-      }}>
-        {b.name}
+        <span style={{ fontWeight: 400, color: C.textMute }}>{b.company}</span>
       </div>
     </div>
   );
