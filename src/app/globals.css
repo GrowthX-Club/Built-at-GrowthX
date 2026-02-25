@@ -94,6 +94,19 @@ body {
   animation: ghostUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #EDEAE4 25%, #F5F3EE 50%, #EDEAE4 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

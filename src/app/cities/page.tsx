@@ -59,12 +59,13 @@ export default function CitiesPage() {
   const pathname = usePathname();
   const { openLoginDialog } = useLoginDialog();
   const [cities, setCities] = useState<CityData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bxApi("/cities").then((r) => r.json()).then((d) => setCities(d.cities || []));
+    bxApi("/cities").then((r) => r.json()).then((d) => setCities(d.cities || [])).finally(() => setLoading(false));
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
   }, []);
 
@@ -133,12 +134,14 @@ export default function CitiesPage() {
               fontSize: 12.5, fontWeight: 550, color: C.textSec,
               cursor: "pointer", fontFamily: "var(--sans)",
               transition: "all 0.12s",
+              display: "flex", alignItems: "center", gap: 6,
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
             onClick={() => router.push("/")}
             >
-              Submit project
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Submit your project
             </button>
             {user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
@@ -208,11 +211,36 @@ export default function CitiesPage() {
         </div> */}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {cities.length === 0 && (
+          {loading && cities.length === 0 ? (
+            [...Array(5)].map((_, i) => (
+              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+                padding: "18px 24px", background: C.surface,
+                border: `1px solid ${C.border}`, borderRadius: 14,
+                marginBottom: 6, display: "flex", gap: 16, alignItems: "center",
+              }}>
+                <div className="skeleton" style={{ width: 28, height: 16, borderRadius: 4 }} />
+                <div className="skeleton" style={{ width: 28, height: 28, borderRadius: 6 }} />
+                <div style={{ flex: 1 }}>
+                  <div className="skeleton" style={{ height: 17, width: 100, marginBottom: 4 }} />
+                  <div className="skeleton" style={{ height: 12, width: 60 }} />
+                </div>
+                <div style={{ display: "flex", gap: 32 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div className="skeleton" style={{ height: 22, width: 40, marginBottom: 4 }} />
+                    <div className="skeleton" style={{ height: 11, width: 45 }} />
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div className="skeleton" style={{ height: 22, width: 30, marginBottom: 4 }} />
+                    <div className="skeleton" style={{ height: 11, width: 45 }} />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : cities.length === 0 ? (
             <p style={{ fontSize: 14, color: C.textMute, padding: "40px 0", textAlign: "center" }}>
               No cities yet. Ship a project to put your city on the map.
             </p>
-          )}
+          ) : null}
           {cities.map((city, i) => (
             <div key={city.name} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
               padding: "18px 24px", background: C.surface,

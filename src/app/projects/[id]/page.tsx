@@ -20,6 +20,7 @@ import {
   STACK_META,
 } from "@/types";
 import { bxApi } from "@/lib/api";
+import { useLoginDialog } from "@/context/LoginDialogContext";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -36,8 +37,17 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function Av({ initials, size = 32, highlight, role }: { initials: string; size?: number; highlight?: boolean; role?: string }) {
+function Av({ initials, size = 32, highlight, role, src }: { initials: string; size?: number; highlight?: boolean; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
+  if (src && src.startsWith("http")) {
+    return (
+      <img src={src} alt={initials} style={{
+        width: size, height: size, borderRadius: size,
+        border: highlight ? `2px solid ${C.gold}` : `1px solid ${C.borderLight}`,
+        flexShrink: 0, objectFit: "cover",
+      }} />
+    );
+  }
   return (
     <div style={{
       width: size, height: size, borderRadius: size,
@@ -97,7 +107,7 @@ function CompanyTag({ title, company, companyColor }: { title?: string; company?
   );
 }
 
-function Reactions({ reactions: initialReactions, onReact }: { reactions: Reaction[]; onReact?: (emojiCode: string) => void }) {
+function Reactions({ reactions: initialReactions, onReact }: { reactions: Reaction[]; onReact?: (emojiCode: string) => boolean }) {
   const [local, setLocal] = useState(initialReactions.map(r => ({ ...r })));
   const [picker, setPicker] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -113,11 +123,14 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
   }, []);
 
   const handleToggle = (emojiCode: string) => {
+    const allowed = onReact?.(emojiCode);
+    if (allowed === false) return;
     setLocal(prev => prev.map(x => x.emoji.code === emojiCode ? { ...x, mine: !x.mine, count: x.mine ? x.count - 1 : x.count + 1 } : x));
-    onReact?.(emojiCode);
   };
 
   const handlePick = (e: typeof CUSTOM_EMOJIS[number]) => {
+    const allowed = onReact?.(e.code);
+    if (allowed === false) return;
     const exists = local.find(x => x.emoji.code === e.code);
     if (exists) {
       if (!exists.mine) {
@@ -127,7 +140,6 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
       setLocal(prev => [...prev, { emoji: e, count: 1, mine: true }]);
     }
     setPicker(false);
-    onReact?.(e.code);
   };
 
   return (
@@ -149,13 +161,22 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
         <button onClick={() => setPicker(!picker)} style={{
           width: 30, height: 30, borderRadius: 20,
           border: `1px dashed ${C.border}`, background: "transparent",
-          cursor: "pointer", fontSize: 14, color: C.textMute,
+          cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
-          transition: "all 0.12s",
+          transition: "all 0.12s", position: "relative",
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMute; }}
-        >+</button>
+        onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.accentSoft; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "transparent"; }}
+        >
+          <span style={{ fontSize: 15, lineHeight: 1, opacity: 0.55 }}>{"\u{1F642}"}</span>
+          <span style={{
+            position: "absolute", bottom: -1, right: -1,
+            width: 12, height: 12, borderRadius: 12,
+            background: C.surface, border: `1px solid ${C.border}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 9, fontWeight: 700, color: C.textMute, lineHeight: 1,
+          }}>+</span>
+        </button>
         {picker && (
           <div style={{
             position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
@@ -234,7 +255,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
                             <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
-                            <span style={{ fontSize: 8.5, fontWeight: 750, padding: "2px 6px", borderRadius: 3, background: C.accent, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase" }}>OP</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Maker</span>
                             <Badge role={reply.author.role} />
                             <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
                           </div>
@@ -271,6 +292,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { openLoginDialog } = useLoginDialog();
   const [project, setProject] = useState<Project | null>(null);
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
@@ -306,8 +328,19 @@ export default function ProjectDetailPage() {
       });
   }, [params.id]);
 
+  const reloadUser = () => {
+    bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
+    bxApi("/projects").then((r) => r.json()).then((d) => {
+      const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
+      setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
+    });
+  };
+
   const handleVote = async () => {
-    if (!user) return;
+    if (!user) {
+      openLoginDialog(() => { reloadUser(); reloadComments(); });
+      return;
+    }
     setVoteAnim(true);
     setTimeout(() => setVoteAnim(false), 800);
     const res = await bxApi("/votes", {
@@ -324,7 +357,11 @@ export default function ProjectDetailPage() {
   };
 
   const handlePostComment = async () => {
-    if (!comment.trim() || !user || postingComment) return;
+    if (!comment.trim() || postingComment) return;
+    if (!user) {
+      openLoginDialog(() => { reloadUser(); reloadComments(); });
+      return;
+    }
     setPostingComment(true);
     try {
       const res = await bxApi("/comments", {
@@ -347,18 +384,25 @@ export default function ProjectDetailPage() {
       .then((d) => setComments((d.comments || []).map(normalizeComment)));
   };
 
-  const handleReact = async (commentId: string, emojiCode: string) => {
-    if (!user) return;
-    const res = await bxApi(`/comments/${commentId}/react`, {
+  const handleReact = (commentId: string, emojiCode: string): boolean => {
+    if (!user) {
+      openLoginDialog(() => { reloadUser(); reloadComments(); });
+      return false;
+    }
+    bxApi(`/comments/${commentId}/react`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ emojiCode }),
-    });
-    if (res.ok) reloadComments();
+    }).then(res => { if (res.ok) reloadComments(); });
+    return true;
   };
 
   const handlePostReply = async (parentId: string) => {
-    if (!replyText.trim() || !user || postingComment) return;
+    if (!replyText.trim() || postingComment) return;
+    if (!user) {
+      openLoginDialog(() => { reloadUser(); reloadComments(); });
+      return;
+    }
     setPostingComment(true);
     try {
       const res = await bxApi("/comments", {
@@ -389,8 +433,49 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: C.textMute, fontSize: 14, fontFamily: "var(--sans)" }}>Loading...</span>
+      <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
+        <nav style={{
+          position: "sticky", top: 0, zIndex: 50,
+          background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
+          borderBottom: `1px solid ${C.border}`, padding: "0 32px",
+        }}>
+          <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: 20 }}>
+            <div className="skeleton" style={{ height: 14, width: 180, borderRadius: 4 }} />
+            <div className="skeleton" style={{ height: 14, width: 100, borderRadius: 4 }} />
+            <div className="skeleton" style={{ height: 30, width: 130, borderRadius: 8 }} />
+          </div>
+        </nav>
+        <main style={{ maxWidth: 800, margin: "0 auto", padding: "40px 32px 100px" }}>
+          <div className="fade-up" style={{ marginBottom: 32 }}>
+            <div className="skeleton" style={{ height: 36, width: "60%", marginBottom: 12 }} />
+            <div className="skeleton" style={{ height: 16, width: "80%", marginBottom: 20 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+              <div className="skeleton" style={{ width: 36, height: 36, borderRadius: 36 }} />
+              <div>
+                <div className="skeleton" style={{ height: 14, width: 100, marginBottom: 4 }} />
+                <div className="skeleton" style={{ height: 11, width: 70 }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+              <div className="skeleton" style={{ height: 24, width: 60, borderRadius: 6 }} />
+              <div className="skeleton" style={{ height: 24, width: 75, borderRadius: 6 }} />
+              <div className="skeleton" style={{ height: 24, width: 55, borderRadius: 6 }} />
+            </div>
+          </div>
+          <div className="fade-up stagger-2">
+            <div className="skeleton" style={{ height: 14, width: "100%", marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: 14, width: "95%", marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 10 }} />
+            <div className="skeleton" style={{ height: 14, width: "85%", marginBottom: 24 }} />
+          </div>
+          <div className="fade-up stagger-3" style={{
+            padding: "24px 28px", background: C.surface,
+            border: `1px solid ${C.border}`, borderRadius: 14, marginTop: 32,
+          }}>
+            <div className="skeleton" style={{ height: 18, width: 120, marginBottom: 16 }} />
+            <div className="skeleton" style={{ height: 60, width: "100%", borderRadius: 10 }} />
+          </div>
+        </main>
       </div>
     );
   }
@@ -429,10 +514,12 @@ export default function ProjectDetailPage() {
             fontSize: 12.5, fontWeight: 600, cursor: "pointer",
             fontFamily: "var(--sans)", color: C.text,
             transition: "all 0.15s", flexShrink: 0,
+            display: "flex", alignItems: "center", gap: 6,
           }}
           onMouseEnter={e => { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = "#fff"; }}
           onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}
           >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             Submit your project
           </button>
         </div>
@@ -651,8 +738,7 @@ export default function ProjectDetailPage() {
               <textarea
                 value={comment}
                 onChange={e => setComment(e.target.value)}
-                placeholder={user ? "Ask a question or share your thoughts..." : "Sign in to comment"}
-                disabled={!user}
+                placeholder="Ask a question or share your thoughts..."
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostComment(); }}}
                 style={{
                   width: "100%", padding: "11px 16px", borderRadius: 10,
@@ -696,7 +782,7 @@ export default function ProjectDetailPage() {
                       </span>
                       <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} />
                       {isRootOP && (
-                        <span style={{ fontSize: 8.5, fontWeight: 750, padding: "2px 6px", borderRadius: 3, background: C.accent, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase" }}>OP</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Maker</span>
                       )}
                       <Badge role={root.authorRole || "member"} />
                       <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
@@ -725,7 +811,10 @@ export default function ProjectDetailPage() {
                         </button>
                       )}
                       {replies.length === 0 && (
-                        <button onClick={() => setReplyingTo(replyingTo === root.id ? null : root.id)} style={{
+                        <button onClick={() => {
+                          if (!user) { openLoginDialog(() => { reloadUser(); reloadComments(); }); return; }
+                          setReplyingTo(replyingTo === root.id ? null : root.id);
+                        }} style={{
                           padding: "5px 12px", borderRadius: 8, border: "none",
                           background: "transparent", cursor: "pointer",
                           fontSize: 12, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)",
@@ -753,7 +842,7 @@ export default function ProjectDetailPage() {
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                         <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
                                         <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} />
-                                        <span style={{ fontSize: 8.5, fontWeight: 750, padding: "2px 6px", borderRadius: 3, background: C.accent, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase" }}>OP</span>
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Maker</span>
                                         <Badge role={reply.authorRole || "member"} />
                                         <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                       </div>

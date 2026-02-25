@@ -18,8 +18,16 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
 
-function Av({ initials, size = 32, role }: { initials: string; size?: number; role?: string }) {
+function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
+  if (src && src.startsWith("http")) {
+    return (
+      <img src={src} alt={initials} style={{
+        width: size, height: size, borderRadius: size,
+        border: `1px solid ${C.borderLight}`, flexShrink: 0, objectFit: "cover",
+      }} />
+    );
+  }
   return (
     <div style={{
       width: size, height: size, borderRadius: size,
@@ -269,7 +277,7 @@ export default function MyProjectsPage() {
           {user && (
             <div ref={profileMenuRef} style={{ position: "relative" }}>
               <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                <Av initials={user.avatar} size={32} role={user.role} />
+                <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
                 <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                 <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
               </button>
@@ -308,7 +316,31 @@ export default function MyProjectsPage() {
         </div>
 
         {loading ? (
-          <div style={{ padding: 40, textAlign: "center", color: C.textMute, fontSize: 14 }}>Loading...</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+                padding: "24px 28px", background: C.surface,
+                border: `1px solid ${C.border}`, borderRadius: 14,
+              }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 17, width: "50%", marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 14, width: "80%" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <div className="skeleton" style={{ height: 13, width: 40 }} />
+                    <div className="skeleton" style={{ width: 50, height: 30, borderRadius: 8 }} />
+                  </div>
+                </div>
+                <div className="skeleton" style={{ height: 13, width: "60%", marginTop: 8 }} />
+                <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
+                  <div className="skeleton" style={{ height: 20, width: 50, borderRadius: 6 }} />
+                  <div className="skeleton" style={{ height: 20, width: 60, borderRadius: 6 }} />
+                  <div className="skeleton" style={{ height: 20, width: 45, borderRadius: 6 }} />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : projects.length === 0 ? (
           <div style={{
             padding: "48px 32px", textAlign: "center",
@@ -591,6 +623,11 @@ export default function MyProjectsPage() {
                             Searching...
                           </span>
                         )}
+                        {!searchingUsers && editData.collabInput.trim().length >= 2 && userResults.length === 0 && (
+                          <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
+                            No members found for &ldquo;{editData.collabInput.trim()}&rdquo;
+                          </div>
+                        )}
 
                         {/* Dropdown */}
                         {showCollabDropdown && userResults.length > 0 && (
@@ -601,61 +638,61 @@ export default function MyProjectsPage() {
                             maxHeight: 240, overflowY: "auto",
                           }}>
                             {userResults.map(u => {
-                              const already = editData.collabs.some(c => c.name === u.name);
-                              return (
-                                <button
-                                  key={u._id}
-                                  onClick={() => addCollab(u)}
-                                  disabled={already}
-                                  style={{
-                                    width: "100%", padding: "10px 14px", border: "none",
-                                    background: "none", cursor: already ? "default" : "pointer",
-                                    display: "flex", alignItems: "center", gap: 10,
-                                    textAlign: "left", transition: "background 0.1s",
-                                    opacity: already ? 0.4 : 1,
-                                  }}
-                                  onMouseEnter={e => { if (!already) e.currentTarget.style.background = C.accentSoft; }}
-                                  onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
-                                >
-                                  <div style={{
-                                    width: 32, height: 32, borderRadius: 32,
-                                    background: C.accentSoft, color: C.textSec,
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                    fontSize: 12, fontWeight: 650, fontFamily: "var(--sans)",
-                                    border: `1px solid ${C.borderLight}`, flexShrink: 0,
-                                  }}>
-                                    {u.avatar.length <= 3 ? u.avatar : u.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
-                                  </div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 13.5, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>
-                                      {u.name}
-                                      {already && <span style={{ fontSize: 11, fontWeight: 400, color: C.textMute, marginLeft: 6 }}>Added</span>}
+                                const already = editData.collabs.some(c => c.name === u.name);
+                                return (
+                                  <button
+                                    key={u._id}
+                                    onClick={() => addCollab(u)}
+                                    disabled={already}
+                                    style={{
+                                      width: "100%", padding: "10px 14px", border: "none",
+                                      background: "none", cursor: already ? "default" : "pointer",
+                                      display: "flex", alignItems: "center", gap: 10,
+                                      textAlign: "left", transition: "background 0.1s",
+                                      opacity: already ? 0.4 : 1,
+                                    }}
+                                    onMouseEnter={e => { if (!already) e.currentTarget.style.background = C.accentSoft; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
+                                  >
+                                    <div style={{
+                                      width: 32, height: 32, borderRadius: 32,
+                                      background: C.accentSoft, color: C.textSec,
+                                      display: "flex", alignItems: "center", justifyContent: "center",
+                                      fontSize: 12, fontWeight: 650, fontFamily: "var(--sans)",
+                                      border: `1px solid ${C.borderLight}`, flexShrink: 0,
+                                    }}>
+                                      {u.avatar.length <= 3 ? u.avatar : u.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                                     </div>
-                                    {(u.role || u.company) && (
-                                      <div style={{ fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 4 }}>
-                                        {u.role && <span>{u.role}</span>}
-                                        {u.role && u.company && <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>}
-                                        {u.company && (
-                                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
-                                            <span style={{
-                                              width: 12, height: 12, borderRadius: 3,
-                                              background: generateColor(u.company),
-                                              display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                              fontSize: 6, fontWeight: 800, color: "#fff", flexShrink: 0,
-                                              overflow: "hidden", position: "relative",
-                                            }}>
-                                              {u.company[0]}
-                                              <img src={getCompanyLogoUrl(u.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                                            </span>
-                                            {u.company}
-                                          </span>
-                                        )}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 13.5, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>
+                                        {u.name}
+                                        {already && <span style={{ fontSize: 11, fontWeight: 400, color: C.textMute, marginLeft: 6 }}>Added</span>}
                                       </div>
-                                    )}
-                                  </div>
-                                </button>
-                              );
-                            })}
+                                      {(u.role || u.company) && (
+                                        <div style={{ fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 4 }}>
+                                          {u.role && <span>{u.role}</span>}
+                                          {u.role && u.company && <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>}
+                                          {u.company && (
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                              <span style={{
+                                                width: 12, height: 12, borderRadius: 3,
+                                                background: generateColor(u.company),
+                                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                                fontSize: 6, fontWeight: 800, color: "#fff", flexShrink: 0,
+                                                overflow: "hidden", position: "relative",
+                                              }}>
+                                                {u.company[0]}
+                                                <img src={getCompanyLogoUrl(u.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                              </span>
+                                              {u.company}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </button>
+                                );
+                              })}
                           </div>
                         )}
                       </div>
