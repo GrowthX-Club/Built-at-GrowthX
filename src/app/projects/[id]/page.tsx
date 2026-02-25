@@ -275,6 +275,7 @@ export default function ProjectDetailPage() {
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [voteAnim, setVoteAnim] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [comment, setComment] = useState("");
   const [postingComment, setPostingComment] = useState(false);
@@ -307,6 +308,8 @@ export default function ProjectDetailPage() {
 
   const handleVote = async () => {
     if (!user) return;
+    setVoteAnim(true);
+    setTimeout(() => setVoteAnim(false), 800);
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -411,7 +414,7 @@ export default function ProjectDetailPage() {
           onMouseEnter={e => e.currentTarget.style.color = C.text}
           onMouseLeave={e => e.currentTarget.style.color = C.textSec}
           >
-            {"\u2190"} Back to Built
+            {"\u2190"} Back to Built at GrowthX
           </button>
           <span style={{
             fontSize: 14, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
@@ -420,36 +423,18 @@ export default function ProjectDetailPage() {
           }}>
             {p.name}
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <button onClick={handleVote} style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "6px 14px", borderRadius: 8,
-              border: hasVoted ? `1.5px solid ${C.gold}` : `1.5px solid ${C.accent}`,
-              background: hasVoted ? C.goldSoft : C.surface,
-              cursor: "pointer", fontSize: 13, fontWeight: 650,
-              fontFamily: "var(--sans)", color: hasVoted ? C.gold : C.text, transition: "all 0.15s",
-            }}
-            onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = C.bg; }}}
-            onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}}
-            >
-              <span style={{ fontSize: 14, lineHeight: 1 }}>{"\u25B3"}</span>
-              {p.weighted.toLocaleString()}
-            </button>
-            {p.url && (
-              <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
-                padding: "6px 16px", borderRadius: 8,
-                border: "none", background: C.accent, color: "#fff",
-                fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-                fontFamily: "var(--sans)", transition: "opacity 0.15s",
-                textDecoration: "none", display: "inline-flex", alignItems: "center",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              >
-                Try it {"\u2192"}
-              </a>
-            )}
-          </div>
+          <button onClick={() => router.push("/?submit=1")} style={{
+            padding: "6px 16px", borderRadius: 8,
+            border: `1.5px solid ${C.accent}`, background: C.surface,
+            fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+            fontFamily: "var(--sans)", color: C.text,
+            transition: "all 0.15s", flexShrink: 0,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}
+          >
+            Submit your project
+          </button>
         </div>
       </nav>
 
@@ -483,16 +468,30 @@ export default function ProjectDetailPage() {
               <button onClick={handleVote} style={{
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 20px", borderRadius: 10,
-                border: hasVoted ? `1.5px solid ${C.gold}` : `1.5px solid ${C.accent}`,
-                background: hasVoted ? C.goldSoft : C.surface,
+                border: hasVoted ? `1.5px solid ${C.brand}` : `1.5px solid ${C.accent}`,
+                background: hasVoted ? C.brandSoft : C.surface,
                 cursor: "pointer", fontSize: 16, fontWeight: 650,
-                fontFamily: "var(--sans)", color: hasVoted ? C.gold : C.text, transition: "all 0.15s",
+                fontFamily: "var(--sans)", color: hasVoted ? C.brand : C.text,
+                transition: "border 0.25s, background 0.25s, color 0.25s",
+                position: "relative", overflow: "visible",
               }}
               onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = C.bg; }}}
               onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}}
               >
-                <span style={{ fontSize: 18, lineHeight: 1 }}>{"\u25B3"}</span>
-                {p.weighted.toLocaleString()}
+                <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                    <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                  </svg>
+                  <span
+                    className={`vote-ghost${voteAnim ? " active" : ""}`}
+                    style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </span>
+                <span style={{ lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
               </button>
               {p.url && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{

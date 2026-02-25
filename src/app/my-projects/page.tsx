@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   C,
   ROLES,
+  STACK_META,
   type Project,
   type BuilderProfile,
   normalizeProject,
   normalizeUser,
   getCompanyLogoUrl,
+  getStackLogoUrl,
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
+import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
 
@@ -84,6 +87,7 @@ interface EditState {
 
 export default function MyProjectsPage() {
   const router = useRouter();
+  const { openLoginDialog } = useLoginDialog();
   const [projects, setProjects] = useState<Project[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,17 +105,24 @@ export default function MyProjectsPage() {
   const collabRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const loadMyData = useCallback(() => {
     bxApi("/me").then(r => r.json()).then(d => {
       const u = normalizeUser(d.user);
-      if (!u) { router.push("/login"); return; }
+      if (!u) {
+        openLoginDialog(() => { loadMyData(); });
+        return;
+      }
       setUser(u);
     });
     bxApi("/my-projects").then(r => r.json()).then(d => {
       const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
       setProjects(list);
     }).finally(() => setLoading(false));
-  }, [router]);
+  }, [openLoginDialog]);
+
+  useEffect(() => {
+    loadMyData();
+  }, [loadMyData]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -161,11 +172,12 @@ export default function MyProjectsPage() {
     clearToken();
     setUser(null);
     setShowProfileMenu(false);
-    router.push("/login");
+    router.push("/");
   };
 
   const startEdit = (p: Project) => {
     const raw = p as unknown as Record<string, unknown>;
+    setEditError("");
     setEditingId(p.id);
     setEditData({
       name: p.name,
@@ -183,8 +195,14 @@ export default function MyProjectsPage() {
     setEditingId(null);
   };
 
+  const [editError, setEditError] = useState("");
+
   const saveEdit = async () => {
     if (!editingId || saving) return;
+    setEditError("");
+    if (!editData.name.trim()) { setEditError("Project name is required."); return; }
+    if (!editData.tagline.trim()) { setEditError("Tagline is required."); return; }
+    if (editData.stack.length === 0) { setEditError("Add at least one tech stack item."); return; }
     setSaving(true);
     try {
       const payload = {
@@ -243,7 +261,7 @@ export default function MyProjectsPage() {
                 color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
               }}
             >
-              Built
+              Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
             </span>
             <span style={{ color: C.textMute, fontSize: 13 }}>/</span>
             <span style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>My Projects</span>
@@ -382,45 +400,174 @@ export default function MyProjectsPage() {
                     {/* Tech stack */}
                     <div>
                       <label style={labelStyle}>Tech stack</label>
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+
+                      {/* Selected stack */}
+                      {editData.stack.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                          {editData.stack.map((s, si) => {
+                            const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                            const logoUrl = getStackLogoUrl(s);
+                            return (
+                              <span key={si} style={{
+                                display: "inline-flex", alignItems: "center", gap: 7,
+                                padding: "5px 10px 5px 6px", borderRadius: 20,
+                                background: C.surface, border: `1.5px solid ${C.accent}`,
+                                fontSize: 12.5, color: C.text, fontWeight: 500,
+                                fontFamily: "var(--sans)",
+                              }}>
+                                <span style={{
+                                  width: 20, height: 20, borderRadius: 5,
+                                  background: meta.bg, color: meta.color,
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  fontSize: 8.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                  flexShrink: 0, letterSpacing: "-0.02em",
+                                  position: "relative", overflow: "hidden",
+                                }}>
+                                  {meta.icon}
+                                  {logoUrl && (
+                                    <img
+                                      src={logoUrl}
+                                      alt={s}
+                                      style={{
+                                        position: "absolute", top: 0, left: 0,
+                                        width: 20, height: 20, borderRadius: 5,
+                                        objectFit: "contain", background: "#fff",
+                                      }}
+                                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                    />
+                                  )}
+                                </span>
+                                {s}
+                                <span
+                                  onClick={() => setEditData(d => ({ ...d, stack: d.stack.filter((_, idx) => idx !== si) }))}
+                                  style={{
+                                    cursor: "pointer", fontSize: 13, color: C.textMute,
+                                    lineHeight: 1, marginLeft: 2,
+                                    transition: "color 0.1s",
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+                                  onMouseLeave={e => { e.currentTarget.style.color = C.textMute; }}
+                                >{"\u00D7"}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Quick-pick suggestions */}
+                      {(() => {
+                        const suggestions = [
+                          "Next.js", "React", "Python", "Node.js", "TypeScript",
+                          "Claude API", "OpenAI", "Supabase", "Firebase", "MongoDB",
+                          "PostgreSQL", "Tailwind CSS", "Flutter", "FastAPI", "Vercel",
+                          "AWS", "Docker", "Stripe", "Prisma", "Go",
+                        ];
+                        const available = suggestions.filter(s => !editData.stack.includes(s));
+                        if (available.length === 0) return null;
+                        return (
+                          <div style={{ marginBottom: 12 }}>
+                            <div style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
+                              Popular — tap to add
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                              {available.map(s => {
+                                const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                                const logoUrl = getStackLogoUrl(s);
+                                return (
+                                  <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => setEditData(d => ({ ...d, stack: [...d.stack, s] }))}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", gap: 6,
+                                      padding: "4px 10px 4px 5px", borderRadius: 20,
+                                      background: C.bg, border: `1px solid ${C.borderLight}`,
+                                      fontSize: 12, color: C.textSec, fontWeight: 450,
+                                      fontFamily: "var(--sans)", cursor: "pointer",
+                                      transition: "all 0.15s",
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; e.currentTarget.style.background = C.surface; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.color = C.textSec; e.currentTarget.style.background = C.bg; }}
+                                  >
+                                    <span style={{
+                                      width: 18, height: 18, borderRadius: 4,
+                                      background: meta.bg, color: meta.color,
+                                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                      fontSize: 7.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                      flexShrink: 0, letterSpacing: "-0.02em",
+                                      position: "relative", overflow: "hidden",
+                                    }}>
+                                      {meta.icon}
+                                      {logoUrl && (
+                                        <img
+                                          src={logoUrl}
+                                          alt={s}
+                                          style={{
+                                            position: "absolute", top: 0, left: 0,
+                                            width: 18, height: 18, borderRadius: 4,
+                                            objectFit: "contain", background: "#fff",
+                                          }}
+                                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                        />
+                                      )}
+                                    </span>
+                                    {s}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Custom input */}
+                      <div style={{ display: "flex", gap: 8 }}>
                         <input
                           value={editData.stackInput}
                           onChange={e => setEditData(d => ({ ...d, stackInput: e.target.value }))}
                           onKeyDown={e => {
                             if (e.key === "Enter" && editData.stackInput.trim()) {
                               e.preventDefault();
-                              setEditData(d => ({
-                                ...d,
-                                stack: [...d.stack, d.stackInput.trim()],
-                                stackInput: "",
-                              }));
+                              const val = editData.stackInput.trim();
+                              if (!editData.stack.includes(val)) {
+                                setEditData(d => ({
+                                  ...d,
+                                  stack: [...d.stack, val],
+                                  stackInput: "",
+                                }));
+                              } else {
+                                setEditData(d => ({ ...d, stackInput: "" }));
+                              }
                             }
                           }}
-                          placeholder="e.g. Next.js, Supabase, Claude API"
-                          style={inputStyle}
+                          placeholder="Or type a custom one..."
+                          style={{ ...inputStyle, flex: 1 }}
                         />
+                        {editData.stackInput.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = editData.stackInput.trim();
+                              if (val && !editData.stack.includes(val)) {
+                                setEditData(d => ({ ...d, stack: [...d.stack, val], stackInput: "" }));
+                              } else {
+                                setEditData(d => ({ ...d, stackInput: "" }));
+                              }
+                            }}
+                            style={{
+                              padding: "0 14px", borderRadius: 8,
+                              border: "none", background: C.accent,
+                              fontSize: 12, fontWeight: 600, color: "#fff",
+                              cursor: "pointer", fontFamily: "var(--sans)",
+                              whiteSpace: "nowrap", transition: "opacity 0.12s",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+                          >Add</button>
+                        )}
                       </div>
-                      {editData.stack.length > 0 && (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
-                          {editData.stack.map((s, si) => (
-                            <span key={si} style={{
-                              display: "inline-flex", alignItems: "center", gap: 6,
-                              padding: "5px 10px 5px 12px", borderRadius: 8,
-                              background: C.accentSoft, border: `1px solid ${C.borderLight}`,
-                              fontSize: 12.5, color: C.text, fontWeight: 480,
-                              fontFamily: "var(--sans)",
-                            }}>
-                              {s}
-                              <span
-                                onClick={() => setEditData(d => ({ ...d, stack: d.stack.filter((_, idx) => idx !== si) }))}
-                                style={{ cursor: "pointer", fontSize: 14, color: C.textMute, lineHeight: 1 }}
-                              >{"\u00D7"}</span>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, fontFamily: "var(--sans)" }}>
-                        Press enter to add
+                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
+                        Press enter or click Add
                       </div>
                     </div>
 
@@ -560,9 +707,21 @@ export default function MyProjectsPage() {
                       </div>
                     </div>
 
+                    {/* Error message */}
+                    {editError && (
+                      <div style={{
+                        padding: "10px 14px", borderRadius: 10,
+                        background: "#FEF2F2", border: "1px solid #FECACA",
+                        fontSize: 13, color: "#B91C1C", fontFamily: "var(--sans)",
+                        fontWeight: 450, lineHeight: 1.45,
+                      }}>
+                        {editError}
+                      </div>
+                    )}
+
                     {/* Actions */}
                     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-                      <button onClick={cancelEdit} style={{
+                      <button onClick={() => { setEditError(""); cancelEdit(); }} style={{
                         padding: "9px 22px", borderRadius: 10, border: `1px solid ${C.border}`,
                         background: "transparent", fontSize: 13, fontWeight: 500, color: C.textSec,
                         cursor: "pointer", fontFamily: "var(--sans)", transition: "all 0.12s",

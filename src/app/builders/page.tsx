@@ -13,6 +13,7 @@ import {
   getCompanyLogoUrl,
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
+import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
 
@@ -98,6 +99,7 @@ const NAV_TABS = [
 export default function BuildersPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const { openLoginDialog } = useLoginDialog();
   const [builders, setBuilders] = useState<BuilderProfile[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -125,7 +127,11 @@ export default function BuildersPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSignIn = () => { router.push("/login"); };
+  const handleSignIn = () => {
+    openLoginDialog(() => {
+      bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
+    });
+  };
 
   const handleSignOut = async () => {
     await bxApi("/logout", { method: "POST" }).catch(() => {});
@@ -172,7 +178,7 @@ export default function BuildersPage() {
                 color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
               }}
             >
-              Built
+              Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
             </span>
             <div style={{ display: "flex", gap: 0 }}>
               {NAV_TABS.map(t => (
