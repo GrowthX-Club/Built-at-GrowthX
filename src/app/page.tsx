@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   C,
@@ -159,7 +159,15 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
 }
 
 // ---- Main ----
-export default function HomePage() {
+export default function HomePageWrapper() {
+  return (
+    <Suspense>
+      <HomePage />
+    </Suspense>
+  );
+}
+
+function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { openLoginDialog } = useLoginDialog();
