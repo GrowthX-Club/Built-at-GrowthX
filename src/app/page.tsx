@@ -856,8 +856,7 @@ function HomePage() {
                     ].map((prompt, pi) => (
                       <div key={pi} style={{
                         padding: "10px 14px", borderRadius: 10,
-                        background: submitData.description ? "transparent" : C.bg,
-                        transition: "all 0.2s",
+                        background: C.bg,
                       }}>
                         <div style={{
                           fontSize: 13, fontWeight: 530, color: C.text,
