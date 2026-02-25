@@ -347,7 +347,7 @@ export default function MyProjectsPage() {
             background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
           }}>
             <p style={{ fontSize: 16, color: C.textSec, marginBottom: 16 }}>You haven&apos;t submitted any projects yet.</p>
-            <button onClick={() => router.push("/")} style={{
+            <button onClick={() => router.push("/?submit=1")} style={{
               padding: "10px 24px", borderRadius: 10,
               border: "none", background: C.accent, color: "#fff",
               fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)",
