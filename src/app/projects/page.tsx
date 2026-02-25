@@ -75,12 +75,11 @@ function BuilderItemP({ b }: { b: { name: string; company: string; companyColor:
 function BuilderCycler({ builders }: { builders: { name: string; company: string; companyColor: string }[] }) {
   const [active, setActive] = useState(0);
   const [sliding, setSliding] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const single = builders.length === 1;
   const ITEM_H = 36;
 
   useEffect(() => {
-    if (single || hovered) return;
+    if (single) return;
     const t = setInterval(() => {
       setSliding(true);
       setTimeout(() => {
@@ -89,16 +88,12 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
       }, 300);
     }, 3000);
     return () => clearInterval(t);
-  }, [builders.length, single, hovered]);
+  }, [builders.length, single]);
 
   const next = (active + 1) % builders.length;
 
   return (
-    <div
-      style={{ position: "relative", textAlign: "left", minWidth: 120, overflow: "visible" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div style={{ textAlign: "left", minWidth: 120 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ minWidth: 0, overflow: "hidden", height: ITEM_H }}>
           <div style={{
@@ -123,45 +118,6 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
           </div>
         )}
       </div>
-
-      {!single && hovered && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", left: 0,
-          background: C.surface, border: `1px solid ${C.border}`,
-          borderRadius: 10, padding: "10px 14px",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-          zIndex: 9999, minWidth: 170,
-          display: "flex", flexDirection: "column", gap: 8,
-        }}>
-          {builders.map((tb, ti) => (
-            <div key={ti}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 5,
-                fontSize: 12.5, fontFamily: "var(--sans)", marginBottom: 1,
-              }}>
-                <span style={{
-                  width: 13, height: 13, borderRadius: 3,
-                  background: tb.companyColor || C.accent,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 6.5, fontWeight: 800, color: "#fff",
-                  fontFamily: "var(--sans)", flexShrink: 0,
-                  overflow: "hidden", position: "relative",
-                }}>
-                  {tb.company[0]}
-                  {tb.company && <img src={getCompanyLogoUrl(tb.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
-                </span>
-                <span style={{ fontWeight: 600, color: C.text }}>{tb.company}</span>
-              </div>
-              <div style={{
-                fontSize: 11, fontWeight: 400, color: C.textMute,
-                fontFamily: "var(--sans)", paddingLeft: 18,
-              }}>
-                {tb.name}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -442,11 +398,8 @@ export default function ProjectsPage() {
                     gridTemplateColumns: "1fr 1fr auto",
                     alignItems: "center",
                     gap: 48,
-                    transition: "opacity 0.12s",
                     position: "relative", zIndex: projects.length - i,
                   }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
-                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                 >
                   {/* Left: product name + tagline */}
                   <div style={{ minWidth: 0 }}>
