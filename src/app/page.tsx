@@ -841,42 +841,38 @@ function HomePage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   <div style={{
                     fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
-                    fontWeight: 400, lineHeight: 1.55, marginBottom: 16,
+                    fontWeight: 400, lineHeight: 1.55, marginBottom: 20,
                   }}>
                     Write like you&apos;re telling a friend what you built and why. The best submissions answer three things:
                   </div>
 
-                  <div style={{
-                    display: "flex", flexDirection: "column", gap: 3, marginBottom: 16,
-                  }}>
+                  <div style={{ marginBottom: 20, paddingLeft: 2 }}>
                     {[
-                      { q: "What problem did you hit?", ex: 'e.g. "We were losing 40% of inbound leads because our response time was 6+ hours."' },
-                      { q: "What did you build to fix it?", ex: 'e.g. "An AI agent that qualifies and responds to leads in under 90 seconds."' },
-                      { q: "What happened when people used it?", ex: 'e.g. "12 beta users. 3x conversion on day one. Two asked to pay before we had pricing."' },
+                      { q: "The problem", hint: "What were you trying to solve?" },
+                      { q: "The build", hint: "What did you make?" },
+                      { q: "The outcome", hint: "What happened when people used it?" },
                     ].map((prompt, pi) => (
                       <div key={pi} style={{
-                        padding: "10px 14px", borderRadius: 10,
-                        background: C.bg,
+                        display: "flex", alignItems: "baseline", gap: 8,
+                        marginBottom: pi < 2 ? 8 : 0,
                       }}>
-                        <div style={{
-                          fontSize: 13, fontWeight: 530, color: C.text,
-                          fontFamily: "var(--sans)", marginBottom: 2,
+                        <span style={{
+                          fontSize: 12, fontWeight: 650, color: C.textMute,
+                          fontFamily: "var(--mono)", minWidth: 16,
                         }}>
-                          {pi + 1}. {prompt.q}
-                        </div>
-                        <div style={{
-                          fontSize: 12, color: C.textMute, fontFamily: "var(--sans)",
-                          fontWeight: 400, fontStyle: "italic",
-                        }}>
-                          {prompt.ex}
-                        </div>
+                          {pi + 1}.
+                        </span>
+                        <span style={{ fontSize: 13.5, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
+                          <span style={{ fontWeight: 580, color: C.text }}>{prompt.q}</span>
+                          <span style={{ color: C.textMute, fontWeight: 400 }}> — {prompt.hint}</span>
+                        </span>
                       </div>
                     ))}
                   </div>
 
                   <textarea
                     className="submit-textarea"
-                    placeholder="Write your story here. No word salad. Just the problem, what you built, and what happened."
+                    placeholder={"e.g. We were losing 40% of inbound leads because our response time was 6+ hours. So I built an AI agent that qualifies and responds in under 90 seconds. 12 beta users, 3x conversion on day one."}
                     value={submitData.description}
                     onChange={e => setSubmitData(d => ({ ...d, description: e.target.value }))}
                     style={{ minHeight: 140 }}
