@@ -746,7 +746,12 @@ export default function ProjectDetailPage() {
                   color: C.text, fontFamily: "var(--sans)",
                   background: "transparent", outline: "none",
                   resize: "none", minHeight: 44, lineHeight: 1.5,
+                  transition: "border-color 0.15s",
                 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
+                onMouseLeave={e => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.borderColor = C.borderLight; }}
+                onFocus={e => { e.currentTarget.style.borderColor = C.accent; }}
+                onBlur={e => { e.currentTarget.style.borderColor = C.borderLight; }}
               />
               {comment.trim() && (
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
