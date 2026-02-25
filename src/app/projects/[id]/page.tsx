@@ -309,7 +309,7 @@ export default function ProjectDetailPage() {
   const handleVote = async () => {
     if (!user) return;
     setVoteAnim(true);
-    setTimeout(() => setVoteAnim(false), 550);
+    setTimeout(() => setVoteAnim(false), 800);
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -414,7 +414,7 @@ export default function ProjectDetailPage() {
           onMouseEnter={e => e.currentTarget.style.color = C.text}
           onMouseLeave={e => e.currentTarget.style.color = C.textSec}
           >
-            {"\u2190"} Back to Built
+            {"\u2190"} Back to Built at GrowthX
           </button>
           <span style={{
             fontSize: 14, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
@@ -478,17 +478,20 @@ export default function ProjectDetailPage() {
               onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = C.bg; }}}
               onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}}
               >
-                <span
-                  className={voteAnim ? "vote-arrow-fly" : ""}
-                  style={{
-                    fontSize: 18, lineHeight: 1,
-                    display: "inline-block",
-                  }}
-                >{"\u25B3"}</span>
-                {p.weighted.toLocaleString()}
-                <div className={`vote-confetti${voteAnim ? " active" : ""}`}>
-                  <span /><span /><span /><span /><span /><span /><span /><span /><span /><span />
-                </div>
+                <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                    <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                  </svg>
+                  <span
+                    className={`vote-ghost${voteAnim ? " active" : ""}`}
+                    style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </span>
+                <span style={{ lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
               </button>
               {p.url && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{

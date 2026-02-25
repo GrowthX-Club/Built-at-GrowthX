@@ -127,6 +127,7 @@ export interface BuilderProfile {
   currentFunction?: string;
   linkedin?: string;
   twitter?: string;
+  isMembershipActive?: boolean;
 }
 
 export interface CityData {
@@ -331,6 +332,7 @@ export function normalizeUser(u: Record<string, unknown> | null): BuilderProfile
     currentFunction: (u.current_function ?? u.currentFunction ?? undefined) as string | undefined,
     linkedin: (u.linkedin ?? undefined) as string | undefined,
     twitter: (u.twitter ?? undefined) as string | undefined,
+    isMembershipActive: (u.is_membership_active ?? false) as boolean,
   };
 }
 
@@ -491,6 +493,7 @@ export const STACK_META: Record<string, { icon: string; bg: string; color: strin
   "Google Maps API": { icon: "G", bg: "#4285F4", color: "#fff" },
   "React Native": { icon: "\u{269B}", bg: "#61DAFB", color: "#222" },
   "WhatsApp Business API": { icon: "W", bg: "#25D366", color: "#fff" },
+  "OpenClaw": { icon: "O", bg: "#000", color: "#fff" },
 };
 
 // Stack name → logo.dev domain mapping
@@ -542,6 +545,7 @@ const STACK_DOMAINS: Record<string, string> = {
   "Notion API": "notion.so",
   "Linear": "linear.app",
   "Framer": "framer.com",
+  "OpenClaw": "openclaw.com",
 };
 
 /** Generate a logo.dev URL for a tech stack item */

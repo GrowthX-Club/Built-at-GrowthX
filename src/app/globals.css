@@ -73,58 +73,26 @@ body {
   animation: fadeIn 0.3s ease-out both;
 }
 
-/* Vote arrow fly animation */
-@keyframes arrowFly {
-  0% { transform: translateY(0); opacity: 1; }
-  50% { transform: translateY(-14px); opacity: 0; }
-  51% { transform: translateY(8px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+/* Ghost chevron — duplicate floats up with non-linear speed and fades */
+@keyframes ghostUp {
+  0%   { transform: translateY(0) scale(1); opacity: 0.9; }
+  25%  { transform: translateY(-14px) scale(0.8); opacity: 0.7; }
+  55%  { transform: translateY(-26px) scale(0.55); opacity: 0.4; }
+  80%  { transform: translateY(-34px) scale(0.35); opacity: 0.15; }
+  100% { transform: translateY(-40px) scale(0.2); opacity: 0; }
 }
 
-.vote-arrow-fly {
-  animation: arrowFly 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-/* Vote confetti — 10 particles bursting in all directions around button */
-@keyframes c1  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-28px,-32px) rotate(180deg); opacity: 0; } }
-@keyframes c2  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(24px,-34px) rotate(-160deg); opacity: 0; } }
-@keyframes c3  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(34px,-12px) rotate(120deg); opacity: 0; } }
-@keyframes c4  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-32px,-6px) rotate(-140deg); opacity: 0; } }
-@keyframes c5  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(6px,-38px) rotate(200deg); opacity: 0; } }
-@keyframes c6  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-18px,-36px) rotate(-120deg); opacity: 0; } }
-@keyframes c7  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(30px,10px) rotate(150deg); opacity: 0; } }
-@keyframes c8  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-30px,12px) rotate(-170deg); opacity: 0; } }
-@keyframes c9  { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(16px,18px) rotate(100deg); opacity: 0; } }
-@keyframes c10 { 0% { transform: translate(0,0) rotate(0deg); opacity: 1; } 100% { transform: translate(-12px,20px) rotate(-90deg); opacity: 0; } }
-
-.vote-confetti {
+.vote-ghost {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 0;
+  left: 0;
   pointer-events: none;
-  z-index: 10;
-}
-
-.vote-confetti span {
-  position: absolute;
   opacity: 0;
 }
 
-/* Circles */
-.vote-confetti span:nth-child(odd) { width: 6px; height: 6px; border-radius: 50%; }
-/* Rectangles */
-.vote-confetti span:nth-child(even) { width: 7px; height: 4px; border-radius: 1px; }
-
-.vote-confetti.active span:nth-child(1)  { background: #0080FF; animation: c1  0.6s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(2)  { background: #FFB800; animation: c2  0.6s 0.02s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(3)  { background: #0080FF; animation: c3  0.55s 0.04s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(4)  { background: #FF6B6B; animation: c4  0.6s 0.01s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(5)  { background: #66B3FF; animation: c5  0.55s 0.05s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(6)  { background: #0080FF; animation: c6  0.6s 0.03s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(7)  { background: #FFB800; animation: c7  0.55s 0.04s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(8)  { background: #66B3FF; animation: c8  0.6s 0.02s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(9)  { background: #FF6B6B; animation: c9  0.55s 0.05s cubic-bezier(0.12,0.8,0.3,1) forwards; }
-.vote-confetti.active span:nth-child(10) { background: #0080FF; animation: c10 0.6s 0.03s cubic-bezier(0.12,0.8,0.3,1) forwards; }
+.vote-ghost.active {
+  animation: ghostUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar {

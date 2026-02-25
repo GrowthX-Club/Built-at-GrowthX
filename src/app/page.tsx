@@ -14,6 +14,7 @@ import {
   getStackLogoUrl,
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
+import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- UI Components ----
 
@@ -161,7 +162,9 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
 export default function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { openLoginDialog } = useLoginDialog();
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showMembersOnly, setShowMembersOnly] = useState(false);
   const [submitStep, setSubmitStep] = useState(0);
   const [submitData, setSubmitData] = useState({
     name: "", tagline: "", description: "",
@@ -215,11 +218,15 @@ export default function HomePage() {
 
   useEffect(() => {
     if (searchParams.get("submit") === "1" && user) {
+      router.replace("/", { scroll: false });
+      if (!user.isMembershipActive) {
+        setShowMembersOnly(true);
+        return;
+      }
       setShowSubmit(true);
       setSubmitStep(0);
       setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
       setSubmitError("");
-      router.replace("/", { scroll: false });
     }
   }, [searchParams, user, router]);
 
@@ -260,7 +267,7 @@ export default function HomePage() {
   };
 
   const handleSignIn = () => {
-    router.push("/login");
+    openLoginDialog(() => { loadUser(); loadProjects(); });
   };
 
   const handleSignOut = async () => {
@@ -276,8 +283,6 @@ export default function HomePage() {
       handleSignIn();
       return;
     }
-    setVoteAnimId(projectId);
-    setTimeout(() => setVoteAnimId(null), 550);
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -287,6 +292,8 @@ export default function HomePage() {
     const result = await res.json();
     if (result.voted) {
       setVotedIds((ids) => [...ids, projectId]);
+      setVoteAnimId(projectId);
+      setTimeout(() => setVoteAnimId(null), 800);
     } else {
       setVotedIds((ids) => ids.filter((id) => id !== projectId));
     }
@@ -385,7 +392,7 @@ export default function HomePage() {
               fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
               color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
             }}>
-              Built
+              Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
             </span>
             <div style={{ display: "flex", gap: 0 }}>
               {tabs.map((t, i) => (
@@ -414,6 +421,7 @@ export default function HomePage() {
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
             onClick={() => {
               if (!user) { handleSignIn(); return; }
+              if (!user.isMembershipActive) { setShowMembersOnly(true); return; }
               setShowSubmit(true);
               setSubmitStep(0);
               setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
@@ -586,24 +594,101 @@ export default function HomePage() {
                   transition: "border 0.25s, background 0.25s, color 0.25s",
                   position: "relative", overflow: "visible",
                 }}>
-                <span
-                  className={voteAnimId === p.id ? "vote-arrow-fly" : ""}
-                  style={{
-                    fontSize: 15,
-                    opacity: votedIds.includes(p.id) ? 1 : 0.45,
-                    display: "inline-block",
-                    transition: "opacity 0.2s",
-                  }}
-                >{"\u25B3"}</span>
-                {p.weighted.toLocaleString()}
-                <div className={`vote-confetti${voteAnimId === p.id ? " active" : ""}`}>
-                  <span /><span /><span /><span /><span /><span /><span /><span /><span /><span />
-                </div>
+                <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 3.5 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                    <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                  </svg>
+                  <span
+                    className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
+                    style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <svg width="16" height="16" viewBox="0 3.5 24 24" fill="currentColor" style={{ display: "block" }}>
+                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </span>
+                <span style={{ lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
               </div>
             </div>
           ))}
         </div>
       </main>
+
+      {/* ---- MEMBERS ONLY ---- */}
+      {showMembersOnly && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div
+            onClick={() => setShowMembersOnly(false)}
+            style={{
+              position: "absolute", inset: 0,
+              background: "rgba(24,23,16,0.4)", backdropFilter: "blur(6px)",
+              animation: "fadeIn 0.2s ease",
+            }}
+          />
+          <div style={{
+            position: "relative", width: "100%", maxWidth: 420,
+            background: C.surface, borderRadius: 20,
+            border: `1px solid ${C.border}`,
+            boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
+            padding: "40px 32px", textAlign: "center",
+            animation: "fadeUp 0.25s ease-out",
+          }}>
+            <button
+              onClick={() => setShowMembersOnly(false)}
+              style={{
+                position: "absolute", top: 16, right: 16,
+                width: 32, height: 32, borderRadius: 32,
+                border: `1px solid ${C.borderLight}`, background: "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", fontSize: 18, color: C.textMute,
+                transition: "all 0.12s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.color = C.textMute; }}
+            >
+              {"\u00D7"}
+            </button>
+            <div style={{
+              width: 56, height: 56, borderRadius: 56, margin: "0 auto 20px",
+              background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 24,
+            }}>
+              {"\u2726"}
+            </div>
+            <h3 style={{
+              fontSize: 20, fontWeight: 500, color: C.text,
+              fontFamily: "var(--serif)", marginBottom: 10, lineHeight: 1.3,
+            }}>
+              Reserved for GrowthX members
+            </h3>
+            <p style={{
+              fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
+              fontWeight: 400, lineHeight: 1.6, marginBottom: 28, maxWidth: 320, margin: "0 auto 28px",
+            }}>
+              Submitting projects is exclusively available to members with an active GrowthX membership.
+            </p>
+            <a
+              href="https://growthx.club"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block", padding: "12px 28px", borderRadius: 10,
+                border: "none", background: C.accent, color: "#fff",
+                fontSize: 14, fontWeight: 600, fontFamily: "var(--sans)",
+                textDecoration: "none", transition: "opacity 0.15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+            >
+              Learn about GrowthX
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* ---- SUBMIT FLOW ---- */}
       {showSubmit && (

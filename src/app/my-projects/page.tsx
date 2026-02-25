@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   C,
@@ -14,6 +14,7 @@ import {
   getStackLogoUrl,
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
+import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
 
@@ -86,6 +87,7 @@ interface EditState {
 
 export default function MyProjectsPage() {
   const router = useRouter();
+  const { openLoginDialog } = useLoginDialog();
   const [projects, setProjects] = useState<Project[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,17 +105,24 @@ export default function MyProjectsPage() {
   const collabRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const loadMyData = useCallback(() => {
     bxApi("/me").then(r => r.json()).then(d => {
       const u = normalizeUser(d.user);
-      if (!u) { router.push("/login"); return; }
+      if (!u) {
+        openLoginDialog(() => { loadMyData(); });
+        return;
+      }
       setUser(u);
     });
     bxApi("/my-projects").then(r => r.json()).then(d => {
       const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
       setProjects(list);
     }).finally(() => setLoading(false));
-  }, [router]);
+  }, [openLoginDialog]);
+
+  useEffect(() => {
+    loadMyData();
+  }, [loadMyData]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -163,7 +172,7 @@ export default function MyProjectsPage() {
     clearToken();
     setUser(null);
     setShowProfileMenu(false);
-    router.push("/login");
+    router.push("/");
   };
 
   const startEdit = (p: Project) => {
@@ -252,7 +261,7 @@ export default function MyProjectsPage() {
                 color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
               }}
             >
-              Built
+              Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
             </span>
             <span style={{ color: C.textMute, fontSize: 13 }}>/</span>
             <span style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>My Projects</span>

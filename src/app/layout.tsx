@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
 import "./globals.css";
+import { LoginDialogProvider } from "@/context/LoginDialogContext";
+import LoginDialog from "@/components/LoginDialog";
 
 export const metadata: Metadata = {
   title: "Built at GrowthX",
@@ -27,7 +29,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans bg-bg text-text antialiased">
-        {children}
+        <LoginDialogProvider>
+          {children}
+          <LoginDialog />
+        </LoginDialogProvider>
       </body>
     </html>
   );
