@@ -182,7 +182,7 @@ export default function ProjectsPage() {
       .then((r) => r.json())
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
-        list.sort((a, b) => b.weighted - a.weighted);
+        list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
       })
