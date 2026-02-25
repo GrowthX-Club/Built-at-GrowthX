@@ -15,8 +15,16 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
 
-function Av({ initials, size = 32, role }: { initials: string; size?: number; role?: string }) {
+function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
+  if (src && src.startsWith("http")) {
+    return (
+      <img src={src} alt={initials} style={{
+        width: size, height: size, borderRadius: size,
+        border: `1px solid ${C.borderLight}`, flexShrink: 0, objectFit: "cover",
+      }} />
+    );
+  }
   return (
     <div style={{
       width: size, height: size, borderRadius: size,
@@ -65,6 +73,7 @@ export default function BuildingPage() {
   const pathname = usePathname();
   const { openLoginDialog } = useLoginDialog();
   const [building, setBuilding] = useState<BuildingProject[]>([]);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -73,7 +82,7 @@ export default function BuildingPage() {
     bxApi("/building").then((r) => r.json()).then((d) => {
       const raw = d.buildings || d.building || [];
       setBuilding(raw.map((p: Record<string, unknown>) => normalizeBuildingProject(p)));
-    });
+    }).finally(() => setLoading(false));
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
   }, []);
 
@@ -142,17 +151,19 @@ export default function BuildingPage() {
               fontSize: 12.5, fontWeight: 550, color: C.textSec,
               cursor: "pointer", fontFamily: "var(--sans)",
               transition: "all 0.12s",
+              display: "flex", alignItems: "center", gap: 6,
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
             onClick={() => router.push("/")}
             >
-              Submit project
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Submit your project
             </button>
             {user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Av initials={user.avatar} size={32} role={user.role} />
+                  <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
                   <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                   <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                 </button>
@@ -217,6 +228,30 @@ export default function BuildingPage() {
         </div> */}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {loading && building.length === 0 && (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+                padding: "24px 28px", background: C.surface,
+                border: `1px solid ${C.border}`, borderRadius: 14,
+              }}>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <div className="skeleton" style={{ height: 18, width: 140 }} />
+                    <div className="skeleton" style={{ height: 18, width: 70, borderRadius: 20 }} />
+                  </div>
+                  <div className="skeleton" style={{ height: 14, width: "80%" }} />
+                </div>
+                <div className="skeleton" style={{ height: 70, width: "100%", borderRadius: 10, marginBottom: 16 }} />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="skeleton" style={{ width: 24, height: 24, borderRadius: 24 }} />
+                    <div className="skeleton" style={{ height: 13, width: 80 }} />
+                  </div>
+                  <div className="skeleton" style={{ width: 100, height: 34, borderRadius: 10 }} />
+                </div>
+              </div>
+            ))
+          )}
           {building.map((p, i) => (
             <div key={p.id} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
               padding: "24px 28px", background: C.surface,

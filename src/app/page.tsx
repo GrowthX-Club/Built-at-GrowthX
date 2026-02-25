@@ -18,8 +18,21 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- UI Components ----
 
-function Av({ initials, size = 32, role }: { initials: string; size?: number; role?: string }) {
+function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
+  if (src && src.startsWith("http")) {
+    return (
+      <img
+        src={src}
+        alt={initials}
+        style={{
+          width: size, height: size, borderRadius: size,
+          border: `1px solid ${C.borderLight}`, flexShrink: 0,
+          objectFit: "cover",
+        }}
+      />
+    );
+  }
   return (
     <div style={{
       width: size, height: size, borderRadius: size,
@@ -184,6 +197,7 @@ function HomePage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
@@ -191,6 +205,7 @@ function HomePage() {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
+  const [searchingCollabs, setSearchingCollabs] = useState(false);
   const collabSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const collabDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -199,9 +214,11 @@ function HomePage() {
       .then((r) => r.json())
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
+        list.sort((a, b) => b.weighted - a.weighted);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const loadUser = useCallback(() => {
@@ -240,7 +257,8 @@ function HomePage() {
 
   const searchCollabs = (query: string) => {
     if (collabSearchTimer.current) clearTimeout(collabSearchTimer.current);
-    if (query.length < 2) { setCollabResults([]); setShowCollabDropdown(false); return; }
+    if (query.length < 2) { setCollabResults([]); setShowCollabDropdown(false); setSearchingCollabs(false); return; }
+    setSearchingCollabs(true);
     collabSearchTimer.current = setTimeout(() => {
       bxApi(`/users/search?q=${encodeURIComponent(query)}`)
         .then(r => r.json())
@@ -255,7 +273,8 @@ function HomePage() {
           }));
           setCollabResults(users);
           setShowCollabDropdown(true);
-        });
+        })
+        .finally(() => setSearchingCollabs(false));
     }, 250);
   };
 
@@ -424,6 +443,7 @@ function HomePage() {
               fontSize: 12.5, fontWeight: 550, color: C.textSec,
               cursor: "pointer", fontFamily: "var(--sans)",
               transition: "all 0.12s",
+              display: "flex", alignItems: "center", gap: 6,
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
@@ -436,12 +456,13 @@ function HomePage() {
               setSubmitError("");
             }}
             >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
               Submit your project
             </button>
             {user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Av initials={user.avatar} size={32} role={user.role} />
+                  <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
                   <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                   <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                 </button>
@@ -509,117 +530,145 @@ function HomePage() {
           </p>
         </div>
 
-        {/* Host picks */}
-        {projects.filter(p => p.featured).map(fp => (
-          <div key={fp.id} className="fade-up stagger-2" style={{
-            padding: "20px 24px", marginBottom: 24,
-            background: C.surface, border: `1px solid ${C.goldBorder}`,
-            borderRadius: 14, cursor: "pointer",
-          }} onClick={() => router.push(`/projects/${fp.id}`)}>
-            <div style={{
-              fontSize: 10, fontWeight: 720, color: C.gold,
-              letterSpacing: "0.08em", textTransform: "uppercase",
-              marginBottom: 12, fontFamily: "var(--sans)",
-            }}>
-              {"\u2726"} Host pick this week
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 17, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
-                  {fp.name}
-                </div>
-                <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
-                  {fp.tagline}
-                </div>
-              </div>
-              <div style={{
-                fontSize: 24, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
-              }}>
-                {fp.weighted.toLocaleString()}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Project list */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-          {projects.map((p, i) => (
-            <div
-              key={p.id}
-              className={`fade-up stagger-${Math.min(i + 3, 6)}`}
-              onClick={() => router.push(`/projects/${p.id}`)}
-              style={{
-                padding: "16px 0", cursor: "pointer",
+        {loading && projects.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+                padding: "16px 0",
                 borderBottom: `1px solid ${C.borderLight}`,
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr auto",
                 alignItems: "center",
                 gap: 48,
-                transition: "opacity 0.12s",
-                position: "relative", zIndex: projects.length - i,
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              {/* Left: product name + tagline */}
-              <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: 15.5, fontWeight: 560, color: C.text,
-                  fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
-                }}>
-                  {p.name}
+              }}>
+                <div>
+                  <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
+                  <div className="skeleton" style={{ height: 13, width: "90%" }} />
                 </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
+                  <div className="skeleton" style={{ height: 13, width: 80 }} />
+                </div>
+                <div className="skeleton" style={{ width: 60, height: 34, borderRadius: 10 }} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Host picks */}
+            {projects.filter(p => p.featured).map(fp => (
+              <div key={fp.id} className="fade-up stagger-2" style={{
+                padding: "20px 24px", marginBottom: 24,
+                background: C.surface, border: `1px solid ${C.goldBorder}`,
+                borderRadius: 14, cursor: "pointer",
+              }} onClick={() => router.push(`/projects/${fp.id}`)}>
                 <div style={{
-                  fontSize: 13, color: C.textMute, fontFamily: "var(--sans)",
-                  fontWeight: 400, lineHeight: 1.3,
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  fontSize: 10, fontWeight: 720, color: C.gold,
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  marginBottom: 12, fontFamily: "var(--sans)",
                 }}>
-                  {p.tagline}
+                  {"\u2726"} Host pick this week
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 17, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
+                      {fp.name}
+                    </div>
+                    <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+                      {fp.tagline}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: 24, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
+                  }}>
+                    {fp.weighted.toLocaleString()}
+                  </div>
                 </div>
               </div>
+            ))}
 
-              {/* Center: cycling builder */}
-              {(() => {
-                const allBuilders = [
-                  { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                  ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                ];
-                return <BuilderCycler builders={allBuilders} />;
-              })()}
+            {/* Project list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
+              {projects.map((p, i) => (
+                <div
+                  key={p.id}
+                  className={`fade-up stagger-${Math.min(i + 3, 6)}`}
+                  onClick={() => router.push(`/projects/${p.id}`)}
+                  style={{
+                    padding: "16px 0", cursor: "pointer",
+                    borderBottom: `1px solid ${C.borderLight}`,
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr auto",
+                    alignItems: "center",
+                    gap: 48,
+                    transition: "opacity 0.12s",
+                    position: "relative", zIndex: projects.length - i,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  {/* Left: product name + tagline */}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 15.5, fontWeight: 560, color: C.text,
+                      fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
+                    }}>
+                      {p.name}
+                    </div>
+                    <div style={{
+                      fontSize: 13, color: C.textMute, fontFamily: "var(--sans)",
+                      fontWeight: 400, lineHeight: 1.3,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {p.tagline}
+                    </div>
+                  </div>
 
-              {/* Right: votes */}
-              <div
-                onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                style={{
-                  flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
-                  padding: "7px 14px", borderRadius: 10,
-                  border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                  background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
-                  fontSize: 15, fontWeight: 650,
-                  color: votedIds.includes(p.id) ? C.brand : C.text,
-                  fontFamily: "var(--sans)",
-                  cursor: "pointer",
-                  transition: "border 0.25s, background 0.25s, color 0.25s",
-                  position: "relative", overflow: "visible",
-                }}>
-                <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 3.5 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                    <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                  </svg>
-                  <span
-                    className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                    style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >
-                    <svg width="16" height="16" viewBox="0 3.5 24 24" fill="currentColor" style={{ display: "block" }}>
-                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </span>
-                <span style={{ lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
-              </div>
+                  {/* Center: cycling builder */}
+                  {(() => {
+                    const allBuilders = [
+                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                    ];
+                    return <BuilderCycler builders={allBuilders} />;
+                  })()}
+
+                  {/* Right: votes */}
+                  <div
+                    onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
+                    style={{
+                      flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      padding: "7px 14px", borderRadius: 10,
+                      minWidth: 72,
+                      border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                      background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                      fontSize: 15, fontWeight: 650,
+                      color: votedIds.includes(p.id) ? C.brand : C.text,
+                      fontFamily: "var(--sans)",
+                      cursor: "pointer",
+                      transition: "border 0.25s, background 0.25s, color 0.25s",
+                      position: "relative", overflow: "visible",
+                    }}>
+                    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                        <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                      </svg>
+                      <span
+                        className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
+                        style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    </span>
+                    <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: 14 }}>{p.weighted.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </main>
 
       {/* ---- MEMBERS ONLY ---- */}
@@ -1059,6 +1108,16 @@ function HomePage() {
                         onChange={e => { const v = e.target.value; setSubmitData(d => ({ ...d, collabInput: v })); searchCollabs(v); }}
                         onFocus={() => { if (collabResults.length > 0) setShowCollabDropdown(true); }}
                       />
+                      {searchingCollabs && (
+                        <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}>
+                          Searching...
+                        </span>
+                      )}
+                      {!searchingCollabs && submitData.collabInput.trim().length >= 2 && collabResults.length === 0 && (
+                        <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
+                          No members found for &ldquo;{submitData.collabInput.trim()}&rdquo;
+                        </div>
+                      )}
                       {showCollabDropdown && collabResults.length > 0 && (
                         <div style={{
                           position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,

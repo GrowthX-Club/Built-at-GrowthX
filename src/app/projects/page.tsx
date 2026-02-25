@@ -16,8 +16,16 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
 
-function Av({ initials, size = 32, role }: { initials: string; size?: number; role?: string }) {
+function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
+  if (src && src.startsWith("http")) {
+    return (
+      <img src={src} alt={initials} style={{
+        width: size, height: size, borderRadius: size,
+        border: `1px solid ${C.borderLight}`, flexShrink: 0, objectFit: "cover",
+      }} />
+    );
+  }
   return (
     <div style={{
       width: size, height: size, borderRadius: size,
@@ -163,6 +171,7 @@ export default function ProjectsPage() {
   const pathname = usePathname();
   const { openLoginDialog } = useLoginDialog();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -173,9 +182,11 @@ export default function ProjectsPage() {
       .then((r) => r.json())
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
+        list.sort((a, b) => b.weighted - a.weighted);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -271,17 +282,19 @@ export default function ProjectsPage() {
               fontSize: 12.5, fontWeight: 550, color: C.textSec,
               cursor: "pointer", fontFamily: "var(--sans)",
               transition: "all 0.12s",
+              display: "flex", alignItems: "center", gap: 6,
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
             onClick={() => router.push("/")}
             >
-              Submit project
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Submit your project
             </button>
             {user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Av initials={user.avatar} size={32} role={user.role} />
+                  <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
                   <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                   <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                 </button>
@@ -349,103 +362,131 @@ export default function ProjectsPage() {
           </p>
         </div>
 
-        {/* Host picks */}
-        {projects.filter(p => p.featured).map(fp => (
-          <div key={fp.id} className="fade-up stagger-2" style={{
-            padding: "20px 24px", marginBottom: 24,
-            background: C.surface, border: `1px solid ${C.goldBorder}`,
-            borderRadius: 14, cursor: "pointer",
-          }} onClick={() => router.push(`/projects/${fp.id}`)}>
-            <div style={{
-              fontSize: 10, fontWeight: 720, color: C.gold,
-              letterSpacing: "0.08em", textTransform: "uppercase",
-              marginBottom: 12, fontFamily: "var(--sans)",
-            }}>
-              {"\u2726"} Host pick this week
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 17, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
-                  {fp.name}
-                </div>
-                <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
-                  {fp.tagline}
-                </div>
-              </div>
-              <div style={{
-                fontSize: 24, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
-              }}>
-                {fp.weighted.toLocaleString()}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Project list */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-          {projects.map((p, i) => (
-            <div
-              key={p.id}
-              className={`fade-up stagger-${Math.min(i + 3, 6)}`}
-              onClick={() => router.push(`/projects/${p.id}`)}
-              style={{
-                padding: "16px 0", cursor: "pointer",
+        {loading && projects.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+                padding: "16px 0",
                 borderBottom: `1px solid ${C.borderLight}`,
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr auto",
                 alignItems: "center",
                 gap: 48,
-                transition: "opacity 0.12s",
-                position: "relative", zIndex: projects.length - i,
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              {/* Left: product name + tagline */}
-              <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: 15.5, fontWeight: 560, color: C.text,
-                  fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
-                }}>
-                  {p.name}
+              }}>
+                <div>
+                  <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
+                  <div className="skeleton" style={{ height: 13, width: "90%" }} />
                 </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
+                  <div className="skeleton" style={{ height: 13, width: 80 }} />
+                </div>
+                <div className="skeleton" style={{ width: 60, height: 34, borderRadius: 10 }} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Host picks */}
+            {projects.filter(p => p.featured).map(fp => (
+              <div key={fp.id} className="fade-up stagger-2" style={{
+                padding: "20px 24px", marginBottom: 24,
+                background: C.surface, border: `1px solid ${C.goldBorder}`,
+                borderRadius: 14, cursor: "pointer",
+              }} onClick={() => router.push(`/projects/${fp.id}`)}>
                 <div style={{
-                  fontSize: 13, color: C.textMute, fontFamily: "var(--sans)",
-                  fontWeight: 400, lineHeight: 1.3,
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  fontSize: 10, fontWeight: 720, color: C.gold,
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  marginBottom: 12, fontFamily: "var(--sans)",
                 }}>
-                  {p.tagline}
+                  {"\u2726"} Host pick this week
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 17, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
+                      {fp.name}
+                    </div>
+                    <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+                      {fp.tagline}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: 24, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
+                  }}>
+                    {fp.weighted.toLocaleString()}
+                  </div>
                 </div>
               </div>
+            ))}
 
-              {/* Center: cycling builder */}
-              {(() => {
-                const allBuilders = [
-                  { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                  ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                ];
-                return <BuilderCycler builders={allBuilders} />;
-              })()}
+            {/* Project list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
+              {projects.map((p, i) => (
+                <div
+                  key={p.id}
+                  className={`fade-up stagger-${Math.min(i + 3, 6)}`}
+                  onClick={() => router.push(`/projects/${p.id}`)}
+                  style={{
+                    padding: "16px 0", cursor: "pointer",
+                    borderBottom: `1px solid ${C.borderLight}`,
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr auto",
+                    alignItems: "center",
+                    gap: 48,
+                    transition: "opacity 0.12s",
+                    position: "relative", zIndex: projects.length - i,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  {/* Left: product name + tagline */}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 15.5, fontWeight: 560, color: C.text,
+                      fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
+                    }}>
+                      {p.name}
+                    </div>
+                    <div style={{
+                      fontSize: 13, color: C.textMute, fontFamily: "var(--sans)",
+                      fontWeight: 400, lineHeight: 1.3,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {p.tagline}
+                    </div>
+                  </div>
 
-              {/* Right: votes */}
-              <div
-                onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                style={{
-                  flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
-                  padding: "7px 14px", borderRadius: 10,
-                  border: votedIds.includes(p.id) ? `1px solid ${C.goldBorder}` : `1px solid ${C.border}`,
-                  background: votedIds.includes(p.id) ? C.goldSoft : C.surface,
-                  fontSize: 15, fontWeight: 650,
-                  color: votedIds.includes(p.id) ? C.gold : C.text,
-                  fontFamily: "var(--sans)",
-                  cursor: "pointer",
-                }}>
-                <span style={{ fontSize: 15, opacity: 0.5 }}>{"\u25B3"}</span>
-                {p.weighted.toLocaleString()}
-              </div>
+                  {/* Center: cycling builder */}
+                  {(() => {
+                    const allBuilders = [
+                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                    ];
+                    return <BuilderCycler builders={allBuilders} />;
+                  })()}
+
+                  {/* Right: votes */}
+                  <div
+                    onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
+                    style={{
+                      flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      padding: "7px 14px", borderRadius: 10,
+                      minWidth: 72,
+                      border: votedIds.includes(p.id) ? `1px solid ${C.goldBorder}` : `1px solid ${C.border}`,
+                      background: votedIds.includes(p.id) ? C.goldSoft : C.surface,
+                      fontSize: 15, fontWeight: 650,
+                      color: votedIds.includes(p.id) ? C.gold : C.text,
+                      fontFamily: "var(--sans)",
+                      cursor: "pointer",
+                    }}>
+                    <span style={{ fontSize: 13, opacity: 0.5, lineHeight: 1, display: "inline-flex" }}>{"\u25B3"}</span>
+                    <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: 14, lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </main>
     </div>
   );
