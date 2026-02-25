@@ -553,6 +553,25 @@ function HomePage() {
               </div>
             ))}
           </div>
+        ) : projects.length === 0 ? (
+          <div className="fade-up stagger-2" style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", padding: "64px 24px", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🚀</div>
+            <div style={{
+              fontSize: 20, fontWeight: 500, color: C.text,
+              fontFamily: "var(--serif)", marginBottom: 8,
+            }}>
+              No projects yet
+            </div>
+            <div style={{
+              fontSize: 15, color: C.textSec, fontFamily: "var(--sans)",
+              fontWeight: 400, maxWidth: 360, lineHeight: 1.5,
+            }}>
+              Be the first to submit your project and show the GrowthX community what you&apos;ve built.
+            </div>
+          </div>
         ) : (
           <>
             {/* Host picks */}
