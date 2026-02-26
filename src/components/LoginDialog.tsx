@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
 import { C, T } from "@/types";
 import { gxApi, setToken } from "@/lib/api";
 import { useCaptcha } from "@/hooks/useCaptcha";
@@ -90,6 +90,16 @@ function LoginDialogInner() {
   // Signup-only fields
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+
+  // Smooth height animation
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [cardHeight, setCardHeight] = useState<number | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      setCardHeight(contentRef.current.scrollHeight);
+    }
+  }, [mode, step, error, ccOpen]);
 
   const captchaAction = mode === "signin"
     ? `MEMBER_LOGIN_${captchaVersion.toUpperCase()}`
@@ -392,10 +402,13 @@ function LoginDialogInner() {
           border: `1px solid ${C.border}`,
           boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
           animation: "fadeUp 0.25s ease-out",
-          padding: "32px 28px",
           alignSelf: isMobile ? "flex-end" : undefined,
+          overflow: "hidden",
+          height: cardHeight !== undefined ? cardHeight : undefined,
+          transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
+       <div ref={contentRef} style={{ padding: "32px 28px" }}>
         {/* Close button */}
         <button
           onClick={closeLoginDialog}
@@ -747,6 +760,7 @@ function LoginDialogInner() {
             </button>
           </div>
         )}
+       </div>
       </div>
     </div>
   );
