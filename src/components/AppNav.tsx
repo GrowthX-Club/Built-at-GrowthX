@@ -258,16 +258,18 @@ export default function AppNav() {
                     return (
                       <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => router.push(t.href)} style={{
                         padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                        fontSize: T.body, fontWeight: active ? 600 : 400,
+                        fontSize: T.body,
                         color: active ? C.text : C.textMute,
                         fontFamily: "var(--sans)",
-                        transition: "color 0.25s ease, font-weight 0.25s ease",
+                        transition: "color 0.25s ease",
                         letterSpacing: "0.005em",
+                        position: "relative",
                       }}
                       onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
                       onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
                       >
-                        {t.label}
+                        <span style={{ fontWeight: 600, visibility: "hidden" }}>{t.label}</span>
+                        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: active ? 600 : 400 }}>{t.label}</span>
                       </button>
                     );
                   })}
