@@ -426,6 +426,7 @@ export default function ProjectsPage() {
                   {(() => {
                     const allBuilders = [
                       { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                       ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                     ];
                     return <BuilderCycler builders={allBuilders} />;

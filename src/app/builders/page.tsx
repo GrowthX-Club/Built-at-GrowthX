@@ -152,6 +152,7 @@ export default function BuildersPage() {
         const all = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
         const matched = all.filter((p: Project) => {
           if (p.builder?.name === b.name) return true;
+          if ((p.creators || []).some(c => c.name === b.name)) return true;
           if (p.collabs?.some(c => c.name === b.name)) return true;
           return false;
         });
@@ -426,7 +427,7 @@ export default function BuildersPage() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {builderProjects.map(p => {
-                    const isCreator = p.builder?.name === selectedBuilder.name;
+                    const isCreator = p.builder?.name === selectedBuilder.name || (p.creators || []).some(c => c.name === selectedBuilder.name);
                     return (
                       <div
                         key={p.id}

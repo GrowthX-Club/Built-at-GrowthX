@@ -72,6 +72,7 @@ export interface Collab {
   title?: string;
   company?: string;
   companyColor?: string;
+  role?: 'creator' | 'collaborator';
 }
 
 export interface GalleryItem {
@@ -87,6 +88,7 @@ export interface Project {
   tagline: string;
   description: string;
   builder: Builder;
+  creators?: Collab[];
   collabs: Collab[];
   weighted: number;
   raw: number;
@@ -276,23 +278,30 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     builder = { name: 'Anonymous', avatar: '?', city: '' };
   }
 
-  // Handle populated collabs array
-  const rawCollabs = Array.isArray(p.collabs) ? p.collabs : [];
-  const collabs: Collab[] = rawCollabs.map((c: Record<string, unknown>) => {
-    if (c && typeof c === 'object' && c.name && typeof c.name === 'object') {
-      // Populated user object
-      const u = formatPopulatedUser(c);
-      return {
-        _id: (c._id ?? '') as string,
-        name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
-        title: u.role || undefined, company: u.company || undefined,
-        companyColor: u.companyColor || undefined,
-      };
-    }
-    // Already flat collab shape — could be an ObjectId string
-    if (typeof c === 'string') return { _id: c, name: '', avatar: '' } as Collab;
-    return c as unknown as Collab;
-  });
+  // Helper to parse a populated users array
+  const parseUserArray = (raw: unknown[], role: 'creator' | 'collaborator'): Collab[] =>
+    raw.map((_c) => {
+      if (typeof _c === 'string') return { _id: _c, name: '', avatar: '', role } as Collab;
+      const c = _c as Record<string, unknown>;
+      if (c && typeof c === 'object' && c.name && typeof c.name === 'object') {
+        const u = formatPopulatedUser(c);
+        return {
+          _id: (c._id ?? '') as string,
+          name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
+          title: u.role || undefined, company: u.company || undefined,
+          companyColor: u.companyColor || undefined, role,
+        };
+      }
+      return { ...(c as unknown as Collab), role };
+    });
+
+  // Handle populated creators array (additional creators beyond the submitter)
+  const creators = parseUserArray(Array.isArray(p.creators) ? p.creators : [], 'creator');
+
+  // Handle populated collabs array — exclude anyone already in creators
+  const creatorIds = new Set(creators.map(c => c._id || c.name).filter(Boolean));
+  const collabs = parseUserArray(Array.isArray(p.collabs) ? p.collabs : [], 'collaborator')
+    .filter(c => !creatorIds.has(c._id || c.name));
 
   return {
     id: (p.id ?? p._id ?? '') as string,
@@ -301,6 +310,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     tagline: (p.tagline ?? '') as string,
     description: (p.description ?? '') as string,
     builder,
+    creators,
     collabs,
     weighted: (p.weighted ?? p.weighted_votes ?? 0) as number,
     raw: (p.raw ?? p.raw_votes ?? 0) as number,
@@ -468,6 +478,34 @@ export interface Vote {
   projectId: number;
   builderName: string;
   weight: number;
+}
+
+// ---- BX API Keys ----
+export interface BxApiKey {
+  _id: string;
+  user: string;
+  key_prefix: string;
+  name: string;
+  is_active: boolean;
+  last_used_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateApiKeyResponse {
+  success: true;
+  msg: string;
+  api_key: string;
+}
+
+export interface ListApiKeysResponse {
+  success: true;
+  api_keys: BxApiKey[];
+}
+
+export interface RevokeApiKeyResponse {
+  success: true;
+  msg: string;
 }
 
 export const ROLE_WEIGHTS: Record<string, number> = {

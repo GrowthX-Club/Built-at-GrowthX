@@ -71,6 +71,7 @@ interface CollabEntry {
   avatar?: string;
   company?: string;
   companyColor?: string;
+  role: 'creator' | 'collaborator';
 }
 
 interface UserResult {
@@ -89,8 +90,8 @@ interface EditState {
   url: string;
   stack: string[];
   stackInput: string;
-  collabs: CollabEntry[];
-  collabInput: string;
+  team: CollabEntry[];
+  teamInput: string;
 }
 
 export default function MyProjectsPage() {
@@ -102,7 +103,7 @@ export default function MyProjectsPage() {
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [editData, setEditData] = useState<EditState>({
     name: "", tagline: "", description: "", url: "",
-    stack: [], stackInput: "", collabs: [], collabInput: "",
+    stack: [], stackInput: "", team: [], teamInput: "",
   });
   const [saving, setSaving] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -164,12 +165,12 @@ export default function MyProjectsPage() {
     }, 250);
   };
 
-  const addCollab = (u: UserResult) => {
-    if (editData.collabs.some(c => c.name === u.name)) return;
+  const addTeamMember = (u: UserResult) => {
+    if (editData.team.some(c => c._id === u._id)) return;
     setEditData(d => ({
       ...d,
-      collabs: [...d.collabs, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: u.company ? generateColor(u.company) : undefined }],
-      collabInput: "",
+      team: [...d.team, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: u.company ? generateColor(u.company) : undefined, role: 'collaborator' }],
+      teamInput: "",
     }));
     setUserResults([]);
     setShowCollabDropdown(false);
@@ -194,8 +195,11 @@ export default function MyProjectsPage() {
       url: (raw.url as string) || "",
       stack: p.stack || [],
       stackInput: "",
-      collabs: (p.collabs || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor })),
-      collabInput: "",
+      team: [
+        ...(p.creators || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor, role: 'creator' as const })),
+        ...(p.collabs || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor, role: 'collaborator' as const })),
+      ],
+      teamInput: "",
     });
   };
 
@@ -220,7 +224,8 @@ export default function MyProjectsPage() {
         description: editData.description,
         url: editData.url,
         stack: editData.stack,
-        collabs: editData.collabs.map(c => c._id).filter(Boolean),
+        creators: editData.team.filter(c => c.role === 'creator').map(c => c._id).filter(Boolean),
+        collabs: editData.team.filter(c => c.role === 'collaborator').map(c => c._id).filter(Boolean),
       };
       const res = await bxApi(`/projects/${editingId}`, {
         method: "PUT",
@@ -234,11 +239,19 @@ export default function MyProjectsPage() {
           tagline: editData.tagline,
           description: editData.description,
           stack: editData.stack,
-          collabs: editData.collabs.map(c => ({
+          creators: editData.team.filter(c => c.role === 'creator').map(c => ({
             name: c.name,
             avatar: c.avatar || c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
             company: c.company,
             companyColor: c.companyColor,
+            role: 'creator' as const,
+          })),
+          collabs: editData.team.filter(c => c.role === 'collaborator').map(c => ({
+            name: c.name,
+            avatar: c.avatar || c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
+            company: c.company,
+            companyColor: c.companyColor,
+            role: 'collaborator' as const,
           })),
         } : p));
         setEditingId(null);
@@ -608,15 +621,15 @@ export default function MyProjectsPage() {
                       </div>
                     </div>
 
-                    {/* Collaborators */}
+                    {/* Team members */}
                     <div ref={collabRef}>
-                      <label style={labelStyle}>Collaborators</label>
+                      <label style={labelStyle}>Team members</label>
                       <div style={{ position: "relative" }}>
                         <input
-                          value={editData.collabInput}
+                          value={editData.teamInput}
                           onChange={e => {
                             const v = e.target.value;
-                            setEditData(d => ({ ...d, collabInput: v }));
+                            setEditData(d => ({ ...d, teamInput: v }));
                             searchUsers(v);
                           }}
                           onFocus={() => { if (userResults.length > 0) setShowCollabDropdown(true); }}
@@ -628,9 +641,9 @@ export default function MyProjectsPage() {
                             Searching...
                           </span>
                         )}
-                        {!searchingUsers && editData.collabInput.trim().length >= 2 && userResults.length === 0 && (
+                        {!searchingUsers && editData.teamInput.trim().length >= 2 && userResults.length === 0 && (
                           <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
-                            No members found for &ldquo;{editData.collabInput.trim()}&rdquo;
+                            No members found for &ldquo;{editData.teamInput.trim()}&rdquo;
                           </div>
                         )}
 
@@ -643,11 +656,11 @@ export default function MyProjectsPage() {
                             maxHeight: 240, overflowY: "auto",
                           }}>
                             {userResults.map(u => {
-                                const already = editData.collabs.some(c => c.name === u.name);
+                                const already = editData.team.some(c => c._id === u._id);
                                 return (
                                   <button
                                     key={u._id}
-                                    onClick={() => addCollab(u)}
+                                    onClick={() => addTeamMember(u)}
                                     disabled={already}
                                     style={{
                                       width: "100%", padding: "10px 14px", border: "none",
@@ -702,9 +715,9 @@ export default function MyProjectsPage() {
                         )}
                       </div>
 
-                      {editData.collabs.length > 0 && (
+                      {editData.team.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                          {editData.collabs.map((c, ci) => (
+                          {editData.team.map((c, ci) => (
                             <span key={ci} style={{
                               display: "inline-flex", alignItems: "center", gap: 8,
                               padding: "6px 10px 6px 8px", borderRadius: 10,
@@ -721,23 +734,29 @@ export default function MyProjectsPage() {
                                 {(c.avatar && c.avatar.length <= 3) ? c.avatar : c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                               </span>
                               {c.name}
-                              {c.company && (
-                                <span style={{ fontSize: 11, color: C.textMute, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                                  <span style={{
-                                    width: 10, height: 10, borderRadius: 3,
-                                    background: c.companyColor || generateColor(c.company),
-                                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                    fontSize: 5, fontWeight: 800, color: "#fff", flexShrink: 0,
-                                    overflow: "hidden", position: "relative",
-                                  }}>
-                                    {c.company[0]}
-                                    <img src={getCompanyLogoUrl(c.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                                  </span>
-                                  {c.company}
-                                </span>
-                              )}
                               <span
-                                onClick={() => setEditData(d => ({ ...d, collabs: d.collabs.filter((_, idx) => idx !== ci) }))}
+                                onClick={() => {
+                                  setEditData(d => ({
+                                    ...d,
+                                    team: d.team.map((t, idx) => idx === ci
+                                      ? { ...t, role: t.role === 'creator' ? 'collaborator' : 'creator' }
+                                      : t
+                                    ),
+                                  }));
+                                }}
+                                style={{
+                                  fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                                  padding: "2px 7px", borderRadius: 4, cursor: "pointer",
+                                  fontFamily: "var(--sans)", userSelect: "none",
+                                  background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
+                                  color: c.role === 'creator' ? "#059669" : C.textMute,
+                                  transition: "all 0.15s",
+                                }}
+                              >
+                                {c.role === 'creator' ? 'Creator' : 'Collaborator'}
+                              </span>
+                              <span
+                                onClick={() => setEditData(d => ({ ...d, team: d.team.filter((_, idx) => idx !== ci) }))}
                                 style={{ cursor: "pointer", fontSize: 14, color: C.textMute, lineHeight: 1 }}
                               >{"\u00D7"}</span>
                             </span>
@@ -745,7 +764,7 @@ export default function MyProjectsPage() {
                         </div>
                       )}
                       <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
-                        Search for GrowthX members to add as collaborators
+                        Search for GrowthX members — tap role to toggle Creator / Collaborator
                       </div>
                     </div>
 

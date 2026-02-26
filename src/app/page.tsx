@@ -148,7 +148,7 @@ function HomePage() {
   const [submitData, setSubmitData] = useState({
     name: "", tagline: "", description: "",
     stack: [] as string[], stackInput: "",
-    collabs: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string }[], collabInput: "",
+    team: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string; role: 'creator' | 'collaborator' }[], teamInput: "",
     url: "",
   });
   const [submitError, setSubmitError] = useState("");
@@ -210,7 +210,7 @@ function HomePage() {
       }
       setShowSubmit(true);
       setSubmitStep(0);
-      setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+      setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
       setSubmitError("");
     }
   }, [searchParams, user, router]);
@@ -238,16 +238,16 @@ function HomePage() {
     }, 250);
   };
 
-  const pickCollab = (u: { _id: string; name: string; avatar: string; company: string }) => {
-    if (submitData.collabs.some(c => c.name === u.name)) return;
+  const pickTeamMember = (u: { _id: string; name: string; avatar: string; company: string }) => {
+    if (submitData.team.some(c => c._id === u._id)) return;
     const colors = ["#0C2451", "#5B21B6", "#92400E", "#166534", "#1E40AF", "#7C3AED", "#B45309", "#047857"];
     let hash = 0;
     for (let i = 0; i < (u.company || "").length; i++) hash = (u.company || "").charCodeAt(i) + ((hash << 5) - hash);
     const cc = u.company ? colors[Math.abs(hash) % colors.length] : undefined;
     setSubmitData(d => ({
       ...d,
-      collabs: [...d.collabs, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: cc }],
-      collabInput: "",
+      team: [...d.team, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: cc, role: 'collaborator' }],
+      teamInput: "",
     }));
     setCollabResults([]);
     setShowCollabDropdown(false);
@@ -330,13 +330,14 @@ function HomePage() {
           category: "AI",
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
-          collabs: submitData.collabs.map(c => c._id),
+          creators: submitData.team.filter(c => c.role === 'creator').map(c => c._id),
+          collabs: submitData.team.filter(c => c.role === 'collaborator').map(c => c._id),
         }),
       });
       if (res.ok) {
         setShowSubmit(false);
         setSubmitStep(0);
-        setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+        setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
         setSubmitError("");
         loadProjects();
       } else {
@@ -412,7 +413,7 @@ function HomePage() {
               if (!user.isMembershipActive) { setShowMembersOnly(true); return; }
               setShowSubmit(true);
               setSubmitStep(0);
-              setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+              setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
               setSubmitError("");
             }}
             >
@@ -606,6 +607,7 @@ function HomePage() {
                   {(() => {
                     const allBuilders = [
                       { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                       ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                     ];
                     return <BuilderCycler builders={allBuilders} />;
@@ -1087,14 +1089,14 @@ function HomePage() {
 
                   <div ref={collabDropdownRef}>
                     <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 8 }}>
-                      Collaborators (optional)
+                      Team members (optional)
                     </div>
                     <div style={{ position: "relative", marginBottom: 10 }}>
                       <input
                         className="submit-input"
                         placeholder="Search by name..."
-                        value={submitData.collabInput}
-                        onChange={e => { const v = e.target.value; setSubmitData(d => ({ ...d, collabInput: v })); searchCollabs(v); }}
+                        value={submitData.teamInput}
+                        onChange={e => { const v = e.target.value; setSubmitData(d => ({ ...d, teamInput: v })); searchCollabs(v); }}
                         onFocus={() => { if (collabResults.length > 0) setShowCollabDropdown(true); }}
                       />
                       {searchingCollabs && (
@@ -1102,9 +1104,9 @@ function HomePage() {
                           Searching...
                         </span>
                       )}
-                      {!searchingCollabs && submitData.collabInput.trim().length >= 2 && collabResults.length === 0 && (
+                      {!searchingCollabs && submitData.teamInput.trim().length >= 2 && collabResults.length === 0 && (
                         <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
-                          No members found for &ldquo;{submitData.collabInput.trim()}&rdquo;
+                          No members found for &ldquo;{submitData.teamInput.trim()}&rdquo;
                         </div>
                       )}
                       {showCollabDropdown && collabResults.length > 0 && (
@@ -1115,9 +1117,9 @@ function HomePage() {
                           maxHeight: 200, overflowY: "auto",
                         }}>
                           {collabResults.map(u => {
-                            const already = submitData.collabs.some(c => c.name === u.name);
+                            const already = submitData.team.some(c => c._id === u._id);
                             return (
-                              <button key={u._id} onClick={() => pickCollab(u)} disabled={already} style={{
+                              <button key={u._id} onClick={() => pickTeamMember(u)} disabled={already} style={{
                                 width: "100%", padding: "10px 14px", border: "none", background: "none",
                                 cursor: already ? "default" : "pointer", display: "flex", alignItems: "center", gap: 10,
                                 textAlign: "left", transition: "background 0.1s", opacity: already ? 0.4 : 1,
@@ -1148,9 +1150,9 @@ function HomePage() {
                         </div>
                       )}
                     </div>
-                    {submitData.collabs.length > 0 && (
+                    {submitData.team.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                        {submitData.collabs.map((c, ci) => (
+                        {submitData.team.map((c, ci) => (
                           <span key={ci} style={{
                             display: "inline-flex", alignItems: "center", gap: 6,
                             padding: "5px 10px 5px 8px", borderRadius: 8,
@@ -1168,7 +1170,29 @@ function HomePage() {
                             </span>
                             {c.name}
                             <span
-                              onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, collabs: d.collabs.filter((_, idx) => idx !== ci) })); }}
+                              onClick={ev => {
+                                ev.stopPropagation();
+                                setSubmitData(d => ({
+                                  ...d,
+                                  team: d.team.map((t, idx) => idx === ci
+                                    ? { ...t, role: t.role === 'creator' ? 'collaborator' : 'creator' }
+                                    : t
+                                  ),
+                                }));
+                              }}
+                              style={{
+                                fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                                padding: "2px 7px", borderRadius: 4, cursor: "pointer",
+                                fontFamily: "var(--sans)", userSelect: "none",
+                                background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
+                                color: c.role === 'creator' ? "#059669" : C.textMute,
+                                transition: "all 0.15s",
+                              }}
+                            >
+                              {c.role === 'creator' ? 'Creator' : 'Collaborator'}
+                            </span>
+                            <span
+                              onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, team: d.team.filter((_, idx) => idx !== ci) })); }}
                               style={{
                                 cursor: "pointer", fontSize: 14, color: C.textMute,
                                 lineHeight: 1, marginTop: -1,
@@ -1179,7 +1203,7 @@ function HomePage() {
                       </div>
                     )}
                     <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
-                      Search for GrowthX members to add as collaborators
+                      Search for GrowthX members — tap role to toggle Creator / Collaborator
                     </div>
                   </div>
                 </div>
