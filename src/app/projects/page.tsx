@@ -97,9 +97,9 @@ function BuilderCycler({ builders, horizontal }: { builders: { name: string; com
   const next = (active + 1) % builders.length;
 
   return (
-    <div style={{ textAlign: "left", minWidth: 120 }}>
+    <div style={{ textAlign: "left", minWidth: horizontal ? undefined : 120, width: horizontal ? "100%" : undefined }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ minWidth: 0, overflow: "hidden", height: ITEM_H }}>
+        <div style={{ minWidth: 0, overflow: "hidden", height: ITEM_H, flex: horizontal ? 1 : undefined }}>
           <div style={{
             display: "flex", flexDirection: "column",
             transform: sliding ? `translateY(-${ITEM_H}px)` : "translateY(0)",
@@ -298,7 +298,7 @@ export default function ProjectsPage() {
                         onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
                         style={{
                           flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
-                          width: 52, borderRadius: 10,
+                          width: 52, height: 52, borderRadius: 10,
                           border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
                           background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
                           fontSize: T.bodySm, fontWeight: 650,
