@@ -615,11 +615,13 @@ export default function ProjectDetailPage() {
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>
               {(p.creators || []).length > 0 ? "Creators" : "Creator"}
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
+            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
+            <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "10px 16px", borderRadius: 12,
-                background: C.surface, border: `1px solid ${C.border}`,
+                background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
               }}>
                 <Av initials={p.builder.avatar} size={34} src={p.builder.avatarUrl} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -650,7 +652,7 @@ export default function ProjectDetailPage() {
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 16px", borderRadius: 12,
-                  background: C.surface, border: `1px solid ${C.border}`,
+                  background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
                 }}>
                   <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -675,18 +677,21 @@ export default function ProjectDetailPage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
 
           {/* Collaborators */}
           {p.collabs.length > 0 && (
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Collaborators</div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
+              {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
+              <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
                 {p.collabs.map((c, i) => (
                   <div key={i} style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "10px 16px", borderRadius: 12,
-                    background: C.surface, border: `1px solid ${C.border}`,
+                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
                   }}>
                     <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -711,13 +716,16 @@ export default function ProjectDetailPage() {
                   </div>
                 ))}
               </div>
+              </div>
             </div>
           )}
 
           {/* Tech stack */}
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
+            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
+            <div style={{ display: "flex", gap: 8, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
               {p.stack.map((t, i) => {
                 const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: "#fff" };
                 const logoUrl = getStackLogoUrl(t);
@@ -725,7 +733,7 @@ export default function ProjectDetailPage() {
                   <div key={i} style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "6px 16px 6px 8px", borderRadius: 40,
-                    background: C.surface, border: `1px solid ${C.border}`,
+                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
                   }}>
                     <div style={{
                       width: 22, height: 22, borderRadius: 6,
@@ -753,6 +761,7 @@ export default function ProjectDetailPage() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
         </div>
