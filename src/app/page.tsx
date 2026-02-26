@@ -648,8 +648,8 @@ function HomePage() {
       <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "32px 32px 100px" }}>
         {/* Header */}
         <div className="fade-up" style={{ marginBottom: 36 }}>
-          <h1 className="responsive-h1" style={{
-            fontSize: isMobile ? 28 : isTablet ? 36 : 44, fontWeight: 400, color: C.text,
+          <h1 className="responsive-h1 hero-title" style={{
+            fontSize: isMobile ? 28 : isTablet ? 36 : 44, fontWeight: 400,
             fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10,
           }}>
             What the community shipped
