@@ -251,8 +251,8 @@ export default function AppNav() {
                 )}
               </div>
               {/* Tabs — inside content-aligned container */}
-              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px", height: 65, display: "flex", alignItems: "center" }}>
-                <div style={{ display: "flex", gap: 0, position: "relative" }}>
+              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px", height: 65, display: "flex", alignItems: "center", position: "relative" }}>
+                <div style={{ display: "flex", gap: 0 }}>
                   {NAV_TABS.map(t => {
                     const active = isTabActive(t.href);
                     return (
@@ -273,13 +273,13 @@ export default function AppNav() {
                       </button>
                     );
                   })}
-                  <div style={{
-                    position: "absolute", bottom: 0, height: 2,
-                    background: C.text, borderRadius: 1,
-                    left: underlineStyle.left, width: underlineStyle.width,
-                    transition: "left 0.3s ease, width 0.3s ease",
-                  }} />
                 </div>
+                <div style={{
+                  position: "absolute", bottom: 0, height: 2,
+                  background: C.text, borderRadius: 1,
+                  left: underlineStyle.left, width: underlineStyle.width,
+                  transition: "left 0.3s ease, width 0.3s ease",
+                }} />
               </div>
             </div>
           )}
