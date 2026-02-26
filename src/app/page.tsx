@@ -378,13 +378,12 @@ function HomePage() {
       <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0 32px",
+        borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0",
       }}>
+        {isMobile ? (
         <div style={{
-          maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? 60 : 65,
+          display: "flex", alignItems: "center", justifyContent: "space-between", height: 60,
         }}>
-          {isMobile ? (
             <>
               {/* Mobile nav: Hamburger | Logo | Avatar/Sign-in */}
               <button
@@ -465,27 +464,18 @@ function HomePage() {
                 )}
               </div>
             </>
-          ) : (
-            <>
-              {/* Tablet / Desktop nav */}
-              <div style={{ display: "flex", alignItems: "center", gap: isTablet ? 24 : 40 }}>
-                <BuiltLogo height={40} />
-                <div style={{ display: "flex", gap: 0 }}>
-                  {tabs.map((t, i) => (
-                    <button key={t.id} onClick={() => router.push(t.href)} style={{
-                      padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                      fontSize: T.body, fontWeight: i === 0 ? 600 : 400,
-                      color: i === 0 ? C.text : C.textMute,
-                      fontFamily: "var(--sans)",
-                      borderBottom: i === 0 ? `2px solid ${C.text}` : "2px solid transparent",
-                      transition: "all 0.15s", letterSpacing: "0.005em",
-                    }}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          )}
+        </div>
+        ) : (
+        <>
+          {/* Desktop nav: logo & right items at 96px, tabs aligned with content */}
+          <div style={{ position: "relative", height: 65 }}>
+            {/* Logo — pinned 96px from left */}
+            <div style={{ position: "absolute", left: 96, top: 0, height: 65, display: "flex", alignItems: "center" }}>
+              <BuiltLogo height={40} />
+            </div>
+            {/* Right items — pinned 96px from right */}
+            <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14 }}>
                 <button style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
@@ -563,10 +553,34 @@ function HomePage() {
                     Sign in
                   </button>
                 )}
+            </div>
+            {/* Tabs — inside content-aligned container */}
+            <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px", height: 65, display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 0 }}>
+                {tabs.map((t, i) => {
+                  const active = i === 0;
+                  return (
+                    <button key={t.id} onClick={() => router.push(t.href)} style={{
+                      padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
+                      fontSize: T.body, fontWeight: active ? 600 : 400,
+                      color: active ? C.text : C.textMute,
+                      fontFamily: "var(--sans)",
+                      borderBottom: active ? `2px solid ${C.text}` : "2px solid transparent",
+                      transition: "color 0.25s ease, border-color 0.25s ease, font-weight 0.25s ease",
+                      letterSpacing: "0.005em",
+                    }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        </>
+        )}
       </nav>
 
       {/* Mobile side drawer — portaled to body so it overlays everything */}
@@ -669,9 +683,9 @@ function HomePage() {
                   display: "flex", flexDirection: "column" as const, gap: 8,
                 } : {
                   display: "grid",
-                  gridTemplateColumns: isTablet ? "1fr auto auto" : "1fr 1fr auto",
+                  gridTemplateColumns: isTablet ? "1fr auto auto" : "1fr auto auto auto",
                   alignItems: "center",
-                  gap: isTablet ? 16 : 48,
+                  gap: isTablet ? 16 : 32,
                 }),
               }}>
                 <div>
@@ -683,6 +697,9 @@ function HomePage() {
                     <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
                     <div className="skeleton" style={{ height: 13, width: 80 }} />
                   </div>
+                )}
+                {!isMobile && !isTablet && (
+                  <div className="skeleton" style={{ width: 16, height: 16, borderRadius: 4 }} />
                 )}
                 {isMobile ? (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -765,9 +782,9 @@ function HomePage() {
                       display: "flex", flexDirection: "column" as const, gap: 8,
                     } : {
                       display: "grid",
-                      gridTemplateColumns: isTablet ? "1fr auto auto" : "1fr 1fr auto",
+                      gridTemplateColumns: isTablet ? "1fr auto auto" : "1fr auto auto auto",
                       alignItems: "center",
-                      gap: isTablet ? 16 : 48,
+                      gap: isTablet ? 16 : 32,
                     }),
                     position: "relative", zIndex: projects.length - i,
                   }}
@@ -841,6 +858,27 @@ function HomePage() {
                         ];
                         return <BuilderCycler builders={allBuilders} />;
                       })()}
+
+                      {/* Kebab menu */}
+                      {!isTablet && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); }}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            padding: 4, display: "flex", alignItems: "center", justifyContent: "center",
+                            color: C.textMute, borderRadius: 4,
+                            transition: "color 0.15s",
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.color = C.text}
+                          onMouseLeave={e => e.currentTarget.style.color = C.textMute}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="8" cy="3" r="1.5" />
+                            <circle cx="8" cy="8" r="1.5" />
+                            <circle cx="8" cy="13" r="1.5" />
+                          </svg>
+                        </button>
+                      )}
 
                       {/* Right: votes */}
                       <div

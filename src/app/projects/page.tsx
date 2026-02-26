@@ -220,11 +220,12 @@ export default function ProjectsPage() {
       <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
+        borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0",
       }}>
         <div style={{
-          maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? 60 : 65,
+          ...(isMobile
+            ? { maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }
+            : {}),
         }}>
           {isMobile ? (
             <>
@@ -271,25 +272,13 @@ export default function ProjectsPage() {
               </div>
             </>
           ) : (
-            <>
-              <div style={{ display: "flex", alignItems: "center", gap: isTablet ? 24 : 40 }}>
+            <div style={{ position: "relative", height: 65 }}>
+              {/* Logo — pinned 96px from left */}
+              <div style={{ position: "absolute", left: 96, top: 0, height: 65, display: "flex", alignItems: "center" }}>
                 <BuiltLogo height={40} onClick={() => router.push("/")} />
-                <div style={{ display: "flex", gap: 0 }}>
-                  {NAV_TABS.map(t => (
-                    <button key={t.href} onClick={() => router.push(t.href)} style={{
-                      padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                      fontSize: T.body, fontWeight: pathname === t.href ? 600 : 400,
-                      color: pathname === t.href ? C.text : C.textMute,
-                      fontFamily: "var(--sans)",
-                      borderBottom: pathname === t.href ? `2px solid ${C.text}` : "2px solid transparent",
-                      transition: "all 0.15s", letterSpacing: "0.005em",
-                    }}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              {/* Right items — pinned 96px from right */}
+              <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14 }}>
                 <button style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
@@ -361,7 +350,31 @@ export default function ProjectsPage() {
                   </button>
                 )}
               </div>
-            </>
+              {/* Tabs — inside content-aligned container */}
+              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px", height: 65, display: "flex", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 0 }}>
+                  {NAV_TABS.map(t => {
+                    const active = pathname === t.href;
+                    return (
+                      <button key={t.href} onClick={() => router.push(t.href)} style={{
+                        padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
+                        fontSize: T.body, fontWeight: active ? 600 : 400,
+                        color: active ? C.text : C.textMute,
+                        fontFamily: "var(--sans)",
+                        borderBottom: active ? `2px solid ${C.text}` : "2px solid transparent",
+                        transition: "color 0.25s ease, border-color 0.25s ease, font-weight 0.25s ease",
+                        letterSpacing: "0.005em",
+                      }}
+                      onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
+                      onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </nav>
