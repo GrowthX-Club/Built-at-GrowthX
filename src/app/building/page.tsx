@@ -149,9 +149,22 @@ export default function BuildingPage() {
                 {userLoading ? (
                   <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
                 ) : user ? (
-                  <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                  </button>
+                  <div ref={profileMenuRef} style={{ position: "relative" }}>
+                    <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
+                    </button>
+                    {showProfileMenu && (
+                      <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100 }}>
+                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                        </button>
+                        <div style={{ height: 1, background: C.borderLight }} />
+                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: 12, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
                     Sign in
@@ -302,21 +315,6 @@ export default function BuildingPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                 Submit your project
               </button>
-              {user && (
-                <>
-                  <div style={{ height: 1, background: C.borderLight, margin: "8px 6px" }} />
-                  <button onClick={() => { setMobileMenuOpen(false); router.push("/my-projects"); }} style={{
-                    padding: "12px 14px", border: "none", background: "none", borderRadius: 10, cursor: "pointer",
-                    fontSize: 15, fontWeight: 500, color: C.textSec, fontFamily: "var(--sans)", textAlign: "left",
-                    display: "flex", alignItems: "center", gap: 10,
-                  }}><span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects</button>
-                  <button onClick={() => { setMobileMenuOpen(false); handleSignOut(); }} style={{
-                    padding: "12px 14px", border: "none", background: "none", borderRadius: 10, cursor: "pointer",
-                    fontSize: 15, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left",
-                    display: "flex", alignItems: "center", gap: 10,
-                  }}><span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out</button>
-                </>
-              )}
             </div>
           </div>
         </>, document.body
