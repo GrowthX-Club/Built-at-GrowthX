@@ -136,6 +136,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
+  const [ghostId, setGhostId] = useState<string | number | null>(null);
 
   const loadProjects = useCallback(() => {
     bxApi("/projects")
@@ -175,6 +176,8 @@ export default function ProjectsPage() {
     const result = await res.json();
     if (result.voted) {
       setVotedIds((ids) => [...ids, projectId]);
+      setGhostId(projectId);
+      setTimeout(() => setGhostId(null), 600);
     } else {
       setVotedIds((ids) => ids.filter((id) => id !== projectId));
     }
@@ -306,10 +309,15 @@ export default function ProjectsPage() {
                           fontFamily: "var(--sans)", cursor: "pointer",
                           transition: "border 0.25s, background 0.25s, color 0.25s",
                         }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
+                        <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
                             <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
                           </svg>
+                          <span className={`vote-ghost${ghostId === p.id ? " active" : ""}`} style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                              <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" />
+                            </svg>
+                          </span>
                         </span>
                         <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.label, lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
                       </div>
@@ -360,6 +368,11 @@ export default function ProjectsPage() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
                           <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
                         </svg>
+                        <span className={`vote-ghost${ghostId === p.id ? " active" : ""}`} style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" />
+                          </svg>
+                        </span>
                       </span>
                       <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body, lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
                     </div>
