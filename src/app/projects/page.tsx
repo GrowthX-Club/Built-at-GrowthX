@@ -48,7 +48,7 @@ function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; c
     );
   }
   return (
-    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}>
       <div style={{
         display: "flex", alignItems: "center", gap: 4,
         fontSize: T.bodySm, fontFamily: "var(--sans)", marginBottom: 2,
@@ -207,9 +207,9 @@ export default function ProjectsPage() {
                 borderBottom: `1px solid ${C.borderLight}`,
                 display: isMobile ? "flex" : "grid",
                 flexDirection: isMobile ? "column" : undefined,
-                gridTemplateColumns: isMobile ? undefined : "1fr 1fr auto",
+                gridTemplateColumns: isMobile ? undefined : "2fr 1fr 80px",
                 alignItems: isMobile ? undefined : "center",
-                gap: isMobile ? 8 : isTablet ? 16 : 48,
+                gap: isMobile ? 8 : isTablet ? 16 : 24,
               }}>
                 <div>
                   <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
@@ -271,9 +271,9 @@ export default function ProjectsPage() {
                     borderBottom: `1px solid ${C.borderLight}`,
                     display: isMobile ? "flex" : "grid",
                     flexDirection: isMobile ? "column" : undefined,
-                    gridTemplateColumns: isMobile ? undefined : isTablet ? "1fr auto auto" : "1fr 1fr auto",
+                    gridTemplateColumns: isMobile ? undefined : "2fr 1fr 80px",
                     alignItems: isMobile ? undefined : "center",
-                    gap: isMobile ? 8 : isTablet ? 16 : 48,
+                    gap: isMobile ? 8 : isTablet ? 16 : 24,
                     position: "relative", zIndex: projects.length - i,
                   }}
                 >
