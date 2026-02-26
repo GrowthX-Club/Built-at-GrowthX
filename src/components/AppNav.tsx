@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -63,6 +63,8 @@ export default function AppNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [portalMounted, setPortalMounted] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [underlineStyle, setUnderlineStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
 
   useEffect(() => { setPortalMounted(true); }, []);
 
@@ -80,6 +82,20 @@ export default function AppNav() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const updateUnderline = useCallback(() => {
+    const activeTab = NAV_TABS.find(t => isTabActive(t.href));
+    if (activeTab) {
+      const el = tabsRef.current[activeTab.href];
+      if (el) {
+        setUnderlineStyle({ left: el.offsetLeft, width: el.offsetWidth });
+      }
+    }
+  }, [pathname]);
+
+  useLayoutEffect(() => {
+    updateUnderline();
+  }, [updateUnderline]);
 
   const handleSignIn = () => {
     openLoginDialog(() => {
@@ -236,17 +252,16 @@ export default function AppNav() {
               </div>
               {/* Tabs — inside content-aligned container */}
               <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px", height: 65, display: "flex", alignItems: "center" }}>
-                <div style={{ display: "flex", gap: 0 }}>
+                <div style={{ display: "flex", gap: 0, position: "relative" }}>
                   {NAV_TABS.map(t => {
                     const active = isTabActive(t.href);
                     return (
-                      <button key={t.href} onClick={() => router.push(t.href)} style={{
+                      <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => router.push(t.href)} style={{
                         padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
                         fontSize: T.body, fontWeight: active ? 600 : 400,
                         color: active ? C.text : C.textMute,
                         fontFamily: "var(--sans)",
-                        borderBottom: active ? `2px solid ${C.text}` : "2px solid transparent",
-                        transition: "color 0.25s ease, border-color 0.25s ease, font-weight 0.25s ease",
+                        transition: "color 0.25s ease, font-weight 0.25s ease",
                         letterSpacing: "0.005em",
                       }}
                       onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
@@ -256,6 +271,12 @@ export default function AppNav() {
                       </button>
                     );
                   })}
+                  <div style={{
+                    position: "absolute", bottom: 0, height: 2,
+                    background: C.text, borderRadius: 1,
+                    left: underlineStyle.left, width: underlineStyle.width,
+                    transition: "left 0.3s ease, width 0.3s ease",
+                  }} />
                 </div>
               </div>
             </div>
