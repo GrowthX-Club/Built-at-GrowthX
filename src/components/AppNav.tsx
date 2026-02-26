@@ -178,7 +178,7 @@ export default function AppNav() {
                 <BuiltLogo height={40} onClick={() => router.push("/")} />
               </div>
               {/* Right items — pinned 96px from right */}
-              <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14, zIndex: 1 }}>
                 <button style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
