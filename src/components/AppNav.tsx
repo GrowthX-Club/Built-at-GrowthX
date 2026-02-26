@@ -121,7 +121,7 @@ export default function AppNav() {
     <>
       <nav className="responsive-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
+        background: "rgba(248,247,244,0.45)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
         borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0",
       }}>
         <div style={{
@@ -292,7 +292,7 @@ export default function AppNav() {
                       {NAV_TABS.map(t => {
                         const active = isTabActive(t.href);
                         return (
-                          <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => router.push(t.href)} style={{
+                          <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => { router.push(t.href); window.scrollTo(0, 0); }} style={{
                             padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
                             fontSize: T.body,
                             color: active ? C.text : C.textMute,
@@ -351,7 +351,7 @@ export default function AppNav() {
               {NAV_TABS.map(t => {
                 const active = isTabActive(t.href);
                 return (
-                  <button key={t.href} onClick={() => { setMobileMenuOpen(false); router.push(t.href); }} style={{
+                  <button key={t.href} onClick={() => { setMobileMenuOpen(false); router.push(t.href); window.scrollTo(0, 0); }} style={{
                     padding: "12px 14px", border: "none", background: active ? C.accentSoft : "none",
                     borderRadius: 10, cursor: "pointer", fontSize: T.body, fontWeight: active ? 600 : 450,
                     color: active ? C.text : C.textSec, fontFamily: "var(--sans)", textAlign: "left",
