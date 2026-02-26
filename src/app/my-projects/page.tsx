@@ -17,6 +17,7 @@ import {
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
+import BuiltLogo from "@/components/BuiltLogo";
 
 // ---- Inline Components ----
 
@@ -295,18 +296,10 @@ export default function MyProjectsPage() {
       }}>
         <div style={{
           maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 60,
+          display: "flex", alignItems: "center", justifyContent: "space-between", height: 65,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 20 }}>
-            <span
-              onClick={() => router.push("/")}
-              style={{
-                fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
-                color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
-              }}
-            >
-              Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-            </span>
+            <BuiltLogo height={40} onClick={() => router.push("/")} />
             {!isMobile && (
               <>
                 <span style={{ color: C.textMute, fontSize: T.bodySm }}>/</span>
@@ -398,7 +391,7 @@ export default function MyProjectsPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {projects.map((p, i) => (
-              <div key={p.id} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+              <div key={p.id} className={`fade-up stagger-${Math.min(i + 1, 6)} list-item-hover`} style={{
                 padding: "24px 28px", background: C.surface,
                 border: `1px solid ${C.border}`, borderRadius: 14,
               }}>

@@ -6,6 +6,7 @@ import { gxApi, setToken } from "@/lib/api";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
+import BuiltLogo from "./BuiltLogo";
 
 type Mode = "signin" | "signup";
 type Step = "name" | "phone" | "otp";
@@ -414,12 +415,7 @@ function LoginDialogInner() {
 
         {/* Logo + subtitle */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <span style={{
-            fontSize: T.headingLg, fontWeight: 400, fontFamily: "var(--serif)",
-            color: C.text, letterSpacing: "-0.02em",
-          }}>
-            Built <span style={{ fontSize: T.body, fontWeight: 400, fontFamily: "var(--sans)", color: C.textMute, letterSpacing: "0" }}>at</span> GrowthX
-          </span>
+          <BuiltLogo height={48} style={{ margin: "0 auto" }} />
           <p style={{
             fontSize: T.body, color: C.textSec, marginTop: 8,
             fontFamily: "var(--sans)", fontWeight: 400,

@@ -17,6 +17,7 @@ import {
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
+import BuiltLogo from "@/components/BuiltLogo";
 
 // ---- Inline Components ----
 
@@ -178,16 +179,14 @@ export default function BuildersPage() {
       }}>
         <div style={{
           maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 60,
+          display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? 60 : 65,
         }}>
           {isMobile ? (
             <>
               <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
-              <span onClick={() => router.push("/")} style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
-                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-              </span>
+              <BuiltLogo height={36} onClick={() => router.push("/")} />
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
                   onClick={() => router.push("/?submit=1")}
@@ -241,15 +240,7 @@ export default function BuildersPage() {
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: isTablet ? 24 : 40 }}>
-                <span
-                  onClick={() => router.push("/")}
-                  style={{
-                    fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
-                    color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
-                  }}
-                >
-                  Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-                </span>
+                <BuiltLogo height={40} onClick={() => router.push("/")} />
                 <div style={{ display: "flex", gap: 0 }}>
                   {NAV_TABS.map(t => (
                     <button key={t.href} onClick={() => router.push(t.href)} style={{
@@ -370,9 +361,7 @@ export default function BuildersPage() {
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "0 20px", height: 60, borderBottom: `1px solid ${C.borderLight}`,
             }}>
-              <span style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em" }}>
-                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-              </span>
+              <BuiltLogo height={36} />
               <button onClick={() => setMobileMenuOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.textMute} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -447,7 +436,7 @@ export default function BuildersPage() {
           {builders.map((b, i) => (
             <div
               key={b._id || i}
-              className={`fade-up stagger-${Math.min(i + 1, 6)}`}
+              className={`fade-up stagger-${Math.min(i + 1, 6)} list-item-hover`}
               onClick={() => openBuilderDialog(b)}
               style={{
                 padding: isMobile ? "14px 16px" : "18px 24px", background: C.surface,

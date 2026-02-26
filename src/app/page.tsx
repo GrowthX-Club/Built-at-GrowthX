@@ -18,6 +18,7 @@ import {
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
+import BuiltLogo from "@/components/BuiltLogo";
 
 // ---- UI Components ----
 
@@ -381,7 +382,7 @@ function HomePage() {
       }}>
         <div style={{
           maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 60,
+          display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? 60 : 65,
         }}>
           {isMobile ? (
             <>
@@ -392,12 +393,7 @@ function HomePage() {
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
-              <span style={{
-                fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
-                color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
-              }}>
-                Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-              </span>
+              <BuiltLogo height={36} />
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
                   onClick={() => {
@@ -473,12 +469,7 @@ function HomePage() {
             <>
               {/* Tablet / Desktop nav */}
               <div style={{ display: "flex", alignItems: "center", gap: isTablet ? 24 : 40 }}>
-                <span style={{
-                  fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
-                  color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
-                }}>
-                  Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-                </span>
+                <BuiltLogo height={40} />
                 <div style={{ display: "flex", gap: 0 }}>
                   {tabs.map((t, i) => (
                     <button key={t.id} onClick={() => router.push(t.href)} style={{
@@ -609,12 +600,7 @@ function HomePage() {
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "0 20px", height: 60, borderBottom: `1px solid ${C.borderLight}`,
             }}>
-              <span style={{
-                fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)",
-                color: C.text, letterSpacing: "-0.02em",
-              }}>
-                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-              </span>
+              <BuiltLogo height={36} />
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}
@@ -713,7 +699,7 @@ function HomePage() {
             ))}
           </div>
         ) : projects.length === 0 ? (
-          <div className="fade-up stagger-2" style={{
+          <div className="fade-up stagger-2 list-item-hover" style={{
             display: "flex", flexDirection: "column", alignItems: "center",
             justifyContent: "center", padding: "64px 24px", textAlign: "center",
           }}>
@@ -735,7 +721,7 @@ function HomePage() {
           <>
             {/* Host picks */}
             {projects.filter(p => p.featured).map(fp => (
-              <div key={fp.id} className="fade-up stagger-2" style={{
+              <div key={fp.id} className="fade-up stagger-2 list-item-hover" style={{
                 padding: "20px 24px", marginBottom: 24,
                 background: C.surface, border: `1px solid ${C.goldBorder}`,
                 borderRadius: 14, cursor: "pointer",
@@ -770,10 +756,10 @@ function HomePage() {
               {projects.map((p, i) => (
                 <div
                   key={p.id}
-                  className={`fade-up stagger-${Math.min(i + 3, 6)}`}
+                  className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover`}
                   onClick={() => router.push(`/projects/${p.id}`)}
                   style={{
-                    padding: "16px 0", cursor: "pointer",
+                    paddingTop: 16, paddingBottom: 16, cursor: "pointer",
                     borderBottom: `1px solid ${C.borderLight}`,
                     ...(isMobile ? {
                       display: "flex", flexDirection: "column" as const, gap: 8,

@@ -92,6 +92,21 @@ body {
 }
 
 
+/* Elevated hover for list items */
+.list-item-hover {
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-radius: 12px;
+  transition: box-shadow 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.list-item-hover:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  background: #FFFFFF;
+  transform: translateY(-1px);
+}
+
 /* Skeleton shimmer */
 @keyframes shimmer {
   0% { background-position: -400px 0; }

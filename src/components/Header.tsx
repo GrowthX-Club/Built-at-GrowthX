@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { C, T, ROLES, type BuilderProfile } from "@/types";
 import Avatar from "./Avatar";
+import BuiltLogo from "./BuiltLogo";
 
 export default function Header({
   onSubmit,
@@ -25,7 +26,7 @@ export default function Header({
         background: C.surface,
         borderBottom: `1px solid ${C.border}`,
         padding: "0 24px",
-        height: 56,
+        height: 65,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -35,30 +36,7 @@ export default function Header({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <span
-          style={{
-            fontFamily: "var(--serif)",
-            fontSize: T.logo,
-            fontWeight: 600,
-            color: C.text,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Built
-        </span>
-        <span
-          style={{
-            fontSize: T.caption,
-            color: C.textMute,
-            fontFamily: "var(--mono)",
-            padding: "2px 8px",
-            background: C.surfaceWarm,
-            borderRadius: 4,
-            border: `1px solid ${C.borderLight}`,
-          }}
-        >
-          at GrowthX
-        </span>
+        <BuiltLogo height={40} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <span
