@@ -42,63 +42,67 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
   );
 }
 
+function BuilderItemP({ b }: { b: { name: string; company: string; companyColor: string } }) {
+  return (
+    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 4,
+        fontSize: 13, fontFamily: "var(--sans)", marginBottom: 2,
+      }}>
+        <span style={{
+          width: 14, height: 14, borderRadius: 4,
+          background: b.companyColor || C.accent,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          fontSize: 7, fontWeight: 800, color: "#fff",
+          fontFamily: "var(--sans)", flexShrink: 0,
+          overflow: "hidden", position: "relative",
+        }}>
+          {b.company[0]}
+          {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+        </span>
+        <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
+      </div>
+      <div style={{
+        fontSize: 11.5, fontWeight: 400, color: C.textMute,
+        fontFamily: "var(--sans)", lineHeight: 1.2,
+      }}>
+        {b.name}
+      </div>
+    </div>
+  );
+}
+
 function BuilderCycler({ builders }: { builders: { name: string; company: string; companyColor: string }[] }) {
   const [active, setActive] = useState(0);
   const [sliding, setSliding] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const single = builders.length === 1;
+  const ITEM_H = 36;
 
   useEffect(() => {
-    if (single || hovered) return;
+    if (single) return;
     const t = setInterval(() => {
       setSliding(true);
       setTimeout(() => {
         setActive(a => (a + 1) % builders.length);
         setSliding(false);
-      }, 250);
+      }, 300);
     }, 3000);
     return () => clearInterval(t);
-  }, [builders.length, single, hovered]);
+  }, [builders.length, single]);
 
-  const b = builders[active];
+  const next = (active + 1) % builders.length;
 
   return (
-    <div
-      style={{ position: "relative", textAlign: "left", minWidth: 120, overflow: "visible" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div style={{ textAlign: "left", minWidth: 120 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ minWidth: 0, overflow: "hidden", height: 34 }}>
-          <div
-            key={active}
-            style={{
-              animation: sliding ? "slideOut 0.25s ease-in forwards" : "slideUp 0.25s ease-out forwards",
-            }}
-          >
-            <div style={{
-              display: "flex", alignItems: "center", gap: 4,
-              fontSize: 13, fontFamily: "var(--sans)", marginBottom: 2,
-            }}>
-              <span style={{
-                width: 14, height: 14, borderRadius: 4,
-                background: b.companyColor || C.accent,
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontSize: 7, fontWeight: 800, color: "#fff",
-                fontFamily: "var(--sans)", flexShrink: 0,
-                overflow: "hidden", position: "relative",
-              }}>
-                {b.company[0]}
-                {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
-              </span>
-              <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
-            </div>
-            <div style={{
-              fontSize: 11.5, fontWeight: 400, color: C.textMute,
-              fontFamily: "var(--sans)", lineHeight: 1.2,
-            }}>
-              {b.name}
-            </div>
+        <div style={{ minWidth: 0, overflow: "hidden", height: ITEM_H }}>
+          <div style={{
+            display: "flex", flexDirection: "column",
+            transform: sliding ? `translateY(-${ITEM_H}px)` : "translateY(0)",
+            transition: sliding ? "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
+          }}>
+            <BuilderItemP b={builders[active]} />
+            <BuilderItemP b={builders[next]} />
           </div>
         </div>
 
@@ -114,45 +118,6 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
           </div>
         )}
       </div>
-
-      {!single && hovered && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", left: 0,
-          background: C.surface, border: `1px solid ${C.border}`,
-          borderRadius: 10, padding: "10px 14px",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-          zIndex: 9999, minWidth: 170,
-          display: "flex", flexDirection: "column", gap: 8,
-        }}>
-          {builders.map((tb, ti) => (
-            <div key={ti}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 5,
-                fontSize: 12.5, fontFamily: "var(--sans)", marginBottom: 1,
-              }}>
-                <span style={{
-                  width: 13, height: 13, borderRadius: 3,
-                  background: tb.companyColor || C.accent,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 6.5, fontWeight: 800, color: "#fff",
-                  fontFamily: "var(--sans)", flexShrink: 0,
-                  overflow: "hidden", position: "relative",
-                }}>
-                  {tb.company[0]}
-                  {tb.company && <img src={getCompanyLogoUrl(tb.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
-                </span>
-                <span style={{ fontWeight: 600, color: C.text }}>{tb.company}</span>
-              </div>
-              <div style={{
-                fontSize: 11, fontWeight: 400, color: C.textMute,
-                fontFamily: "var(--sans)", paddingLeft: 18,
-              }}>
-                {tb.name}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -173,6 +138,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -181,7 +147,8 @@ export default function ProjectsPage() {
     bxApi("/projects")
       .then((r) => r.json())
       .then((d) => {
-        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
+        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
+          .filter((p: Project) => p.enabled !== false);
         list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
@@ -193,7 +160,8 @@ export default function ProjectsPage() {
     loadProjects();
     bxApi("/me")
       .then((r) => r.json())
-      .then((d) => setUser(normalizeUser(d.user)));
+      .then((d) => setUser(normalizeUser(d.user)))
+      .finally(() => setUserLoading(false));
   }, [loadProjects]);
 
   useEffect(() => {
@@ -291,7 +259,9 @@ export default function ProjectsPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
               Submit your project
             </button>
-            {user ? (
+            {userLoading ? (
+              <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
+            ) : user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                   <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
@@ -433,11 +403,8 @@ export default function ProjectsPage() {
                     gridTemplateColumns: "1fr 1fr auto",
                     alignItems: "center",
                     gap: 48,
-                    transition: "opacity 0.12s",
                     position: "relative", zIndex: projects.length - i,
                   }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
-                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                 >
                   {/* Left: product name + tagline */}
                   <div style={{ minWidth: 0 }}>
@@ -460,6 +427,7 @@ export default function ProjectsPage() {
                   {(() => {
                     const allBuilders = [
                       { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                       ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                     ];
                     return <BuilderCycler builders={allBuilders} />;

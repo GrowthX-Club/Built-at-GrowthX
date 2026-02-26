@@ -10,6 +10,49 @@ type Mode = "signin" | "signup";
 type Step = "name" | "phone" | "otp";
 type CaptchaVersion = "v2" | "v3";
 
+const COUNTRIES = [
+  { code: "+91", iso: "IN", flag: "🇮🇳", name: "India" },
+  { code: "+1", iso: "US", flag: "🇺🇸", name: "United States" },
+  { code: "+44", iso: "GB", flag: "🇬🇧", name: "United Kingdom" },
+  { code: "+971", iso: "AE", flag: "🇦🇪", name: "UAE" },
+  { code: "+65", iso: "SG", flag: "🇸🇬", name: "Singapore" },
+  { code: "+61", iso: "AU", flag: "🇦🇺", name: "Australia" },
+  { code: "+49", iso: "DE", flag: "🇩🇪", name: "Germany" },
+  { code: "+33", iso: "FR", flag: "🇫🇷", name: "France" },
+  { code: "+81", iso: "JP", flag: "🇯🇵", name: "Japan" },
+  { code: "+86", iso: "CN", flag: "🇨🇳", name: "China" },
+  { code: "+966", iso: "SA", flag: "🇸🇦", name: "Saudi Arabia" },
+  { code: "+974", iso: "QA", flag: "🇶🇦", name: "Qatar" },
+  { code: "+60", iso: "MY", flag: "🇲🇾", name: "Malaysia" },
+  { code: "+62", iso: "ID", flag: "🇮🇩", name: "Indonesia" },
+  { code: "+63", iso: "PH", flag: "🇵🇭", name: "Philippines" },
+  { code: "+234", iso: "NG", flag: "🇳🇬", name: "Nigeria" },
+  { code: "+254", iso: "KE", flag: "🇰🇪", name: "Kenya" },
+  { code: "+27", iso: "ZA", flag: "🇿🇦", name: "South Africa" },
+  { code: "+55", iso: "BR", flag: "🇧🇷", name: "Brazil" },
+  { code: "+52", iso: "MX", flag: "🇲🇽", name: "Mexico" },
+  { code: "+82", iso: "KR", flag: "🇰🇷", name: "South Korea" },
+  { code: "+7", iso: "RU", flag: "🇷🇺", name: "Russia" },
+  { code: "+39", iso: "IT", flag: "🇮🇹", name: "Italy" },
+  { code: "+34", iso: "ES", flag: "🇪🇸", name: "Spain" },
+  { code: "+31", iso: "NL", flag: "🇳🇱", name: "Netherlands" },
+  { code: "+46", iso: "SE", flag: "🇸🇪", name: "Sweden" },
+  { code: "+41", iso: "CH", flag: "🇨🇭", name: "Switzerland" },
+  { code: "+353", iso: "IE", flag: "🇮🇪", name: "Ireland" },
+  { code: "+972", iso: "IL", flag: "🇮🇱", name: "Israel" },
+  { code: "+90", iso: "TR", flag: "🇹🇷", name: "Turkey" },
+  { code: "+48", iso: "PL", flag: "🇵🇱", name: "Poland" },
+  { code: "+47", iso: "NO", flag: "🇳🇴", name: "Norway" },
+  { code: "+45", iso: "DK", flag: "🇩🇰", name: "Denmark" },
+  { code: "+64", iso: "NZ", flag: "🇳🇿", name: "New Zealand" },
+  { code: "+94", iso: "LK", flag: "🇱🇰", name: "Sri Lanka" },
+  { code: "+977", iso: "NP", flag: "🇳🇵", name: "Nepal" },
+  { code: "+880", iso: "BD", flag: "🇧🇩", name: "Bangladesh" },
+  { code: "+92", iso: "PK", flag: "🇵🇰", name: "Pakistan" },
+  { code: "+66", iso: "TH", flag: "🇹🇭", name: "Thailand" },
+  { code: "+84", iso: "VN", flag: "🇻🇳", name: "Vietnam" },
+];
+
 const CAPTCHA_SITE_KEYS = {
   v3: "6LdwUNUlAAAAAB1mZxFvzL7qRyt0LieKgUpzrDKW",
   v2: "6LehQ-snAAAAABH9UY_05XxOOH-cQ8RqrqyJ4bpO",
@@ -37,6 +80,10 @@ function LoginDialogInner() {
   const [resendTimer, setResendTimer] = useState(0);
   const [captchaVersion, setCaptchaVersion] = useState<CaptchaVersion>("v3");
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [ccOpen, setCcOpen] = useState(false);
+  const [ccSearch, setCcSearch] = useState("");
+  const ccRef = useRef<HTMLDivElement>(null);
+  const ccSearchRef = useRef<HTMLInputElement>(null);
   // Signup-only fields
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -61,11 +108,38 @@ function LoginDialogInner() {
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLoginDialog();
+      if (e.key === "Escape") {
+        if (ccOpen) setCcOpen(false);
+        else closeLoginDialog();
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [closeLoginDialog]);
+  }, [closeLoginDialog, ccOpen]);
+
+  // Close country dropdown on outside click
+  useEffect(() => {
+    if (!ccOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (ccRef.current && !ccRef.current.contains(e.target as Node)) setCcOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [ccOpen]);
+
+  // Focus search when dropdown opens
+  useEffect(() => {
+    if (ccOpen) setTimeout(() => ccSearchRef.current?.focus(), 0);
+  }, [ccOpen]);
+
+  const selectedCountry = COUNTRIES.find(c => c.code === countryCode) || COUNTRIES[0];
+  const filteredCountries = ccSearch
+    ? COUNTRIES.filter(c =>
+        c.name.toLowerCase().includes(ccSearch.toLowerCase()) ||
+        c.code.includes(ccSearch) ||
+        c.iso.toLowerCase().includes(ccSearch.toLowerCase())
+      )
+    : COUNTRIES;
 
   const switchMode = (newMode: Mode) => {
     setMode(newMode);
@@ -446,23 +520,82 @@ function LoginDialogInner() {
             }}>
               Phone number
             </label>
-            <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-              <select
-                value={countryCode}
-                onChange={e => setCountryCode(e.target.value)}
-                style={{
-                  width: 80, padding: "12px 8px", borderRadius: 10,
-                  border: `1px solid ${C.border}`, background: C.bg,
-                  fontSize: 14, color: C.text, fontFamily: "var(--sans)",
-                  outline: "none", cursor: "pointer",
-                }}
-              >
-                <option value="+91">+91</option>
-                <option value="+1">+1</option>
-                <option value="+44">+44</option>
-                <option value="+971">+971</option>
-                <option value="+65">+65</option>
-              </select>
+            <div style={{ display: "flex", gap: 0, marginBottom: 20 }}>
+              <div ref={ccRef} style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  onClick={() => { setCcOpen(!ccOpen); setCcSearch(""); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "12px 10px 12px 14px", borderRadius: "10px 0 0 10px",
+                    border: `1px solid ${C.border}`, borderRight: "none",
+                    background: C.bg, fontSize: 15, color: C.text,
+                    fontFamily: "var(--sans)", cursor: "pointer",
+                    height: "100%", whiteSpace: "nowrap",
+                  }}
+                >
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{selectedCountry.flag}</span>
+                  <span style={{ fontSize: 14, fontWeight: 450 }}>{selectedCountry.code}</span>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ marginLeft: 2, flexShrink: 0, transition: "transform 0.15s", transform: ccOpen ? "rotate(180deg)" : "rotate(0)" }}>
+                    <path d="M1 1L5 5L9 1" stroke={C.textMute} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {ccOpen && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 4px)", left: 0,
+                    width: 260, maxHeight: 280,
+                    background: C.surface, border: `1px solid ${C.border}`,
+                    borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                    zIndex: 10, overflow: "hidden",
+                    display: "flex", flexDirection: "column",
+                  }}>
+                    <div style={{ padding: "8px 8px 4px" }}>
+                      <input
+                        ref={ccSearchRef}
+                        type="text"
+                        value={ccSearch}
+                        onChange={e => setCcSearch(e.target.value)}
+                        placeholder="Search country..."
+                        style={{
+                          width: "100%", padding: "8px 10px", borderRadius: 8,
+                          border: `1px solid ${C.borderLight}`, background: C.bg,
+                          fontSize: 13, color: C.text, fontFamily: "var(--sans)",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                    <div style={{ overflowY: "auto", flex: 1 }}>
+                      {filteredCountries.map(c => (
+                        <button
+                          key={c.iso}
+                          type="button"
+                          onClick={() => { setCountryCode(c.code); setCcOpen(false); }}
+                          style={{
+                            width: "100%", display: "flex", alignItems: "center", gap: 10,
+                            padding: "9px 12px", border: "none",
+                            background: c.code === countryCode ? C.bg : "transparent",
+                            cursor: "pointer", fontSize: 14, color: C.text,
+                            fontFamily: "var(--sans)", textAlign: "left",
+                            transition: "background 0.1s",
+                          }}
+                          onMouseEnter={e => { if (c.code !== countryCode) e.currentTarget.style.background = C.bg; }}
+                          onMouseLeave={e => { if (c.code !== countryCode) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <span style={{ fontSize: 18, lineHeight: 1 }}>{c.flag}</span>
+                          <span style={{ flex: 1, fontWeight: 400 }}>{c.name}</span>
+                          <span style={{ fontSize: 13, color: C.textMute, fontWeight: 450 }}>{c.code}</span>
+                        </button>
+                      ))}
+                      {filteredCountries.length === 0 && (
+                        <div style={{ padding: "12px 16px", fontSize: 13, color: C.textMute, fontFamily: "var(--sans)" }}>
+                          No results
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <input
                 type="tel"
                 value={phone}
@@ -473,6 +606,7 @@ function LoginDialogInner() {
                 style={{
                   ...inputStyle, flex: 1, width: "auto",
                   letterSpacing: "0.02em",
+                  borderRadius: "0 10px 10px 0",
                 }}
               />
             </div>

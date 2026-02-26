@@ -71,6 +71,7 @@ interface CollabEntry {
   avatar?: string;
   company?: string;
   companyColor?: string;
+  role: 'creator' | 'collaborator';
 }
 
 interface UserResult {
@@ -89,8 +90,8 @@ interface EditState {
   url: string;
   stack: string[];
   stackInput: string;
-  collabs: CollabEntry[];
-  collabInput: string;
+  team: CollabEntry[];
+  teamInput: string;
 }
 
 export default function MyProjectsPage() {
@@ -102,7 +103,7 @@ export default function MyProjectsPage() {
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [editData, setEditData] = useState<EditState>({
     name: "", tagline: "", description: "", url: "",
-    stack: [], stackInput: "", collabs: [], collabInput: "",
+    stack: [], stackInput: "", team: [], teamInput: "",
   });
   const [saving, setSaving] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -157,19 +158,19 @@ export default function MyProjectsPage() {
             company: (u.company ?? '') as string,
             role: (u.role ?? '') as string,
           }));
-          setUserResults(users);
+          setUserResults(user ? users.filter((u: UserResult) => u._id !== user._id) : users);
           setShowCollabDropdown(true);
         })
         .finally(() => setSearchingUsers(false));
     }, 250);
   };
 
-  const addCollab = (u: UserResult) => {
-    if (editData.collabs.some(c => c.name === u.name)) return;
+  const addTeamMember = (u: UserResult) => {
+    if (editData.team.some(c => c._id === u._id)) return;
     setEditData(d => ({
       ...d,
-      collabs: [...d.collabs, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: u.company ? generateColor(u.company) : undefined }],
-      collabInput: "",
+      team: [...d.team, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: u.company ? generateColor(u.company) : undefined, role: 'collaborator' }],
+      teamInput: "",
     }));
     setUserResults([]);
     setShowCollabDropdown(false);
@@ -194,13 +195,35 @@ export default function MyProjectsPage() {
       url: (raw.url as string) || "",
       stack: p.stack || [],
       stackInput: "",
-      collabs: (p.collabs || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor })),
-      collabInput: "",
+      team: [
+        ...(p.creators || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor, role: 'creator' as const })),
+        ...(p.collabs || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor, role: 'collaborator' as const })),
+      ],
+      teamInput: "",
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
+  };
+
+  const [togglingId, setTogglingId] = useState<string | number | null>(null);
+
+  const toggleEnabled = async (p: Project) => {
+    if (togglingId) return;
+    const newEnabled = !p.enabled;
+    setTogglingId(p.id);
+    try {
+      const res = await bxApi(`/projects/${p.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: newEnabled }),
+      });
+      if (res.ok) {
+        setProjects(prev => prev.map(proj => proj.id === p.id ? { ...proj, enabled: newEnabled } : proj));
+      }
+    } catch { /* ignore */ }
+    setTogglingId(null);
   };
 
   const [editError, setEditError] = useState("");
@@ -210,6 +233,7 @@ export default function MyProjectsPage() {
     setEditError("");
     if (!editData.name.trim()) { setEditError("Project name is required."); return; }
     if (!editData.tagline.trim()) { setEditError("Tagline is required."); return; }
+    if (!editData.description.trim()) { setEditError("Description is required. Tell us what you built."); return; }
     if (editData.stack.length === 0) { setEditError("Add at least one tech stack item."); return; }
     setSaving(true);
     try {
@@ -219,7 +243,8 @@ export default function MyProjectsPage() {
         description: editData.description,
         url: editData.url,
         stack: editData.stack,
-        collabs: editData.collabs.map(c => c._id).filter(Boolean),
+        creators: editData.team.filter(c => c.role === 'creator').map(c => c._id).filter(Boolean),
+        collabs: editData.team.filter(c => c.role === 'collaborator').map(c => c._id).filter(Boolean),
       };
       const res = await bxApi(`/projects/${editingId}`, {
         method: "PUT",
@@ -233,11 +258,19 @@ export default function MyProjectsPage() {
           tagline: editData.tagline,
           description: editData.description,
           stack: editData.stack,
-          collabs: editData.collabs.map(c => ({
+          creators: editData.team.filter(c => c.role === 'creator').map(c => ({
             name: c.name,
             avatar: c.avatar || c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
             company: c.company,
             companyColor: c.companyColor,
+            role: 'creator' as const,
+          })),
+          collabs: editData.team.filter(c => c.role === 'collaborator').map(c => ({
+            name: c.name,
+            avatar: c.avatar || c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
+            company: c.company,
+            companyColor: c.companyColor,
+            role: 'collaborator' as const,
           })),
         } : p));
         setEditingId(null);
@@ -347,7 +380,7 @@ export default function MyProjectsPage() {
             background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
           }}>
             <p style={{ fontSize: 16, color: C.textSec, marginBottom: 16 }}>You haven&apos;t submitted any projects yet.</p>
-            <button onClick={() => router.push("/")} style={{
+            <button onClick={() => router.push("/?submit=1")} style={{
               padding: "10px 24px", borderRadius: 10,
               border: "none", background: C.accent, color: "#fff",
               fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)",
@@ -384,10 +417,14 @@ export default function MyProjectsPage() {
                         onChange={e => setEditData(d => ({ ...d, tagline: e.target.value }))}
                         maxLength={100}
                         placeholder="One-line tagline (what does it do?)"
-                        style={inputStyle}
+                        style={{ ...inputStyle, borderColor: editData.tagline.length >= 100 ? "#DC2626" : undefined }}
                       />
-                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                        {editData.tagline.length}/100
+                      <div style={{
+                        fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                        color: editData.tagline.length >= 90 ? (editData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
+                        fontWeight: editData.tagline.length >= 100 ? 600 : 400,
+                      }}>
+                        {editData.tagline.length}/100{editData.tagline.length >= 100 && " — limit reached"}
                       </div>
                     </div>
 
@@ -490,7 +527,7 @@ export default function MyProjectsPage() {
                       {(() => {
                         const suggestions = [
                           "Next.js", "React", "Python", "Node.js", "TypeScript",
-                          "Claude API", "OpenAI", "Supabase", "Firebase", "MongoDB",
+                          "Claude API", "OpenAI", "OpenClaw", "Supabase", "Firebase", "MongoDB",
                           "PostgreSQL", "Tailwind CSS", "Flutter", "FastAPI", "Vercel",
                           "AWS", "Docker", "Stripe", "Prisma", "Go",
                         ];
@@ -603,15 +640,15 @@ export default function MyProjectsPage() {
                       </div>
                     </div>
 
-                    {/* Collaborators */}
+                    {/* Team members */}
                     <div ref={collabRef}>
-                      <label style={labelStyle}>Collaborators</label>
+                      <label style={labelStyle}>Team members</label>
                       <div style={{ position: "relative" }}>
                         <input
-                          value={editData.collabInput}
+                          value={editData.teamInput}
                           onChange={e => {
                             const v = e.target.value;
-                            setEditData(d => ({ ...d, collabInput: v }));
+                            setEditData(d => ({ ...d, teamInput: v }));
                             searchUsers(v);
                           }}
                           onFocus={() => { if (userResults.length > 0) setShowCollabDropdown(true); }}
@@ -623,9 +660,9 @@ export default function MyProjectsPage() {
                             Searching...
                           </span>
                         )}
-                        {!searchingUsers && editData.collabInput.trim().length >= 2 && userResults.length === 0 && (
+                        {!searchingUsers && editData.teamInput.trim().length >= 2 && userResults.length === 0 && (
                           <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
-                            No members found for &ldquo;{editData.collabInput.trim()}&rdquo;
+                            No members found for &ldquo;{editData.teamInput.trim()}&rdquo;
                           </div>
                         )}
 
@@ -638,11 +675,11 @@ export default function MyProjectsPage() {
                             maxHeight: 240, overflowY: "auto",
                           }}>
                             {userResults.map(u => {
-                                const already = editData.collabs.some(c => c.name === u.name);
+                                const already = editData.team.some(c => c._id === u._id);
                                 return (
                                   <button
                                     key={u._id}
-                                    onClick={() => addCollab(u)}
+                                    onClick={() => addTeamMember(u)}
                                     disabled={already}
                                     style={{
                                       width: "100%", padding: "10px 14px", border: "none",
@@ -697,9 +734,9 @@ export default function MyProjectsPage() {
                         )}
                       </div>
 
-                      {editData.collabs.length > 0 && (
+                      {editData.team.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                          {editData.collabs.map((c, ci) => (
+                          {editData.team.map((c, ci) => (
                             <span key={ci} style={{
                               display: "inline-flex", alignItems: "center", gap: 8,
                               padding: "6px 10px 6px 8px", borderRadius: 10,
@@ -716,23 +753,29 @@ export default function MyProjectsPage() {
                                 {(c.avatar && c.avatar.length <= 3) ? c.avatar : c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                               </span>
                               {c.name}
-                              {c.company && (
-                                <span style={{ fontSize: 11, color: C.textMute, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                                  <span style={{
-                                    width: 10, height: 10, borderRadius: 3,
-                                    background: c.companyColor || generateColor(c.company),
-                                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                    fontSize: 5, fontWeight: 800, color: "#fff", flexShrink: 0,
-                                    overflow: "hidden", position: "relative",
-                                  }}>
-                                    {c.company[0]}
-                                    <img src={getCompanyLogoUrl(c.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                                  </span>
-                                  {c.company}
-                                </span>
-                              )}
                               <span
-                                onClick={() => setEditData(d => ({ ...d, collabs: d.collabs.filter((_, idx) => idx !== ci) }))}
+                                onClick={() => {
+                                  setEditData(d => ({
+                                    ...d,
+                                    team: d.team.map((t, idx) => idx === ci
+                                      ? { ...t, role: t.role === 'creator' ? 'collaborator' : 'creator' }
+                                      : t
+                                    ),
+                                  }));
+                                }}
+                                style={{
+                                  fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                                  padding: "2px 7px", borderRadius: 4, cursor: "pointer",
+                                  fontFamily: "var(--sans)", userSelect: "none",
+                                  background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
+                                  color: c.role === 'creator' ? "#059669" : C.textMute,
+                                  transition: "all 0.15s",
+                                }}
+                              >
+                                {c.role === 'creator' ? 'Creator' : 'Collaborator'}
+                              </span>
+                              <span
+                                onClick={() => setEditData(d => ({ ...d, team: d.team.filter((_, idx) => idx !== ci) }))}
                                 style={{ cursor: "pointer", fontSize: 14, color: C.textMute, lineHeight: 1 }}
                               >{"\u00D7"}</span>
                             </span>
@@ -740,7 +783,7 @@ export default function MyProjectsPage() {
                         </div>
                       )}
                       <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
-                        Search for GrowthX members to add as collaborators
+                        Search for GrowthX members — tap role to toggle Creator / Collaborator
                       </div>
                     </div>
 
@@ -778,14 +821,24 @@ export default function MyProjectsPage() {
                   </div>
                 ) : (
                   /* ---- View mode ---- */
-                  <div>
+                  <div style={{ opacity: p.enabled ? 1 : 0.5, transition: "opacity 0.2s" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: 17, fontWeight: 550, color: C.text,
-                          fontFamily: "var(--sans)", marginBottom: 3, cursor: "pointer",
-                        }} onClick={() => router.push(`/projects/${p.id}`)}>
-                          {p.name}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                          <div style={{
+                            fontSize: 17, fontWeight: 550, color: C.text,
+                            fontFamily: "var(--sans)", cursor: "pointer",
+                          }} onClick={() => router.push(`/projects/${p.id}`)}>
+                            {p.name}
+                          </div>
+                          {!p.enabled && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 600, color: C.textMute,
+                              fontFamily: "var(--sans)", padding: "2px 6px",
+                              borderRadius: 4, background: C.borderLight,
+                              textTransform: "uppercase", letterSpacing: "0.04em",
+                            }}>Hidden</span>
+                          )}
                         </div>
                         <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
                           {p.tagline}
@@ -799,6 +852,26 @@ export default function MyProjectsPage() {
                           <span style={{ fontSize: 13, opacity: 0.5 }}>{"\u25B3"}</span>
                           {p.weighted.toLocaleString()}
                         </div>
+                        {/* Enable/Disable toggle */}
+                        <button
+                          onClick={() => toggleEnabled(p)}
+                          disabled={togglingId === p.id}
+                          title={p.enabled ? "Visible on homepage — click to hide" : "Hidden from homepage — click to show"}
+                          style={{
+                            position: "relative", width: 36, height: 20, borderRadius: 10,
+                            border: "none", cursor: togglingId === p.id ? "default" : "pointer",
+                            background: p.enabled ? C.green : C.borderLight,
+                            transition: "background 0.2s", flexShrink: 0, padding: 0,
+                            opacity: togglingId === p.id ? 0.6 : 1,
+                          }}
+                        >
+                          <span style={{
+                            position: "absolute", top: 2, left: p.enabled ? 18 : 2,
+                            width: 16, height: 16, borderRadius: 8,
+                            background: "#fff", transition: "left 0.2s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                          }} />
+                        </button>
                         <button onClick={() => startEdit(p)} style={{
                           padding: "7px 16px", borderRadius: 8,
                           border: `1px solid ${C.border}`, background: C.surface,
