@@ -100,6 +100,7 @@ export interface Project {
   date: string;
   gallery: GalleryItem[];
   url?: string;
+  enabled: boolean;
 }
 
 export interface BuildingProject {
@@ -322,6 +323,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     date: (p.date ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
     url: (p.url as string) || undefined,
+    enabled: (p.enabled !== undefined ? p.enabled : true) as boolean,
   };
 }
 

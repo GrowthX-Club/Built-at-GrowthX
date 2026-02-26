@@ -207,6 +207,25 @@ export default function MyProjectsPage() {
     setEditingId(null);
   };
 
+  const [togglingId, setTogglingId] = useState<string | number | null>(null);
+
+  const toggleEnabled = async (p: Project) => {
+    if (togglingId) return;
+    const newEnabled = !p.enabled;
+    setTogglingId(p.id);
+    try {
+      const res = await bxApi(`/projects/${p.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: newEnabled }),
+      });
+      if (res.ok) {
+        setProjects(prev => prev.map(proj => proj.id === p.id ? { ...proj, enabled: newEnabled } : proj));
+      }
+    } catch { /* ignore */ }
+    setTogglingId(null);
+  };
+
   const [editError, setEditError] = useState("");
 
   const saveEdit = async () => {
@@ -802,14 +821,24 @@ export default function MyProjectsPage() {
                   </div>
                 ) : (
                   /* ---- View mode ---- */
-                  <div>
+                  <div style={{ opacity: p.enabled ? 1 : 0.5, transition: "opacity 0.2s" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: 17, fontWeight: 550, color: C.text,
-                          fontFamily: "var(--sans)", marginBottom: 3, cursor: "pointer",
-                        }} onClick={() => router.push(`/projects/${p.id}`)}>
-                          {p.name}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                          <div style={{
+                            fontSize: 17, fontWeight: 550, color: C.text,
+                            fontFamily: "var(--sans)", cursor: "pointer",
+                          }} onClick={() => router.push(`/projects/${p.id}`)}>
+                            {p.name}
+                          </div>
+                          {!p.enabled && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 600, color: C.textMute,
+                              fontFamily: "var(--sans)", padding: "2px 6px",
+                              borderRadius: 4, background: C.borderLight,
+                              textTransform: "uppercase", letterSpacing: "0.04em",
+                            }}>Hidden</span>
+                          )}
                         </div>
                         <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
                           {p.tagline}
@@ -823,6 +852,26 @@ export default function MyProjectsPage() {
                           <span style={{ fontSize: 13, opacity: 0.5 }}>{"\u25B3"}</span>
                           {p.weighted.toLocaleString()}
                         </div>
+                        {/* Enable/Disable toggle */}
+                        <button
+                          onClick={() => toggleEnabled(p)}
+                          disabled={togglingId === p.id}
+                          title={p.enabled ? "Visible on homepage — click to hide" : "Hidden from homepage — click to show"}
+                          style={{
+                            position: "relative", width: 36, height: 20, borderRadius: 10,
+                            border: "none", cursor: togglingId === p.id ? "default" : "pointer",
+                            background: p.enabled ? C.green : C.borderLight,
+                            transition: "background 0.2s", flexShrink: 0, padding: 0,
+                            opacity: togglingId === p.id ? 0.6 : 1,
+                          }}
+                        >
+                          <span style={{
+                            position: "absolute", top: 2, left: p.enabled ? 18 : 2,
+                            width: 16, height: 16, borderRadius: 8,
+                            background: "#fff", transition: "left 0.2s",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                          }} />
+                        </button>
                         <button onClick={() => startEdit(p)} style={{
                           padding: "7px 16px", borderRadius: 8,
                           border: `1px solid ${C.border}`, background: C.surface,

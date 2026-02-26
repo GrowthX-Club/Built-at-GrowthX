@@ -147,7 +147,8 @@ export default function ProjectsPage() {
     bxApi("/projects")
       .then((r) => r.json())
       .then((d) => {
-        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
+        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
+          .filter((p: Project) => p.enabled !== false);
         list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
