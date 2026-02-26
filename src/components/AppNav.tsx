@@ -93,7 +93,7 @@ export default function AppNav() {
         setUnderlineStyle({ left: el.offsetLeft, width: el.offsetWidth });
       }
     }
-  }, [pathname]);
+  }, [pathname, override]);
 
   useLayoutEffect(() => {
     updateUnderline();

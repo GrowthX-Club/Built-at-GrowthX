@@ -14,10 +14,10 @@ import {
   getCompanyLogoUrl,
   getStackLogoUrl,
 } from "@/types";
-import { bxApi, clearToken } from "@/lib/api";
+import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
-import BuiltLogo from "@/components/BuiltLogo";
 
 // ---- Inline Components ----
 
@@ -100,6 +100,7 @@ interface EditState {
 export default function MyProjectsPage() {
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
+  const { setNavOverride, clearNavOverride } = useNavOverride();
   const { isMobile } = useResponsive();
   const [projects, setProjects] = useState<Project[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
@@ -110,8 +111,6 @@ export default function MyProjectsPage() {
     stack: [], stackInput: "", team: [], teamInput: "",
   });
   const [saving, setSaving] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
   const [searchingUsers, setSearchingUsers] = useState(false);
@@ -138,8 +137,12 @@ export default function MyProjectsPage() {
   }, [loadMyData]);
 
   useEffect(() => {
+    setNavOverride({ title: "My Projects", backHref: "/" });
+    return () => clearNavOverride();
+  }, [setNavOverride, clearNavOverride]);
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) setShowProfileMenu(false);
       if (collabRef.current && !collabRef.current.contains(e.target as Node)) setShowCollabDropdown(false);
     };
     document.addEventListener("mousedown", handler);
@@ -178,14 +181,6 @@ export default function MyProjectsPage() {
     }));
     setUserResults([]);
     setShowCollabDropdown(false);
-  };
-
-  const handleSignOut = async () => {
-    await bxApi("/logout", { method: "POST" }).catch(() => {});
-    clearToken();
-    setUser(null);
-    setShowProfileMenu(false);
-    router.push("/");
   };
 
   const startEdit = (p: Project) => {
@@ -287,58 +282,7 @@ export default function MyProjectsPage() {
   if (!user && !loading) return null;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      {/* Nav */}
-      <nav className="responsive-nav" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
-      }}>
-        <div style={{
-          maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 65,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 20 }}>
-            <BuiltLogo height={40} onClick={() => router.push("/")} />
-            {!isMobile && (
-              <>
-                <span style={{ color: C.textMute, fontSize: T.bodySm }}>/</span>
-                <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>My Projects</span>
-              </>
-            )}
-          </div>
-          {user && (
-            <div ref={profileMenuRef} style={{ position: "relative" }}>
-              <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
-                <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
-              </button>
-              {showProfileMenu && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 8px)", right: 0,
-                  background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100,
-                }}>
-                  <button onClick={handleSignOut} style={{
-                    width: "100%", padding: "12px 16px", border: "none", background: "none",
-                    cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
-                    fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                    transition: "background 0.1s",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
-                  onMouseLeave={e => e.currentTarget.style.background = "none"}
-                  >
-                    <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </nav>
-
-      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
+    <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px", fontFamily: "var(--sans)" }}>
         <div className="fade-up" style={{ marginBottom: 36 }}>
           <h1 style={{ fontSize: T.pageTitle, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>
             My Projects
@@ -908,7 +852,6 @@ export default function MyProjectsPage() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+    </main>
   );
 }
