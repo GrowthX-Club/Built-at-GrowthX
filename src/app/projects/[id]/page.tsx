@@ -21,6 +21,7 @@ import {
 } from "@/types";
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useResponsive } from "@/hooks/useMediaQuery";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -108,6 +109,7 @@ function CompanyTag({ title, company, companyColor }: { title?: string; company?
 }
 
 function Reactions({ reactions: initialReactions, onReact }: { reactions: Reaction[]; onReact?: (emojiCode: string) => boolean }) {
+  const { isMobile } = useResponsive();
   const [local, setLocal] = useState(initialReactions.map(r => ({ ...r })));
   const [picker, setPicker] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -179,7 +181,9 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
         </button>
         {picker && (
           <div style={{
-            position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+            position: "absolute", bottom: "calc(100% + 6px)",
+            left: isMobile ? 0 : "50%",
+            transform: isMobile ? "none" : "translateX(-50%)",
             padding: 10, background: C.surface,
             border: `1px solid ${C.border}`, borderRadius: 14,
             boxShadow: "0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
@@ -208,6 +212,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
 }
 
 function ThreadBlock({ thread }: { thread: ThreadData }) {
+  const { isMobile } = useResponsive();
   const [open, setOpen] = useState(false);
   return (
     <div style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
@@ -240,7 +245,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
             )}
           </div>
           {open && (
-            <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: 20, marginLeft: 2 }}>
+            <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
               {thread.replies.map((reply, i) => (
                 <div key={i} style={{ padding: "16px 0", borderBottom: i < thread.replies.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
                   {reply.author.isCreator ? (
@@ -293,6 +298,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
+  const { isMobile } = useResponsive();
   const [project, setProject] = useState<Project | null>(null);
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
@@ -434,7 +440,7 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-        <nav style={{
+        <nav className="responsive-nav" style={{
           position: "sticky", top: 0, zIndex: 50,
           background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
           borderBottom: `1px solid ${C.border}`, padding: "0 32px",
@@ -445,7 +451,7 @@ export default function ProjectDetailPage() {
             <div className="skeleton" style={{ height: 30, width: 130, borderRadius: 8 }} />
           </div>
         </nav>
-        <main style={{ maxWidth: 800, margin: "0 auto", padding: "40px 32px 100px" }}>
+        <main className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "40px 32px 100px" }}>
           <div className="fade-up" style={{ marginBottom: 32 }}>
             <div className="skeleton" style={{ height: 36, width: "60%", marginBottom: 12 }} />
             <div className="skeleton" style={{ height: 16, width: "80%", marginBottom: 20 }} />
@@ -484,30 +490,32 @@ export default function ProjectDetailPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <nav style={{
+      <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
         borderBottom: `1px solid ${C.border}`, padding: "0 32px",
       }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: 20 }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: isMobile ? 10 : 20 }}>
           <button onClick={() => router.push("/")} style={{
             border: "none", background: "none", cursor: "pointer",
             fontSize: 13.5, color: C.textSec, fontFamily: "var(--sans)",
             fontWeight: 500, display: "flex", alignItems: "center", gap: 6,
-            padding: 0, transition: "color 0.12s",
+            padding: 0, transition: "color 0.12s", flexShrink: 0,
           }}
           onMouseEnter={e => e.currentTarget.style.color = C.text}
           onMouseLeave={e => e.currentTarget.style.color = C.textSec}
           >
-            {"\u2190"} Back to Built at GrowthX
+            {isMobile ? "\u2190" : "\u2190 Back to Built at GrowthX"}
           </button>
-          <span style={{
-            fontSize: 14, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            flex: 1, textAlign: "center",
-          }}>
-            {p.name}
-          </span>
+          {!isMobile && (
+            <span style={{
+              fontSize: 14, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              flex: 1, textAlign: "center",
+            }}>
+              {p.name}
+            </span>
+          )}
           <button onClick={() => router.push("/?submit=1")} style={{
             padding: "6px 16px", borderRadius: 8,
             border: `1.5px solid ${C.accent}`, background: C.surface,
@@ -520,18 +528,18 @@ export default function ProjectDetailPage() {
           onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            Submit your project
+            {!isMobile && "Submit your project"}
           </button>
         </div>
       </nav>
 
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px" }}>
+      <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px" }}>
         {/* Hero */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
             <div style={{ flex: 1, paddingTop: 2 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
-                <h1 style={{ fontSize: 36, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
+                <h1 className="responsive-h1" style={{ fontSize: 36, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
                 {p.featured && (
                   <span style={{
                     fontSize: 9.5, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
@@ -551,7 +559,7 @@ export default function ProjectDetailPage() {
                 )}
               </div>
             </div>
-            <div style={{ flexShrink: 0, display: "flex", gap: 8 }}>
+            <div style={{ flexShrink: 0, display: "flex", gap: 8, ...(isMobile ? { width: "100%" } : {}) }}>
               <button onClick={handleVote} style={{
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 20px", borderRadius: 10,
@@ -613,7 +621,7 @@ export default function ProjectDetailPage() {
                 padding: "10px 16px", borderRadius: 12,
                 background: C.surface, border: `1px solid ${C.border}`,
               }}>
-                <Av initials={p.builder.avatar} size={34} />
+                <Av initials={p.builder.avatar} size={34} src={p.builder.avatarUrl} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
@@ -644,7 +652,7 @@ export default function ProjectDetailPage() {
                   padding: "10px 16px", borderRadius: 12,
                   background: C.surface, border: `1px solid ${C.border}`,
                 }}>
-                  <Av initials={c.avatar} size={30} />
+                  <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
                     {c.title && c.company && (
@@ -680,7 +688,7 @@ export default function ProjectDetailPage() {
                     padding: "10px 16px", borderRadius: 12,
                     background: C.surface, border: `1px solid ${C.border}`,
                   }}>
-                    <Av initials={c.avatar} size={30} />
+                    <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                       <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
                       {c.title && c.company && (
@@ -760,7 +768,7 @@ export default function ProjectDetailPage() {
             background: C.surface, border: `1px solid ${C.border}`,
             borderRadius: 14, marginBottom: 4,
           }}>
-            <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} />
+            <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} src={user?.avatarUrl} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
               <textarea
                 value={comment}
@@ -856,7 +864,7 @@ export default function ProjectDetailPage() {
 
                     {/* Nested replies */}
                     {(replyingTo === root.id || replies.length > 0) && replyingTo === root.id && (
-                      <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: 20, marginLeft: 2 }}>
+                      <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
                         {replies.map((reply, i) => {
                           const replyInitials = reply.authorAvatar || (reply.authorName ? reply.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
                           const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
@@ -905,7 +913,7 @@ export default function ProjectDetailPage() {
                         {/* Reply compose */}
                         {user && (
                           <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
-                            <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} />
+                            <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} src={user.avatarUrl} />
                             <div style={{ flex: 1, display: "flex", gap: 8 }}>
                               <input
                                 value={replyText}
