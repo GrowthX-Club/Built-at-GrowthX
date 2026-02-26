@@ -49,72 +49,70 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
   );
 }
 
+function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string } }) {
+  return (
+    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div style={{
+        fontSize: 13, fontWeight: 600, color: C.text,
+        fontFamily: "var(--sans)", marginBottom: 2, lineHeight: 1.2,
+      }}>
+        {b.name}
+      </div>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 4,
+        fontSize: 11.5, fontFamily: "var(--sans)",
+      }}>
+        <span style={{
+          width: 12, height: 12, borderRadius: 3,
+          background: b.companyColor || C.accent,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          fontSize: 6, fontWeight: 800, color: "#fff",
+          fontFamily: "var(--sans)", flexShrink: 0,
+          overflow: "hidden", position: "relative",
+        }}>
+          {b.company[0]}
+          {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+        </span>
+        <span style={{ fontWeight: 400, color: C.textMute }}>{b.company}</span>
+      </div>
+    </div>
+  );
+}
+
 function BuilderCycler({ builders }: { builders: { name: string; company: string; companyColor: string }[] }) {
   const [active, setActive] = useState(0);
   const [sliding, setSliding] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const single = builders.length === 1;
+  const ITEM_H = 36;
 
   useEffect(() => {
-    if (single || hovered) return;
+    if (single) return;
     const t = setInterval(() => {
       setSliding(true);
       setTimeout(() => {
         setActive(a => (a + 1) % builders.length);
         setSliding(false);
-      }, 250);
+      }, 300);
     }, 3000);
     return () => clearInterval(t);
-  }, [builders.length, single, hovered]);
+  }, [builders.length, single]);
 
-  const b = builders[active];
+  const next = (active + 1) % builders.length;
 
   return (
-    <div
-      style={{ position: "relative", textAlign: "left", minWidth: 120, overflow: "visible" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {/* Active builder */}
+    <div style={{ textAlign: "left", minWidth: 120 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{
-          minWidth: 0, overflow: "hidden", height: 34,
-        }}>
-          <div
-            key={active}
-            style={{
-              animation: sliding ? "slideOut 0.25s ease-in forwards" : "slideUp 0.25s ease-out forwards",
-            }}
-          >
-            {/* Company line */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 4,
-              fontSize: 13, fontFamily: "var(--sans)", marginBottom: 2,
-            }}>
-              <span style={{
-                width: 14, height: 14, borderRadius: 4,
-                background: b.companyColor || C.accent,
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontSize: 7, fontWeight: 800, color: "#fff",
-                fontFamily: "var(--sans)", flexShrink: 0,
-                overflow: "hidden", position: "relative",
-              }}>
-                {b.company[0]}
-                {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
-              </span>
-              <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
-            </div>
-            {/* Name line */}
-            <div style={{
-              fontSize: 11.5, fontWeight: 400, color: C.textMute,
-              fontFamily: "var(--sans)", lineHeight: 1.2,
-            }}>
-              {b.name}
-            </div>
+        <div style={{ minWidth: 0, overflow: "hidden", height: ITEM_H }}>
+          <div style={{
+            display: "flex", flexDirection: "column",
+            transform: sliding ? `translateY(-${ITEM_H}px)` : "translateY(0)",
+            transition: sliding ? "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
+          }}>
+            <BuilderItem b={builders[active]} />
+            <BuilderItem b={builders[next]} />
           </div>
         </div>
 
-        {/* Dots */}
         {!single && (
           <div style={{ display: "flex", flexDirection: "column", gap: 3, marginLeft: 2 }}>
             {builders.map((_, di) => (
@@ -127,46 +125,6 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
           </div>
         )}
       </div>
-
-      {/* Tooltip on hover */}
-      {!single && hovered && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", left: 0,
-          background: C.surface, border: `1px solid ${C.border}`,
-          borderRadius: 10, padding: "10px 14px",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-          zIndex: 9999, minWidth: 170,
-          display: "flex", flexDirection: "column", gap: 8,
-        }}>
-          {builders.map((tb, ti) => (
-            <div key={ti}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 5,
-                fontSize: 12.5, fontFamily: "var(--sans)", marginBottom: 1,
-              }}>
-                <span style={{
-                  width: 13, height: 13, borderRadius: 3,
-                  background: tb.companyColor || C.accent,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 6.5, fontWeight: 800, color: "#fff",
-                  fontFamily: "var(--sans)", flexShrink: 0,
-                  overflow: "hidden", position: "relative",
-                }}>
-                  {tb.company[0]}
-                  {tb.company && <img src={getCompanyLogoUrl(tb.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
-                </span>
-                <span style={{ fontWeight: 600, color: C.text }}>{tb.company}</span>
-              </div>
-              <div style={{
-                fontSize: 11, fontWeight: 400, color: C.textMute,
-                fontFamily: "var(--sans)", paddingLeft: 18,
-              }}>
-                {tb.name}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -190,7 +148,7 @@ function HomePage() {
   const [submitData, setSubmitData] = useState({
     name: "", tagline: "", description: "",
     stack: [] as string[], stackInput: "",
-    collabs: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string }[], collabInput: "",
+    team: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string; role: 'creator' | 'collaborator' }[], teamInput: "",
     url: "",
   });
   const [submitError, setSubmitError] = useState("");
@@ -199,6 +157,7 @@ function HomePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -213,7 +172,8 @@ function HomePage() {
     bxApi("/projects")
       .then((r) => r.json())
       .then((d) => {
-        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
+        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
+          .filter((p: Project) => p.enabled !== false);
         list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
@@ -224,7 +184,8 @@ function HomePage() {
   const loadUser = useCallback(() => {
     bxApi("/me")
       .then((r) => r.json())
-      .then((d) => setUser(normalizeUser(d.user)));
+      .then((d) => setUser(normalizeUser(d.user)))
+      .finally(() => setUserLoading(false));
   }, []);
 
   useEffect(() => {
@@ -250,7 +211,7 @@ function HomePage() {
       }
       setShowSubmit(true);
       setSubmitStep(0);
-      setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+      setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
       setSubmitError("");
     }
   }, [searchParams, user, router]);
@@ -270,7 +231,7 @@ function HomePage() {
             avatarUrl: (u.avatar_url ?? undefined) as string | undefined,
             company: (u.company ?? '') as string,
             role: (u.role ?? '') as string,
-          }));
+          })).filter((u: { _id: string }) => !user?._id || u._id !== user._id);
           setCollabResults(users);
           setShowCollabDropdown(true);
         })
@@ -278,16 +239,16 @@ function HomePage() {
     }, 250);
   };
 
-  const pickCollab = (u: { _id: string; name: string; avatar: string; company: string }) => {
-    if (submitData.collabs.some(c => c.name === u.name)) return;
+  const pickTeamMember = (u: { _id: string; name: string; avatar: string; company: string }) => {
+    if (submitData.team.some(c => c._id === u._id)) return;
     const colors = ["#0C2451", "#5B21B6", "#92400E", "#166534", "#1E40AF", "#7C3AED", "#B45309", "#047857"];
     let hash = 0;
     for (let i = 0; i < (u.company || "").length; i++) hash = (u.company || "").charCodeAt(i) + ((hash << 5) - hash);
     const cc = u.company ? colors[Math.abs(hash) % colors.length] : undefined;
     setSubmitData(d => ({
       ...d,
-      collabs: [...d.collabs, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: cc }],
-      collabInput: "",
+      team: [...d.team, { _id: u._id, name: u.name, avatar: u.avatar, company: u.company, companyColor: cc, role: 'collaborator' }],
+      teamInput: "",
     }));
     setCollabResults([]);
     setShowCollabDropdown(false);
@@ -370,13 +331,14 @@ function HomePage() {
           category: "AI",
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
-          collabs: submitData.collabs.map(c => c._id),
+          creators: submitData.team.filter(c => c.role === 'creator').map(c => c._id),
+          collabs: submitData.team.filter(c => c.role === 'collaborator').map(c => c._id),
         }),
       });
       if (res.ok) {
         setShowSubmit(false);
         setSubmitStep(0);
-        setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+        setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
         setSubmitError("");
         loadProjects();
       } else {
@@ -452,14 +414,16 @@ function HomePage() {
               if (!user.isMembershipActive) { setShowMembersOnly(true); return; }
               setShowSubmit(true);
               setSubmitStep(0);
-              setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", collabs: [], collabInput: "", url: "" });
+              setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
               setSubmitError("");
             }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
               Submit your project
             </button>
-            {user ? (
+            {userLoading ? (
+              <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
+            ) : user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                   <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
@@ -620,11 +584,8 @@ function HomePage() {
                     gridTemplateColumns: "1fr 1fr auto",
                     alignItems: "center",
                     gap: 48,
-                    transition: "opacity 0.12s",
                     position: "relative", zIndex: projects.length - i,
                   }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
-                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                 >
                   {/* Left: product name + tagline */}
                   <div style={{ minWidth: 0 }}>
@@ -647,6 +608,7 @@ function HomePage() {
                   {(() => {
                     const allBuilders = [
                       { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                       ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
                     ];
                     return <BuilderCycler builders={allBuilders} />;
@@ -865,9 +827,14 @@ function HomePage() {
                       value={submitData.tagline}
                       onChange={e => setSubmitData(d => ({ ...d, tagline: e.target.value }))}
                       maxLength={100}
+                      style={{ borderColor: submitData.tagline.length >= 100 ? "#DC2626" : undefined }}
                     />
-                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                      {submitData.tagline.length}/100
+                    <div style={{
+                      fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                      color: submitData.tagline.length >= 90 ? (submitData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
+                      fontWeight: submitData.tagline.length >= 100 ? 600 : 400,
+                    }}>
+                      {submitData.tagline.length}/100{submitData.tagline.length >= 100 && " — limit reached"}
                     </div>
                   </div>
                   <div>
@@ -886,50 +853,56 @@ function HomePage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   <div style={{
                     fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
-                    fontWeight: 400, lineHeight: 1.55, marginBottom: 16,
+                    fontWeight: 400, lineHeight: 1.55, marginBottom: 20,
                   }}>
                     Write like you&apos;re telling a friend what you built and why. The best submissions answer three things:
                   </div>
 
-                  <div style={{
-                    display: "flex", flexDirection: "column", gap: 3, marginBottom: 16,
-                  }}>
+                  <div style={{ marginBottom: 20, paddingLeft: 2 }}>
                     {[
-                      { q: "What problem did you hit?", ex: 'e.g. "We were losing 40% of inbound leads because our response time was 6+ hours."' },
-                      { q: "What did you build to fix it?", ex: 'e.g. "An AI agent that qualifies and responds to leads in under 90 seconds."' },
-                      { q: "What happened when people used it?", ex: 'e.g. "12 beta users. 3x conversion on day one. Two asked to pay before we had pricing."' },
+                      { q: "The problem", hint: "What were you trying to solve?" },
+                      { q: "The build", hint: "What did you make?" },
+                      { q: "The outcome", hint: "What happened when people used it?" },
                     ].map((prompt, pi) => (
                       <div key={pi} style={{
-                        padding: "10px 14px", borderRadius: 10,
-                        background: submitData.description ? "transparent" : C.bg,
-                        transition: "all 0.2s",
+                        display: "flex", alignItems: "baseline", gap: 8,
+                        marginBottom: pi < 2 ? 8 : 0,
                       }}>
-                        <div style={{
-                          fontSize: 13, fontWeight: 530, color: C.text,
-                          fontFamily: "var(--sans)", marginBottom: 2,
+                        <span style={{
+                          fontSize: 12, fontWeight: 650, color: C.textMute,
+                          fontFamily: "var(--mono)", minWidth: 16,
                         }}>
-                          {pi + 1}. {prompt.q}
-                        </div>
-                        <div style={{
-                          fontSize: 12, color: C.textMute, fontFamily: "var(--sans)",
-                          fontWeight: 400, fontStyle: "italic",
-                        }}>
-                          {prompt.ex}
-                        </div>
+                          {pi + 1}.
+                        </span>
+                        <span style={{ fontSize: 13.5, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
+                          <span style={{ fontWeight: 580, color: C.text }}>{prompt.q}</span>
+                          <span style={{ color: C.textMute, fontWeight: 400 }}> — {prompt.hint}</span>
+                        </span>
                       </div>
                     ))}
                   </div>
 
                   <textarea
                     className="submit-textarea"
-                    placeholder="Write your story here. No word salad. Just the problem, what you built, and what happened."
+                    placeholder={"e.g. We were losing 40% of inbound leads because our response time was 6+ hours. So I built an AI agent that qualifies and responds in under 90 seconds. 12 beta users, 3x conversion on day one."}
                     value={submitData.description}
-                    onChange={e => setSubmitData(d => ({ ...d, description: e.target.value }))}
-                    style={{ minHeight: 140 }}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val.length <= 500) setSubmitData(d => ({ ...d, description: val }));
+                    }}
+                    maxLength={500}
+                    style={{
+                      minHeight: 140,
+                      borderColor: submitData.description.length >= 500 ? "#DC2626" : undefined,
+                    }}
                     autoFocus
                   />
-                  <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                    {submitData.description.length}/500
+                  <div style={{
+                    fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                    color: submitData.description.length >= 480 ? (submitData.description.length >= 500 ? "#DC2626" : "#B45309") : C.textMute,
+                    fontWeight: submitData.description.length >= 500 ? 600 : 400,
+                  }}>
+                    {submitData.description.length}/500{submitData.description.length >= 500 && " — limit reached"}
                   </div>
                 </div>
               )}
@@ -999,7 +972,7 @@ function HomePage() {
                     {(() => {
                       const suggestions = [
                         "Next.js", "React", "Python", "Node.js", "TypeScript",
-                        "Claude API", "OpenAI", "Supabase", "Firebase", "MongoDB",
+                        "Claude API", "OpenAI", "OpenClaw", "Supabase", "Firebase", "MongoDB",
                         "PostgreSQL", "Tailwind CSS", "Flutter", "FastAPI", "Vercel",
                         "AWS", "Docker", "Stripe", "Prisma", "Go",
                       ];
@@ -1117,14 +1090,14 @@ function HomePage() {
 
                   <div ref={collabDropdownRef}>
                     <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 8 }}>
-                      Collaborators (optional)
+                      Team members (optional)
                     </div>
                     <div style={{ position: "relative", marginBottom: 10 }}>
                       <input
                         className="submit-input"
                         placeholder="Search by name..."
-                        value={submitData.collabInput}
-                        onChange={e => { const v = e.target.value; setSubmitData(d => ({ ...d, collabInput: v })); searchCollabs(v); }}
+                        value={submitData.teamInput}
+                        onChange={e => { const v = e.target.value; setSubmitData(d => ({ ...d, teamInput: v })); searchCollabs(v); }}
                         onFocus={() => { if (collabResults.length > 0) setShowCollabDropdown(true); }}
                       />
                       {searchingCollabs && (
@@ -1132,9 +1105,9 @@ function HomePage() {
                           Searching...
                         </span>
                       )}
-                      {!searchingCollabs && submitData.collabInput.trim().length >= 2 && collabResults.length === 0 && (
+                      {!searchingCollabs && submitData.teamInput.trim().length >= 2 && collabResults.length === 0 && (
                         <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
-                          No members found for &ldquo;{submitData.collabInput.trim()}&rdquo;
+                          No members found for &ldquo;{submitData.teamInput.trim()}&rdquo;
                         </div>
                       )}
                       {showCollabDropdown && collabResults.length > 0 && (
@@ -1145,9 +1118,9 @@ function HomePage() {
                           maxHeight: 200, overflowY: "auto",
                         }}>
                           {collabResults.map(u => {
-                            const already = submitData.collabs.some(c => c.name === u.name);
+                            const already = submitData.team.some(c => c._id === u._id);
                             return (
-                              <button key={u._id} onClick={() => pickCollab(u)} disabled={already} style={{
+                              <button key={u._id} onClick={() => pickTeamMember(u)} disabled={already} style={{
                                 width: "100%", padding: "10px 14px", border: "none", background: "none",
                                 cursor: already ? "default" : "pointer", display: "flex", alignItems: "center", gap: 10,
                                 textAlign: "left", transition: "background 0.1s", opacity: already ? 0.4 : 1,
@@ -1178,9 +1151,9 @@ function HomePage() {
                         </div>
                       )}
                     </div>
-                    {submitData.collabs.length > 0 && (
+                    {submitData.team.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                        {submitData.collabs.map((c, ci) => (
+                        {submitData.team.map((c, ci) => (
                           <span key={ci} style={{
                             display: "inline-flex", alignItems: "center", gap: 6,
                             padding: "5px 10px 5px 8px", borderRadius: 8,
@@ -1198,7 +1171,29 @@ function HomePage() {
                             </span>
                             {c.name}
                             <span
-                              onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, collabs: d.collabs.filter((_, idx) => idx !== ci) })); }}
+                              onClick={ev => {
+                                ev.stopPropagation();
+                                setSubmitData(d => ({
+                                  ...d,
+                                  team: d.team.map((t, idx) => idx === ci
+                                    ? { ...t, role: t.role === 'creator' ? 'collaborator' : 'creator' }
+                                    : t
+                                  ),
+                                }));
+                              }}
+                              style={{
+                                fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                                padding: "2px 7px", borderRadius: 4, cursor: "pointer",
+                                fontFamily: "var(--sans)", userSelect: "none",
+                                background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
+                                color: c.role === 'creator' ? "#059669" : C.textMute,
+                                transition: "all 0.15s",
+                              }}
+                            >
+                              {c.role === 'creator' ? 'Creator' : 'Collaborator'}
+                            </span>
+                            <span
+                              onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, team: d.team.filter((_, idx) => idx !== ci) })); }}
                               style={{
                                 cursor: "pointer", fontSize: 14, color: C.textMute,
                                 lineHeight: 1, marginTop: -1,
@@ -1209,7 +1204,7 @@ function HomePage() {
                       </div>
                     )}
                     <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
-                      Search for GrowthX members to add as collaborators
+                      Search for GrowthX members — tap role to toggle Creator / Collaborator
                     </div>
                   </div>
                 </div>
@@ -1254,6 +1249,8 @@ function HomePage() {
                       if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) { setSubmitError("Please enter a valid URL starting with http:// or https://"); return; }
                       setSubmitStep(1);
                     } else if (submitStep === 1) {
+                      if (!submitData.description.trim()) { setSubmitError("Description is required. Tell us what you built."); return; }
+                      if (submitData.description.length > 500) { setSubmitError("Description must be 500 characters or less."); return; }
                       setSubmitStep(2);
                     } else {
                       if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }

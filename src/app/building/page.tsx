@@ -75,6 +75,7 @@ export default function BuildingPage() {
   const [building, setBuilding] = useState<BuildingProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +84,7 @@ export default function BuildingPage() {
       const raw = d.buildings || d.building || [];
       setBuilding(raw.map((p: Record<string, unknown>) => normalizeBuildingProject(p)));
     }).finally(() => setLoading(false));
-    bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
+    bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user))).finally(() => setUserLoading(false));
   }, []);
 
   useEffect(() => {
@@ -160,7 +161,9 @@ export default function BuildingPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
               Submit your project
             </button>
-            {user ? (
+            {userLoading ? (
+              <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
+            ) : user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                   <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />

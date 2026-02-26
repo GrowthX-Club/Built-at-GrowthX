@@ -255,7 +255,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
                             <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Maker</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             <Badge role={reply.author.role} />
                             <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
                           </div>
@@ -562,8 +562,8 @@ export default function ProjectDetailPage() {
                 transition: "border 0.25s, background 0.25s, color 0.25s",
                 position: "relative", overflow: "visible",
               }}
-              onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = C.bg; }}}
-              onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}}
+              onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.brand; e.currentTarget.style.borderColor = C.brand; e.currentTarget.style.color = "#fff"; }}}
+              onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}}
               >
                 <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, flexShrink: 0 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
@@ -602,19 +602,17 @@ export default function ProjectDetailPage() {
         <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
           <p style={{ fontSize: 16, lineHeight: 1.7, color: C.text, fontFamily: "var(--sans)", fontWeight: 400, margin: "0 0 28px", maxWidth: 620 }}>{p.description}</p>
 
-          {/* Built by */}
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Built by</div>
+          {/* Creators */}
+          <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>
+              {(p.creators || []).length > 0 ? "Creators" : "Creator"}
+            </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "10px 16px", borderRadius: 12,
                 background: C.surface, border: `1px solid ${C.border}`,
-                cursor: "pointer", transition: "border-color 0.12s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
-              onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
-              >
+              }}>
                 <Av initials={p.builder.avatar} size={34} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
@@ -640,16 +638,12 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
               </div>
-              {p.collabs.map((c, i) => (
+              {(p.creators || []).map((c, i) => (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 16px", borderRadius: 12,
                   background: C.surface, border: `1px solid ${C.border}`,
-                  cursor: "pointer", transition: "border-color 0.12s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
-                onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
-                >
+                }}>
                   <Av initials={c.avatar} size={30} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
@@ -675,6 +669,43 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
+          {/* Collaborators */}
+          {p.collabs.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Collaborators</div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {p.collabs.map((c, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 16px", borderRadius: 12,
+                    background: C.surface, border: `1px solid ${C.border}`,
+                  }}>
+                    <Av initials={c.avatar} size={30} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
+                      {c.title && c.company && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
+                          <span>{c.title}</span>
+                          <span style={{
+                            width: 13, height: 13, borderRadius: 3,
+                            background: c.companyColor || C.accent,
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 6.5, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
+                            overflow: "hidden", position: "relative",
+                          }}>
+                            {c.company[0]}
+                            <img src={getCompanyLogoUrl(c.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                          </span>
+                          <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Tech stack */}
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
@@ -687,11 +718,7 @@ export default function ProjectDetailPage() {
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "6px 16px 6px 8px", borderRadius: 40,
                     background: C.surface, border: `1px solid ${C.border}`,
-                    cursor: "pointer", transition: "all 0.12s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.06)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}
-                  >
+                  }}>
                     <div style={{
                       width: 22, height: 22, borderRadius: 6,
                       background: meta.bg, color: meta.color,
@@ -746,7 +773,12 @@ export default function ProjectDetailPage() {
                   color: C.text, fontFamily: "var(--sans)",
                   background: "transparent", outline: "none",
                   resize: "none", minHeight: 44, lineHeight: 1.5,
+                  transition: "border-color 0.15s",
                 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
+                onMouseLeave={e => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.borderColor = C.borderLight; }}
+                onFocus={e => { e.currentTarget.style.borderColor = C.accent; }}
+                onBlur={e => { e.currentTarget.style.borderColor = C.borderLight; }}
               />
               {comment.trim() && (
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -774,7 +806,7 @@ export default function ProjectDetailPage() {
             return (
               <div key={root.id} style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
                 <div style={{ display: "flex", gap: 14 }}>
-                  <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} />
+                  <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
@@ -782,7 +814,7 @@ export default function ProjectDetailPage() {
                       </span>
                       <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} />
                       {isRootOP && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Maker</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                       )}
                       <Badge role={root.authorRole || "member"} />
                       <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
@@ -837,12 +869,12 @@ export default function ProjectDetailPage() {
                                   borderRadius: "0 10px 10px 0",
                                 }}>
                                   <div style={{ display: "flex", gap: 10 }}>
-                                    <Av initials={replyInitials} size={30} highlight role={reply.authorRole || "member"} />
+                                    <Av initials={replyInitials} size={30} highlight role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                                     <div style={{ flex: 1 }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                         <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
                                         <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} />
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Maker</span>
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                                         <Badge role={reply.authorRole || "member"} />
                                         <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                       </div>
@@ -853,7 +885,7 @@ export default function ProjectDetailPage() {
                                 </div>
                               ) : (
                                 <div style={{ display: "flex", gap: 10 }}>
-                                  <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} />
+                                  <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                                   <div style={{ flex: 1 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                       <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.authorName}</span>

@@ -72,6 +72,7 @@ export interface Collab {
   title?: string;
   company?: string;
   companyColor?: string;
+  role?: 'creator' | 'collaborator';
 }
 
 export interface GalleryItem {
@@ -87,6 +88,7 @@ export interface Project {
   tagline: string;
   description: string;
   builder: Builder;
+  creators?: Collab[];
   collabs: Collab[];
   weighted: number;
   raw: number;
@@ -98,6 +100,7 @@ export interface Project {
   date: string;
   gallery: GalleryItem[];
   url?: string;
+  enabled: boolean;
 }
 
 export interface BuildingProject {
@@ -181,6 +184,7 @@ export interface Comment {
   projectId: string | number;
   authorName: string;
   authorAvatar: string;
+  authorAvatarUrl?: string;
   authorRole: string;
   authorTitle: string;
   authorCompany: string;
@@ -275,23 +279,30 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     builder = { name: 'Anonymous', avatar: '?', city: '' };
   }
 
-  // Handle populated collabs array
-  const rawCollabs = Array.isArray(p.collabs) ? p.collabs : [];
-  const collabs: Collab[] = rawCollabs.map((c: Record<string, unknown>) => {
-    if (c && typeof c === 'object' && c.name && typeof c.name === 'object') {
-      // Populated user object
-      const u = formatPopulatedUser(c);
-      return {
-        _id: (c._id ?? '') as string,
-        name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
-        title: u.role || undefined, company: u.company || undefined,
-        companyColor: u.companyColor || undefined,
-      };
-    }
-    // Already flat collab shape — could be an ObjectId string
-    if (typeof c === 'string') return { _id: c, name: '', avatar: '' } as Collab;
-    return c as unknown as Collab;
-  });
+  // Helper to parse a populated users array
+  const parseUserArray = (raw: unknown[], role: 'creator' | 'collaborator'): Collab[] =>
+    raw.map((_c) => {
+      if (typeof _c === 'string') return { _id: _c, name: '', avatar: '', role } as Collab;
+      const c = _c as Record<string, unknown>;
+      if (c && typeof c === 'object' && c.name && typeof c.name === 'object') {
+        const u = formatPopulatedUser(c);
+        return {
+          _id: (c._id ?? '') as string,
+          name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
+          title: u.role || undefined, company: u.company || undefined,
+          companyColor: u.companyColor || undefined, role,
+        };
+      }
+      return { ...(c as unknown as Collab), role };
+    });
+
+  // Handle populated creators array (additional creators beyond the submitter)
+  const creators = parseUserArray(Array.isArray(p.creators) ? p.creators : [], 'creator');
+
+  // Handle populated collabs array — exclude anyone already in creators
+  const creatorIds = new Set(creators.map(c => c._id || c.name).filter(Boolean));
+  const collabs = parseUserArray(Array.isArray(p.collabs) ? p.collabs : [], 'collaborator')
+    .filter(c => !creatorIds.has(c._id || c.name));
 
   return {
     id: (p.id ?? p._id ?? '') as string,
@@ -300,6 +311,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     tagline: (p.tagline ?? '') as string,
     description: (p.description ?? '') as string,
     builder,
+    creators,
     collabs,
     weighted: (p.weighted ?? p.weighted_votes ?? 0) as number,
     raw: (p.raw ?? p.raw_votes ?? 0) as number,
@@ -311,6 +323,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     date: (p.date ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
     url: (p.url as string) || undefined,
+    enabled: (p.enabled !== undefined ? p.enabled : true) as boolean,
   };
 }
 
@@ -432,12 +445,14 @@ export function normalizeComment(c: Record<string, unknown>): Comment {
   let authorTitle = (c.authorTitle ?? c.author_title ?? "") as string;
   let authorCompany = (c.authorCompany ?? c.author_company ?? "") as string;
   let authorCompanyColor = (c.authorCompanyColor ?? c.author_company_color ?? "") as string;
+  let authorAvatarUrl = (c.authorAvatarUrl ?? c.author_avatar_url ?? undefined) as string | undefined;
 
   if (authorRaw && typeof authorRaw === 'object' && authorRaw.name && typeof authorRaw.name === 'object') {
     // Populated gx-backend user object
     const u = formatPopulatedUser(authorRaw);
     authorName = u.name;
     authorAvatar = u.initials;
+    authorAvatarUrl = u.avatarUrl;
     authorRole = 'member';
     authorTitle = u.role;
     authorCompany = u.company;
@@ -449,6 +464,7 @@ export function normalizeComment(c: Record<string, unknown>): Comment {
     projectId: (c.projectId ?? c.project_id ?? "") as string,
     authorName,
     authorAvatar,
+    authorAvatarUrl,
     authorRole,
     authorTitle,
     authorCompany,
@@ -464,6 +480,34 @@ export interface Vote {
   projectId: number;
   builderName: string;
   weight: number;
+}
+
+// ---- BX API Keys ----
+export interface BxApiKey {
+  _id: string;
+  user: string;
+  key_prefix: string;
+  name: string;
+  is_active: boolean;
+  last_used_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateApiKeyResponse {
+  success: true;
+  msg: string;
+  api_key: string;
+}
+
+export interface ListApiKeysResponse {
+  success: true;
+  api_keys: BxApiKey[];
+}
+
+export interface RevokeApiKeyResponse {
+  success: true;
+  msg: string;
 }
 
 export const ROLE_WEIGHTS: Record<string, number> = {
@@ -493,7 +537,7 @@ export const STACK_META: Record<string, { icon: string; bg: string; color: strin
   "Google Maps API": { icon: "G", bg: "#4285F4", color: "#fff" },
   "React Native": { icon: "\u{269B}", bg: "#61DAFB", color: "#222" },
   "WhatsApp Business API": { icon: "W", bg: "#25D366", color: "#fff" },
-  "OpenClaw": { icon: "O", bg: "#000", color: "#fff" },
+  "OpenClaw": { icon: "\u{1F99E}", bg: "#D63B2F", color: "#fff" },
 };
 
 // Stack name → logo.dev domain mapping
@@ -548,9 +592,15 @@ const STACK_DOMAINS: Record<string, string> = {
   "OpenClaw": "openclaw.com",
 };
 
+// Hardcoded logo URLs for stacks where logo.dev doesn't have a good match
+const STACK_LOGO_OVERRIDES: Record<string, string> = {
+  "OpenClaw": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/openclaw.png",
+};
+
 /** Generate a logo.dev URL for a tech stack item */
 export function getStackLogoUrl(stackName: string): string {
   if (!stackName) return '';
+  if (STACK_LOGO_OVERRIDES[stackName]) return STACK_LOGO_OVERRIDES[stackName];
   // Use known mapping first, fall back to best-effort domain guess
   const domain = STACK_DOMAINS[stackName]
     || stackName.toLowerCase().replace(/\s*(api|sdk|\.js|\.ts)$/i, '').replace(/[^a-z0-9]/g, '') + '.com';
