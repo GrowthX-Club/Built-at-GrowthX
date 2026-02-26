@@ -157,7 +157,7 @@ export default function MyProjectsPage() {
             company: (u.company ?? '') as string,
             role: (u.role ?? '') as string,
           }));
-          setUserResults(users);
+          setUserResults(user ? users.filter((u: UserResult) => u._id !== user._id) : users);
           setShowCollabDropdown(true);
         })
         .finally(() => setSearchingUsers(false));
@@ -210,6 +210,7 @@ export default function MyProjectsPage() {
     setEditError("");
     if (!editData.name.trim()) { setEditError("Project name is required."); return; }
     if (!editData.tagline.trim()) { setEditError("Tagline is required."); return; }
+    if (!editData.description.trim()) { setEditError("Description is required. Tell us what you built."); return; }
     if (editData.stack.length === 0) { setEditError("Add at least one tech stack item."); return; }
     setSaving(true);
     try {
@@ -384,10 +385,14 @@ export default function MyProjectsPage() {
                         onChange={e => setEditData(d => ({ ...d, tagline: e.target.value }))}
                         maxLength={100}
                         placeholder="One-line tagline (what does it do?)"
-                        style={inputStyle}
+                        style={{ ...inputStyle, borderColor: editData.tagline.length >= 100 ? "#DC2626" : undefined }}
                       />
-                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                        {editData.tagline.length}/100
+                      <div style={{
+                        fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                        color: editData.tagline.length >= 90 ? (editData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
+                        fontWeight: editData.tagline.length >= 100 ? 600 : 400,
+                      }}>
+                        {editData.tagline.length}/100{editData.tagline.length >= 100 && " — limit reached"}
                       </div>
                     </div>
 
@@ -490,7 +495,7 @@ export default function MyProjectsPage() {
                       {(() => {
                         const suggestions = [
                           "Next.js", "React", "Python", "Node.js", "TypeScript",
-                          "Claude API", "OpenAI", "Supabase", "Firebase", "MongoDB",
+                          "Claude API", "OpenAI", "OpenClaw", "Supabase", "Firebase", "MongoDB",
                           "PostgreSQL", "Tailwind CSS", "Flutter", "FastAPI", "Vercel",
                           "AWS", "Docker", "Stripe", "Prisma", "Go",
                         ];

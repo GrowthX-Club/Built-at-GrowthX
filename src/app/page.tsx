@@ -157,6 +157,7 @@ function HomePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -182,7 +183,8 @@ function HomePage() {
   const loadUser = useCallback(() => {
     bxApi("/me")
       .then((r) => r.json())
-      .then((d) => setUser(normalizeUser(d.user)));
+      .then((d) => setUser(normalizeUser(d.user)))
+      .finally(() => setUserLoading(false));
   }, []);
 
   useEffect(() => {
@@ -228,7 +230,7 @@ function HomePage() {
             avatarUrl: (u.avatar_url ?? undefined) as string | undefined,
             company: (u.company ?? '') as string,
             role: (u.role ?? '') as string,
-          }));
+          })).filter((u: { _id: string }) => !user?._id || u._id !== user._id);
           setCollabResults(users);
           setShowCollabDropdown(true);
         })
@@ -417,7 +419,9 @@ function HomePage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
               Submit your project
             </button>
-            {user ? (
+            {userLoading ? (
+              <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
+            ) : user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                   <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
@@ -820,9 +824,14 @@ function HomePage() {
                       value={submitData.tagline}
                       onChange={e => setSubmitData(d => ({ ...d, tagline: e.target.value }))}
                       maxLength={100}
+                      style={{ borderColor: submitData.tagline.length >= 100 ? "#DC2626" : undefined }}
                     />
-                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                      {submitData.tagline.length}/100
+                    <div style={{
+                      fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                      color: submitData.tagline.length >= 90 ? (submitData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
+                      fontWeight: submitData.tagline.length >= 100 ? 600 : 400,
+                    }}>
+                      {submitData.tagline.length}/100{submitData.tagline.length >= 100 && " — limit reached"}
                     </div>
                   </div>
                   <div>
@@ -874,12 +883,23 @@ function HomePage() {
                     className="submit-textarea"
                     placeholder={"e.g. We were losing 40% of inbound leads because our response time was 6+ hours. So I built an AI agent that qualifies and responds in under 90 seconds. 12 beta users, 3x conversion on day one."}
                     value={submitData.description}
-                    onChange={e => setSubmitData(d => ({ ...d, description: e.target.value }))}
-                    style={{ minHeight: 140 }}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val.length <= 500) setSubmitData(d => ({ ...d, description: val }));
+                    }}
+                    maxLength={500}
+                    style={{
+                      minHeight: 140,
+                      borderColor: submitData.description.length >= 500 ? "#DC2626" : undefined,
+                    }}
                     autoFocus
                   />
-                  <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                    {submitData.description.length}/500
+                  <div style={{
+                    fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                    color: submitData.description.length >= 480 ? (submitData.description.length >= 500 ? "#DC2626" : "#B45309") : C.textMute,
+                    fontWeight: submitData.description.length >= 500 ? 600 : 400,
+                  }}>
+                    {submitData.description.length}/500{submitData.description.length >= 500 && " — limit reached"}
                   </div>
                 </div>
               )}
@@ -949,7 +969,7 @@ function HomePage() {
                     {(() => {
                       const suggestions = [
                         "Next.js", "React", "Python", "Node.js", "TypeScript",
-                        "Claude API", "OpenAI", "Supabase", "Firebase", "MongoDB",
+                        "Claude API", "OpenAI", "OpenClaw", "Supabase", "Firebase", "MongoDB",
                         "PostgreSQL", "Tailwind CSS", "Flutter", "FastAPI", "Vercel",
                         "AWS", "Docker", "Stripe", "Prisma", "Go",
                       ];
@@ -1204,6 +1224,8 @@ function HomePage() {
                       if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) { setSubmitError("Please enter a valid URL starting with http:// or https://"); return; }
                       setSubmitStep(1);
                     } else if (submitStep === 1) {
+                      if (!submitData.description.trim()) { setSubmitError("Description is required. Tell us what you built."); return; }
+                      if (submitData.description.length > 500) { setSubmitError("Description must be 500 characters or less."); return; }
                       setSubmitStep(2);
                     } else {
                       if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }

@@ -103,6 +103,7 @@ export default function BuildersPage() {
   const [builders, setBuilders] = useState<BuilderProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -116,7 +117,7 @@ export default function BuildersPage() {
     bxApi("/members").then((r) => r.json()).then((d) => {
       setBuilders((d.members || []).map((m: Record<string, unknown>) => normalizeMember(m)));
     }).finally(() => setLoading(false));
-    bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
+    bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user))).finally(() => setUserLoading(false));
   }, []);
 
   useEffect(() => {
@@ -212,7 +213,9 @@ export default function BuildersPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
               Submit your project
             </button>
-            {user ? (
+            {userLoading ? (
+              <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
+            ) : user ? (
               <div ref={profileMenuRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                   <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
@@ -422,35 +425,49 @@ export default function BuildersPage() {
                 <p style={{ fontSize: 13, color: C.textMute, textAlign: "center", padding: "24px 0" }}>No projects yet.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {builderProjects.map(p => (
-                    <div
-                      key={p.id}
-                      onClick={() => { setSelectedBuilder(null); router.push(`/projects/${p.id}`); }}
-                      style={{
-                        padding: "14px 18px", background: C.bg,
-                        border: `1px solid ${C.borderLight}`, borderRadius: 12,
-                        cursor: "pointer", transition: "all 0.12s",
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.transform = "none"; }}
-                    >
-                      <div style={{ fontSize: 14.5, fontWeight: 560, color: C.text, fontFamily: "var(--sans)", marginBottom: 3 }}>
-                        {p.name}
+                  {builderProjects.map(p => {
+                    const isCreator = p.builder?.name === selectedBuilder.name;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => { setSelectedBuilder(null); router.push(`/projects/${p.id}`); }}
+                        style={{
+                          padding: "14px 18px", background: C.bg,
+                          border: `1px solid ${C.borderLight}`, borderRadius: 12,
+                          cursor: "pointer", transition: "all 0.12s",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.transform = "none"; }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                          <div style={{ fontSize: 14.5, fontWeight: 560, color: C.text, fontFamily: "var(--sans)" }}>
+                            {p.name}
+                          </div>
+                          <span style={{
+                            fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                            padding: "2px 7px", borderRadius: 4,
+                            fontFamily: "var(--sans)",
+                            background: isCreator ? "#D1FAE5" : C.accentSoft,
+                            color: isCreator ? "#059669" : C.textMute,
+                          }}>
+                            {isCreator ? "Creator" : "Collaborator"}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, marginBottom: 8 }}>
+                          {p.tagline}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
+                          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ fontSize: 12, opacity: 0.5 }}>{"\u25B3"}</span>
+                            {p.weighted.toLocaleString()}
+                          </span>
+                          {p.stack && p.stack.length > 0 && (
+                            <span>{p.stack.slice(0, 3).join(", ")}{p.stack.length > 3 ? ` +${p.stack.length - 3}` : ""}</span>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, marginBottom: 8 }}>
-                        {p.tagline}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <span style={{ fontSize: 12, opacity: 0.5 }}>{"\u25B3"}</span>
-                          {p.weighted.toLocaleString()}
-                        </span>
-                        {p.stack && p.stack.length > 0 && (
-                          <span>{p.stack.slice(0, 3).join(", ")}{p.stack.length > 3 ? ` +${p.stack.length - 3}` : ""}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

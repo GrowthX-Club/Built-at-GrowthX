@@ -497,7 +497,7 @@ export const STACK_META: Record<string, { icon: string; bg: string; color: strin
   "Google Maps API": { icon: "G", bg: "#4285F4", color: "#fff" },
   "React Native": { icon: "\u{269B}", bg: "#61DAFB", color: "#222" },
   "WhatsApp Business API": { icon: "W", bg: "#25D366", color: "#fff" },
-  "OpenClaw": { icon: "O", bg: "#000", color: "#fff" },
+  "OpenClaw": { icon: "\u{1F99E}", bg: "#D63B2F", color: "#fff" },
 };
 
 // Stack name → logo.dev domain mapping
@@ -552,9 +552,15 @@ const STACK_DOMAINS: Record<string, string> = {
   "OpenClaw": "openclaw.com",
 };
 
+// Hardcoded logo URLs for stacks where logo.dev doesn't have a good match
+const STACK_LOGO_OVERRIDES: Record<string, string> = {
+  "OpenClaw": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/openclaw.png",
+};
+
 /** Generate a logo.dev URL for a tech stack item */
 export function getStackLogoUrl(stackName: string): string {
   if (!stackName) return '';
+  if (STACK_LOGO_OVERRIDES[stackName]) return STACK_LOGO_OVERRIDES[stackName];
   // Use known mapping first, fall back to best-effort domain guess
   const domain = STACK_DOMAINS[stackName]
     || stackName.toLowerCase().replace(/\s*(api|sdk|\.js|\.ts)$/i, '').replace(/[^a-z0-9]/g, '') + '.com';
