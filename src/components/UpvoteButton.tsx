@@ -28,6 +28,7 @@ export default function UpvoteButton({
   const [voted, setVoted] = useState(initialVoted);
   const [weighted, setWeighted] = useState(initialWeighted);
   const [loading, setLoading] = useState(false);
+  const [ghostActive, setGhostActive] = useState(false);
 
   const isLarge = size === "large";
 
@@ -44,6 +45,10 @@ export default function UpvoteButton({
     try {
       const result = await onVote(projectId);
       if (result) {
+        if (result.voted && !voted) {
+          setGhostActive(true);
+          setTimeout(() => setGhostActive(false), 600);
+        }
         setVoted(result.voted);
         setWeighted(result.weighted);
       }
@@ -71,12 +76,22 @@ export default function UpvoteButton({
         opacity: loading ? 0.6 : 1,
         fontFamily: "var(--sans)",
         color: voted ? C.brand : C.text,
+        position: "relative",
+        overflow: "visible",
       }}
     >
-      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: iconSize, height: iconSize, flexShrink: 0 }}>
+      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: iconSize, height: iconSize, flexShrink: 0 }}>
         <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
           <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
         </svg>
+        <span
+          className={`vote-ghost${ghostActive ? " active" : ""}`}
+          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
+          </svg>
+        </span>
       </span>
       <span
         style={{
