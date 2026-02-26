@@ -12,6 +12,7 @@ import {
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import BuiltLogo from "@/components/BuiltLogo";
 
@@ -55,6 +56,7 @@ export default function AppNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { openLoginDialog } = useLoginDialog();
+  const { override } = useNavOverride();
   const { isMobile, isTablet } = useResponsive();
 
   const [user, setUser] = useState<BuilderProfile | null>(null);
@@ -129,9 +131,15 @@ export default function AppNav() {
         }}>
           {isMobile ? (
             <>
-              <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-              </button>
+              {override ? (
+                <button onClick={() => router.push(override.backHref)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+              ) : (
+                <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+              )}
               <BuiltLogo height={36} onClick={() => router.push("/")} />
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
@@ -250,36 +258,66 @@ export default function AppNav() {
                   </button>
                 )}
               </div>
-              {/* Tabs — inside content-aligned container */}
+              {/* Tabs or override (back + title) — inside content-aligned container */}
               <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px", height: 65, display: "flex", alignItems: "center", position: "relative" }}>
-                <div style={{ display: "flex", gap: 0 }}>
-                  {NAV_TABS.map(t => {
-                    const active = isTabActive(t.href);
-                    return (
-                      <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => router.push(t.href)} style={{
-                        padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                        fontSize: T.body,
-                        color: active ? C.text : C.textMute,
-                        fontFamily: "var(--sans)",
-                        transition: "color 0.25s ease",
-                        letterSpacing: "0.005em",
-                        position: "relative",
+                {override ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
+                    <button
+                      onClick={() => router.push(override.backHref)}
+                      style={{
+                        border: "none", background: "none", cursor: "pointer",
+                        fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
+                        fontWeight: 500, display: "flex", alignItems: "center", gap: 6,
+                        padding: 0, transition: "color 0.12s", flexShrink: 0,
                       }}
-                      onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
-                      onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
-                      >
-                        <span style={{ fontWeight: 600, visibility: "hidden" }}>{t.label}</span>
-                        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: active ? 600 : 400 }}>{t.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div style={{
-                  position: "absolute", bottom: 0, height: 2,
-                  background: C.text, borderRadius: 1,
-                  left: underlineStyle.left, width: underlineStyle.width,
-                  transition: "left 0.3s ease, width 0.3s ease",
-                }} />
+                      onMouseEnter={e => e.currentTarget.style.color = C.text}
+                      onMouseLeave={e => e.currentTarget.style.color = C.textSec}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                      Back
+                    </button>
+                    <span style={{
+                      fontSize: T.body, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      flex: 1, textAlign: "center",
+                    }}>
+                      {override.title}
+                    </span>
+                    {/* Spacer to balance the back button for centering */}
+                    <div style={{ width: 60, flexShrink: 0 }} />
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", gap: 0 }}>
+                      {NAV_TABS.map(t => {
+                        const active = isTabActive(t.href);
+                        return (
+                          <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => router.push(t.href)} style={{
+                            padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
+                            fontSize: T.body,
+                            color: active ? C.text : C.textMute,
+                            fontFamily: "var(--sans)",
+                            transition: "color 0.25s ease",
+                            letterSpacing: "0.005em",
+                            position: "relative",
+                          }}
+                          onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
+                          onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
+                          >
+                            <span style={{ fontWeight: 600, visibility: "hidden" }}>{t.label}</span>
+                            <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: active ? 600 : 400 }}>{t.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{
+                      position: "absolute", bottom: 0, height: 2,
+                      background: C.text, borderRadius: 1,
+                      left: underlineStyle.left, width: underlineStyle.width,
+                      transition: "left 0.3s ease, width 0.3s ease",
+                    }} />
+                  </>
+                )}
               </div>
             </div>
           )}

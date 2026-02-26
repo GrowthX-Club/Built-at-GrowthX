@@ -22,6 +22,7 @@ import {
 } from "@/types";
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 
 function timeAgo(dateStr: string): string {
@@ -299,6 +300,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
+  const { setNavOverride, clearNavOverride } = useNavOverride();
   const { isMobile } = useResponsive();
   const [project, setProject] = useState<Project | null>(null);
   const [threads, setThreads] = useState<ThreadData[]>([]);
@@ -334,6 +336,13 @@ export default function ProjectDetailPage() {
         setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
       });
   }, [params.id]);
+
+  useEffect(() => {
+    if (project) {
+      setNavOverride({ title: project.name, backHref: "/" });
+    }
+    return () => clearNavOverride();
+  }, [project, setNavOverride, clearNavOverride]);
 
   const reloadUser = () => {
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
@@ -440,101 +449,44 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-        <nav className="responsive-nav" style={{
-          position: "sticky", top: 0, zIndex: 50,
-          background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${C.border}`, padding: "0 32px",
+      <main className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "40px 32px 100px", fontFamily: "var(--sans)" }}>
+        <div className="fade-up" style={{ marginBottom: 32 }}>
+          <div className="skeleton" style={{ height: 36, width: "60%", marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 16, width: "80%", marginBottom: 20 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <div className="skeleton" style={{ width: 36, height: 36, borderRadius: 36 }} />
+            <div>
+              <div className="skeleton" style={{ height: 14, width: 100, marginBottom: 4 }} />
+              <div className="skeleton" style={{ height: 11, width: 70 }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+            <div className="skeleton" style={{ height: 24, width: 60, borderRadius: 6 }} />
+            <div className="skeleton" style={{ height: 24, width: 75, borderRadius: 6 }} />
+            <div className="skeleton" style={{ height: 24, width: 55, borderRadius: 6 }} />
+          </div>
+        </div>
+        <div className="fade-up stagger-2">
+          <div className="skeleton" style={{ height: 14, width: "100%", marginBottom: 10 }} />
+          <div className="skeleton" style={{ height: 14, width: "95%", marginBottom: 10 }} />
+          <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 10 }} />
+          <div className="skeleton" style={{ height: 14, width: "85%", marginBottom: 24 }} />
+        </div>
+        <div className="fade-up stagger-3" style={{
+          padding: "24px 28px", background: C.surface,
+          border: `1px solid ${C.border}`, borderRadius: 14, marginTop: 32,
         }}>
-          <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: 20 }}>
-            <div className="skeleton" style={{ height: 14, width: 180, borderRadius: 4 }} />
-            <div className="skeleton" style={{ height: 14, width: 100, borderRadius: 4 }} />
-            <div className="skeleton" style={{ height: 30, width: 130, borderRadius: 8 }} />
-          </div>
-        </nav>
-        <main className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "40px 32px 100px" }}>
-          <div className="fade-up" style={{ marginBottom: 32 }}>
-            <div className="skeleton" style={{ height: 36, width: "60%", marginBottom: 12 }} />
-            <div className="skeleton" style={{ height: 16, width: "80%", marginBottom: 20 }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-              <div className="skeleton" style={{ width: 36, height: 36, borderRadius: 36 }} />
-              <div>
-                <div className="skeleton" style={{ height: 14, width: 100, marginBottom: 4 }} />
-                <div className="skeleton" style={{ height: 11, width: 70 }} />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-              <div className="skeleton" style={{ height: 24, width: 60, borderRadius: 6 }} />
-              <div className="skeleton" style={{ height: 24, width: 75, borderRadius: 6 }} />
-              <div className="skeleton" style={{ height: 24, width: 55, borderRadius: 6 }} />
-            </div>
-          </div>
-          <div className="fade-up stagger-2">
-            <div className="skeleton" style={{ height: 14, width: "100%", marginBottom: 10 }} />
-            <div className="skeleton" style={{ height: 14, width: "95%", marginBottom: 10 }} />
-            <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 10 }} />
-            <div className="skeleton" style={{ height: 14, width: "85%", marginBottom: 24 }} />
-          </div>
-          <div className="fade-up stagger-3" style={{
-            padding: "24px 28px", background: C.surface,
-            border: `1px solid ${C.border}`, borderRadius: 14, marginTop: 32,
-          }}>
-            <div className="skeleton" style={{ height: 18, width: 120, marginBottom: 16 }} />
-            <div className="skeleton" style={{ height: 60, width: "100%", borderRadius: 10 }} />
-          </div>
-        </main>
-      </div>
+          <div className="skeleton" style={{ height: 18, width: 120, marginBottom: 16 }} />
+          <div className="skeleton" style={{ height: 60, width: "100%", borderRadius: 10 }} />
+        </div>
+      </main>
     );
   }
 
   const p = project;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <nav className="responsive-nav" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
-      }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: isMobile ? 10 : 20 }}>
-          <button onClick={() => router.push("/")} style={{
-            border: "none", background: "none", cursor: "pointer",
-            fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
-            fontWeight: 500, display: "flex", alignItems: "center", gap: 6,
-            padding: 0, transition: "color 0.12s", flexShrink: 0,
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = C.text}
-          onMouseLeave={e => e.currentTarget.style.color = C.textSec}
-          >
-            {isMobile ? "\u2190" : "\u2190 Back to Built at GrowthX"}
-          </button>
-          {!isMobile && (
-            <span style={{
-              fontSize: T.body, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              flex: 1, textAlign: "center",
-            }}>
-              {p.name}
-            </span>
-          )}
-          <button onClick={() => router.push("/?submit=1")} style={{
-            padding: "6px 16px", borderRadius: 8,
-            border: `1.5px solid ${C.accent}`, background: C.surface,
-            fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
-            fontFamily: "var(--sans)", color: C.text,
-            transition: "all 0.15s", flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 6,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            {!isMobile && "Submit your project"}
-          </button>
-        </div>
-      </nav>
-
-      <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px" }}>
+    <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px", fontFamily: "var(--sans)" }}>
         {/* Hero */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
@@ -965,7 +917,6 @@ export default function ProjectDetailPage() {
 
           {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
-      </div>
     </div>
   );
 }

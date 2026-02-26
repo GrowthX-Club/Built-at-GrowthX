@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { LoginDialogProvider } from "@/context/LoginDialogContext";
+import { NavProvider } from "@/context/NavContext";
 import LoginDialog from "@/components/LoginDialog";
 import AppNav from "@/components/AppNav";
 
@@ -31,9 +32,11 @@ export default function RootLayout({
       </head>
       <body className="font-sans bg-bg text-text antialiased">
         <LoginDialogProvider>
-          <AppNav />
-          {children}
-          <LoginDialog />
+          <NavProvider>
+            <AppNav />
+            {children}
+            <LoginDialog />
+          </NavProvider>
         </LoginDialogProvider>
       </body>
     </html>
