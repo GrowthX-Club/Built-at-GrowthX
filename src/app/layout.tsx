@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LoginDialogProvider } from "@/context/LoginDialogContext";
 import LoginDialog from "@/components/LoginDialog";
+import AppNav from "@/components/AppNav";
 
 export const metadata: Metadata = {
   title: "Built at GrowthX",
@@ -30,6 +31,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans bg-bg text-text antialiased">
         <LoginDialogProvider>
+          <AppNav />
           {children}
           <LoginDialog />
         </LoginDialogProvider>
