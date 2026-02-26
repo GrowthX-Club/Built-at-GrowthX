@@ -120,7 +120,7 @@ export default function AppNav() {
   return (
     <>
       <nav className="responsive-nav" style={{
-        position: "sticky", top: 0, zIndex: 50,
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
         borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0",
       }}>
@@ -323,6 +323,8 @@ export default function AppNav() {
           )}
         </div>
       </nav>
+      {/* Spacer to offset fixed nav height */}
+      <div style={{ height: isMobile ? 60 : 65 }} />
 
       {/* Mobile side drawer — portaled to body */}
       {portalMounted && createPortal(
