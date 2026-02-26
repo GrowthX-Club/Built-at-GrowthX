@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   C,
+  T,
   ROLES,
   STACK_META,
   type Project,
@@ -15,6 +16,7 @@ import {
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useResponsive } from "@/hooks/useMediaQuery";
 
 // ---- Inline Components ----
 
@@ -52,14 +54,14 @@ function generateColor(name: string): string {
 }
 
 const labelStyle = {
-  fontSize: 11, fontWeight: 650, color: C.textMute,
+  fontSize: T.caption, fontWeight: 650, color: C.textMute,
   textTransform: "uppercase" as const, letterSpacing: "0.06em",
   marginBottom: 6, display: "block", fontFamily: "var(--sans)",
 };
 
 const inputStyle = {
   width: "100%", padding: "12px 16px", borderRadius: 10,
-  border: `1px solid ${C.borderLight}`, fontSize: 14.5,
+  border: `1px solid ${C.borderLight}`, fontSize: T.body,
   color: C.text, fontFamily: "var(--sans)", background: C.bg, outline: "none",
 };
 
@@ -97,6 +99,7 @@ interface EditState {
 export default function MyProjectsPage() {
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
+  const { isMobile } = useResponsive();
   const [projects, setProjects] = useState<Project[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -285,7 +288,7 @@ export default function MyProjectsPage() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
       {/* Nav */}
-      <nav style={{
+      <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
         borderBottom: `1px solid ${C.border}`, padding: "0 32px",
@@ -294,24 +297,28 @@ export default function MyProjectsPage() {
           maxWidth: 960, margin: "0 auto",
           display: "flex", alignItems: "center", justifyContent: "space-between", height: 60,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 20 }}>
             <span
               onClick={() => router.push("/")}
               style={{
-                fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
+                fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
                 color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
               }}
             >
-              Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
             </span>
-            <span style={{ color: C.textMute, fontSize: 13 }}>/</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>My Projects</span>
+            {!isMobile && (
+              <>
+                <span style={{ color: C.textMute, fontSize: T.bodySm }}>/</span>
+                <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>My Projects</span>
+              </>
+            )}
           </div>
           {user && (
             <div ref={profileMenuRef} style={{ position: "relative" }}>
               <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                 <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
+                <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                 <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
               </button>
               {showProfileMenu && (
@@ -322,14 +329,14 @@ export default function MyProjectsPage() {
                 }}>
                   <button onClick={handleSignOut} style={{
                     width: "100%", padding: "12px 16px", border: "none", background: "none",
-                    cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                    cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                     fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                     transition: "background 0.1s",
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
                   onMouseLeave={e => e.currentTarget.style.background = "none"}
                   >
-                    <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                    <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                   </button>
                 </div>
               )}
@@ -338,12 +345,12 @@ export default function MyProjectsPage() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
+      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
         <div className="fade-up" style={{ marginBottom: 36 }}>
-          <h1 style={{ fontSize: 36, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>
+          <h1 style={{ fontSize: T.pageTitle, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>
             My Projects
           </h1>
-          <p style={{ fontSize: 15, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+          <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
             Manage and edit the projects you&apos;ve submitted.
           </p>
         </div>
@@ -379,11 +386,11 @@ export default function MyProjectsPage() {
             padding: "48px 32px", textAlign: "center",
             background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
           }}>
-            <p style={{ fontSize: 16, color: C.textSec, marginBottom: 16 }}>You haven&apos;t submitted any projects yet.</p>
+            <p style={{ fontSize: T.bodyLg, color: C.textSec, marginBottom: 16 }}>You haven&apos;t submitted any projects yet.</p>
             <button onClick={() => router.push("/?submit=1")} style={{
               padding: "10px 24px", borderRadius: 10,
               border: "none", background: C.accent, color: "#fff",
-              fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)",
+              fontSize: T.body, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)",
             }}>
               Submit your first project
             </button>
@@ -404,7 +411,7 @@ export default function MyProjectsPage() {
                       <input
                         value={editData.name}
                         onChange={e => setEditData(d => ({ ...d, name: e.target.value }))}
-                        style={{ ...inputStyle, fontSize: 22, fontWeight: 500, fontFamily: "var(--serif)" }}
+                        style={{ ...inputStyle, fontSize: T.logo, fontWeight: 500, fontFamily: "var(--serif)" }}
                         autoFocus
                       />
                     </div>
@@ -420,7 +427,7 @@ export default function MyProjectsPage() {
                         style={{ ...inputStyle, borderColor: editData.tagline.length >= 100 ? "#DC2626" : undefined }}
                       />
                       <div style={{
-                        fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                        fontSize: T.caption, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
                         color: editData.tagline.length >= 90 ? (editData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
                         fontWeight: editData.tagline.length >= 100 ? 600 : 400,
                       }}>
@@ -445,7 +452,7 @@ export default function MyProjectsPage() {
                     <div>
                       <label style={labelStyle}>Description</label>
                       <div style={{
-                        fontSize: 13, color: C.textSec, fontFamily: "var(--sans)",
+                        fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)",
                         fontWeight: 400, lineHeight: 1.55, marginBottom: 12,
                       }}>
                         Write like you&apos;re telling a friend what you built and why.
@@ -459,7 +466,7 @@ export default function MyProjectsPage() {
                           padding: "12px 16px",
                         }}
                       />
-                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
+                      <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
                         {editData.description.length}/500
                       </div>
                     </div>
@@ -481,14 +488,14 @@ export default function MyProjectsPage() {
                                 display: "inline-flex", alignItems: "center", gap: 7,
                                 padding: "5px 10px 5px 6px", borderRadius: 20,
                                 background: C.surface, border: `1.5px solid ${C.accent}`,
-                                fontSize: 12.5, color: C.text, fontWeight: 500,
+                                fontSize: T.bodySm, color: C.text, fontWeight: 500,
                                 fontFamily: "var(--sans)",
                               }}>
                                 <span style={{
                                   width: 20, height: 20, borderRadius: 5,
                                   background: meta.bg, color: meta.color,
                                   display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                  fontSize: 8.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                  fontSize: T.micro, fontWeight: 750, fontFamily: "var(--sans)",
                                   flexShrink: 0, letterSpacing: "-0.02em",
                                   position: "relative", overflow: "hidden",
                                 }}>
@@ -510,7 +517,7 @@ export default function MyProjectsPage() {
                                 <span
                                   onClick={() => setEditData(d => ({ ...d, stack: d.stack.filter((_, idx) => idx !== si) }))}
                                   style={{
-                                    cursor: "pointer", fontSize: 13, color: C.textMute,
+                                    cursor: "pointer", fontSize: T.bodySm, color: C.textMute,
                                     lineHeight: 1, marginLeft: 2,
                                     transition: "color 0.1s",
                                   }}
@@ -535,7 +542,7 @@ export default function MyProjectsPage() {
                         if (available.length === 0) return null;
                         return (
                           <div style={{ marginBottom: 12 }}>
-                            <div style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
+                            <div style={{ fontSize: T.caption, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
                               Popular — tap to add
                             </div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
@@ -551,7 +558,7 @@ export default function MyProjectsPage() {
                                       display: "inline-flex", alignItems: "center", gap: 6,
                                       padding: "4px 10px 4px 5px", borderRadius: 20,
                                       background: C.bg, border: `1px solid ${C.borderLight}`,
-                                      fontSize: 12, color: C.textSec, fontWeight: 450,
+                                      fontSize: T.label, color: C.textSec, fontWeight: 450,
                                       fontFamily: "var(--sans)", cursor: "pointer",
                                       transition: "all 0.15s",
                                     }}
@@ -562,7 +569,7 @@ export default function MyProjectsPage() {
                                       width: 18, height: 18, borderRadius: 4,
                                       background: meta.bg, color: meta.color,
                                       display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                      fontSize: 7.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                      fontSize: T.micro, fontWeight: 750, fontFamily: "var(--sans)",
                                       flexShrink: 0, letterSpacing: "-0.02em",
                                       position: "relative", overflow: "hidden",
                                     }}>
@@ -626,7 +633,7 @@ export default function MyProjectsPage() {
                             style={{
                               padding: "0 14px", borderRadius: 8,
                               border: "none", background: C.accent,
-                              fontSize: 12, fontWeight: 600, color: "#fff",
+                              fontSize: T.label, fontWeight: 600, color: "#fff",
                               cursor: "pointer", fontFamily: "var(--sans)",
                               whiteSpace: "nowrap", transition: "opacity 0.12s",
                             }}
@@ -635,7 +642,7 @@ export default function MyProjectsPage() {
                           >Add</button>
                         )}
                       </div>
-                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
+                      <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
                         Press enter or click Add
                       </div>
                     </div>
@@ -656,12 +663,12 @@ export default function MyProjectsPage() {
                           style={inputStyle}
                         />
                         {searchingUsers && (
-                          <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}>
+                          <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: T.caption, color: C.textMute }}>
                             Searching...
                           </span>
                         )}
                         {!searchingUsers && editData.teamInput.trim().length >= 2 && userResults.length === 0 && (
-                          <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
+                          <div style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
                             No members found for &ldquo;{editData.teamInput.trim()}&rdquo;
                           </div>
                         )}
@@ -695,18 +702,18 @@ export default function MyProjectsPage() {
                                       width: 32, height: 32, borderRadius: 32,
                                       background: C.accentSoft, color: C.textSec,
                                       display: "flex", alignItems: "center", justifyContent: "center",
-                                      fontSize: 12, fontWeight: 650, fontFamily: "var(--sans)",
+                                      fontSize: T.label, fontWeight: 650, fontFamily: "var(--sans)",
                                       border: `1px solid ${C.borderLight}`, flexShrink: 0,
                                     }}>
                                       {u.avatar.length <= 3 ? u.avatar : u.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: 13.5, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>
+                                      <div style={{ fontSize: T.body, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>
                                         {u.name}
-                                        {already && <span style={{ fontSize: 11, fontWeight: 400, color: C.textMute, marginLeft: 6 }}>Added</span>}
+                                        {already && <span style={{ fontSize: T.caption, fontWeight: 400, color: C.textMute, marginLeft: 6 }}>Added</span>}
                                       </div>
                                       {(u.role || u.company) && (
-                                        <div style={{ fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 4 }}>
+                                        <div style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 4 }}>
                                           {u.role && <span>{u.role}</span>}
                                           {u.role && u.company && <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>}
                                           {u.company && (
@@ -715,7 +722,7 @@ export default function MyProjectsPage() {
                                                 width: 12, height: 12, borderRadius: 3,
                                                 background: generateColor(u.company),
                                                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                                fontSize: 6, fontWeight: 800, color: "#fff", flexShrink: 0,
+                                                fontSize: T.micro, fontWeight: 800, color: "#fff", flexShrink: 0,
                                                 overflow: "hidden", position: "relative",
                                               }}>
                                                 {u.company[0]}
@@ -741,7 +748,7 @@ export default function MyProjectsPage() {
                               display: "inline-flex", alignItems: "center", gap: 8,
                               padding: "6px 10px 6px 8px", borderRadius: 10,
                               background: C.accentSoft, border: `1px solid ${C.borderLight}`,
-                              fontSize: 12.5, color: C.text, fontWeight: 480,
+                              fontSize: T.bodySm, color: C.text, fontWeight: 480,
                               fontFamily: "var(--sans)",
                             }}>
                               <span style={{
@@ -764,7 +771,7 @@ export default function MyProjectsPage() {
                                   }));
                                 }}
                                 style={{
-                                  fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                                  fontSize: T.badge, fontWeight: 650, letterSpacing: "0.03em",
                                   padding: "2px 7px", borderRadius: 4, cursor: "pointer",
                                   fontFamily: "var(--sans)", userSelect: "none",
                                   background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
@@ -776,13 +783,13 @@ export default function MyProjectsPage() {
                               </span>
                               <span
                                 onClick={() => setEditData(d => ({ ...d, team: d.team.filter((_, idx) => idx !== ci) }))}
-                                style={{ cursor: "pointer", fontSize: 14, color: C.textMute, lineHeight: 1 }}
+                                style={{ cursor: "pointer", fontSize: T.body, color: C.textMute, lineHeight: 1 }}
                               >{"\u00D7"}</span>
                             </span>
                           ))}
                         </div>
                       )}
-                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
+                      <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
                         Search for GrowthX members — tap role to toggle Creator / Collaborator
                       </div>
                     </div>
@@ -792,7 +799,7 @@ export default function MyProjectsPage() {
                       <div style={{
                         padding: "10px 14px", borderRadius: 10,
                         background: "#FEF2F2", border: "1px solid #FECACA",
-                        fontSize: 13, color: "#B91C1C", fontFamily: "var(--sans)",
+                        fontSize: T.bodySm, color: "#B91C1C", fontFamily: "var(--sans)",
                         fontWeight: 450, lineHeight: 1.45,
                       }}>
                         {editError}
@@ -803,7 +810,7 @@ export default function MyProjectsPage() {
                     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
                       <button onClick={() => { setEditError(""); cancelEdit(); }} style={{
                         padding: "9px 22px", borderRadius: 10, border: `1px solid ${C.border}`,
-                        background: "transparent", fontSize: 13, fontWeight: 500, color: C.textSec,
+                        background: "transparent", fontSize: T.bodySm, fontWeight: 500, color: C.textSec,
                         cursor: "pointer", fontFamily: "var(--sans)", transition: "all 0.12s",
                       }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
@@ -812,7 +819,7 @@ export default function MyProjectsPage() {
                       <button onClick={saveEdit} disabled={saving || !editData.name.trim()} style={{
                         padding: "9px 24px", borderRadius: 10, border: "none",
                         background: (!editData.name.trim() || saving) ? C.borderLight : C.accent,
-                        fontSize: 13, fontWeight: 600,
+                        fontSize: T.bodySm, fontWeight: 600,
                         color: (!editData.name.trim() || saving) ? C.textMute : "#fff",
                         cursor: (!editData.name.trim() || saving) ? "default" : "pointer",
                         fontFamily: "var(--sans)", transition: "all 0.15s",
@@ -826,30 +833,30 @@ export default function MyProjectsPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                           <div style={{
-                            fontSize: 17, fontWeight: 550, color: C.text,
+                            fontSize: T.subtitle, fontWeight: 550, color: C.text,
                             fontFamily: "var(--sans)", cursor: "pointer",
                           }} onClick={() => router.push(`/projects/${p.id}`)}>
                             {p.name}
                           </div>
                           {!p.enabled && (
                             <span style={{
-                              fontSize: 10, fontWeight: 600, color: C.textMute,
+                              fontSize: T.badge, fontWeight: 600, color: C.textMute,
                               fontFamily: "var(--sans)", padding: "2px 6px",
                               borderRadius: 4, background: C.borderLight,
                               textTransform: "uppercase", letterSpacing: "0.04em",
                             }}>Hidden</span>
                           )}
                         </div>
-                        <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+                        <div style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
                           {p.tagline}
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
                         <div style={{
-                          fontSize: 13, fontWeight: 600, color: C.textSec,
+                          fontSize: T.bodySm, fontWeight: 600, color: C.textSec,
                           fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 4,
                         }}>
-                          <span style={{ fontSize: 13, opacity: 0.5 }}>{"\u25B3"}</span>
+                          <span style={{ fontSize: T.bodySm, opacity: 0.5 }}>{"\u25B3"}</span>
                           {p.weighted.toLocaleString()}
                         </div>
                         {/* Enable/Disable toggle */}
@@ -875,7 +882,7 @@ export default function MyProjectsPage() {
                         <button onClick={() => startEdit(p)} style={{
                           padding: "7px 16px", borderRadius: 8,
                           border: `1px solid ${C.border}`, background: C.surface,
-                          cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
                           color: C.text, fontFamily: "var(--sans)",
                           transition: "all 0.12s",
                         }}
@@ -887,7 +894,7 @@ export default function MyProjectsPage() {
                       </div>
                     </div>
                     {p.description && (
-                      <p style={{ fontSize: 13, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
+                      <p style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
                         {p.description.length > 150 ? p.description.slice(0, 150) + "..." : p.description}
                       </p>
                     )}
@@ -896,7 +903,7 @@ export default function MyProjectsPage() {
                         {p.stack.map((s, si) => (
                           <span key={si} style={{
                             padding: "3px 8px", borderRadius: 6,
-                            background: C.accentSoft, fontSize: 11, color: C.textSec,
+                            background: C.accentSoft, fontSize: T.caption, color: C.textSec,
                             fontWeight: 500, fontFamily: "var(--sans)",
                           }}>{s}</span>
                         ))}

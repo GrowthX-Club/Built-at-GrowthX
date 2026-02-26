@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C } from "@/types";
+import { C, T } from "@/types";
 import { bxApi } from "@/lib/api";
 
 interface SubmitModalProps {
@@ -63,7 +63,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
     border: `1px solid ${C.border}`,
     borderRadius: 8,
     padding: "10px 12px",
-    fontSize: 14,
+    fontSize: T.body,
     color: C.text,
     background: C.surface,
     outline: "none",
@@ -110,7 +110,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             <h2
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 20,
+                fontSize: T.title,
                 fontWeight: 600,
                 margin: 0,
                 color: C.text,
@@ -118,7 +118,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             >
               Submit a project
             </h2>
-            <p style={{ fontSize: 13, color: C.textSec, margin: "4px 0 0" }}>
+            <p style={{ fontSize: T.bodySm, color: C.textSec, margin: "4px 0 0" }}>
               Share what you&apos;ve built with the community
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             style={{
               background: "none",
               border: "none",
-              fontSize: 20,
+              fontSize: T.title,
               color: C.textMute,
               cursor: "pointer",
               padding: 4,
@@ -145,7 +145,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
                 border: "1px solid #FECACA",
                 borderRadius: 8,
                 padding: "8px 12px",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 color: "#DC2626",
                 marginBottom: 16,
               }}
@@ -158,7 +158,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             <label
               style={{
                 display: "block",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 fontWeight: 500,
                 color: C.text,
                 marginBottom: 6,
@@ -180,7 +180,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             <label
               style={{
                 display: "block",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 fontWeight: 500,
                 color: C.text,
                 marginBottom: 6,
@@ -202,7 +202,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             <label
               style={{
                 display: "block",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 fontWeight: 500,
                 color: C.text,
                 marginBottom: 6,
@@ -227,7 +227,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             <label
               style={{
                 display: "block",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 fontWeight: 500,
                 color: C.text,
                 marginBottom: 6,
@@ -248,7 +248,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
             <label
               style={{
                 display: "block",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 fontWeight: 500,
                 color: C.text,
                 marginBottom: 6,
@@ -274,7 +274,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
                 border: `1px solid ${C.border}`,
                 borderRadius: 8,
                 padding: "10px 16px",
-                fontSize: 14,
+                fontSize: T.body,
                 fontWeight: 500,
                 color: C.textSec,
                 background: C.surface,
@@ -292,7 +292,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
                 border: "none",
                 borderRadius: 8,
                 padding: "10px 16px",
-                fontSize: 14,
+                fontSize: T.body,
                 fontWeight: 600,
                 color: "#fff",
                 background: C.accent,

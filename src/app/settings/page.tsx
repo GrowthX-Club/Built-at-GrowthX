@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   C,
+  T,
   ROLES,
   type BuilderProfile,
   type BxApiKey,
@@ -11,6 +12,7 @@ import {
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useResponsive } from "@/hooks/useMediaQuery";
 
 // ---- Inline Components ----
 
@@ -65,6 +67,7 @@ function formatDate(dateStr: string): string {
 export default function SettingsPage() {
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
+  const { isMobile } = useResponsive();
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   // Auth + User
@@ -214,7 +217,7 @@ export default function SettingsPage() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
       {/* Nav */}
-      <nav style={{
+      <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
         borderBottom: `1px solid ${C.border}`, padding: "0 32px",
@@ -223,18 +226,22 @@ export default function SettingsPage() {
           maxWidth: 960, margin: "0 auto",
           display: "flex", alignItems: "center", justifyContent: "space-between", height: 60,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 20 }}>
             <span
               onClick={() => router.push("/")}
               style={{
-                fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
+                fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
                 color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
               }}
             >
-              Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
             </span>
-            <span style={{ color: C.textMute, fontSize: 13 }}>/</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>Settings</span>
+            {!isMobile && (
+              <>
+                <span style={{ color: C.textMute, fontSize: T.bodySm }}>/</span>
+                <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>Settings</span>
+              </>
+            )}
           </div>
           {userLoading ? (
             <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
@@ -242,7 +249,7 @@ export default function SettingsPage() {
             <div ref={profileMenuRef} style={{ position: "relative" }}>
               <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                 <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
+                <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                 <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
               </button>
               {showProfileMenu && (
@@ -253,26 +260,26 @@ export default function SettingsPage() {
                 }}>
                   <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                     width: "100%", padding: "12px 16px", border: "none", background: "none",
-                    cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text,
+                    cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
                     fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                     transition: "background 0.1s",
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
                   onMouseLeave={e => e.currentTarget.style.background = "none"}
                   >
-                    <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                    <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                   </button>
                   <div style={{ height: 1, background: C.borderLight }} />
                   <button onClick={handleSignOut} style={{
                     width: "100%", padding: "12px 16px", border: "none", background: "none",
-                    cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                    cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                     fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                     transition: "background 0.1s",
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
                   onMouseLeave={e => e.currentTarget.style.background = "none"}
                   >
-                    <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                    <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                   </button>
                 </div>
               )}
@@ -281,13 +288,13 @@ export default function SettingsPage() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
+      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
         {/* Page header */}
         <div className="fade-up" style={{ marginBottom: 36 }}>
-          <h1 style={{ fontSize: 36, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>
+          <h1 className="responsive-h1" style={{ fontSize: T.pageTitle, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>
             API Keys
           </h1>
-          <p style={{ fontSize: 15, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+          <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
             Manage API keys for OpenClaw and other integrations.
           </p>
         </div>
@@ -311,14 +318,14 @@ export default function SettingsPage() {
             <div style={{
               width: 56, height: 56, borderRadius: 56, margin: "0 auto 20px",
               background: C.goldSoft, display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 24,
+              fontSize: T.heading,
             }}>
               {"\u{1F512}"}
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 8 }}>
+            <h3 style={{ fontSize: T.subtitle, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 8 }}>
               Active membership required
             </h3>
-            <p style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.5 }}>
               API key management is available to members with an active GrowthX membership.
             </p>
             <a
@@ -329,7 +336,7 @@ export default function SettingsPage() {
                 display: "inline-flex", alignItems: "center", gap: 6,
                 padding: "10px 20px", borderRadius: 10,
                 background: C.accent, color: "#fff",
-                fontSize: 13, fontWeight: 600, fontFamily: "var(--sans)",
+                fontSize: T.bodySm, fontWeight: 600, fontFamily: "var(--sans)",
                 textDecoration: "none", transition: "opacity 0.12s",
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
@@ -343,7 +350,7 @@ export default function SettingsPage() {
           <>
             {/* Header + Create button */}
             <div className="fade-up stagger-1" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>
+              <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>
                 Your API keys
               </span>
               <button
@@ -351,7 +358,7 @@ export default function SettingsPage() {
                 style={{
                   padding: "8px 16px", borderRadius: 10,
                   background: C.accent, color: "#fff", border: "none",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
                   fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 6,
                   transition: "opacity 0.12s",
                 }}
@@ -389,14 +396,14 @@ export default function SettingsPage() {
                 <div style={{
                   width: 48, height: 48, borderRadius: 48, margin: "0 auto 16px",
                   background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 20,
+                  fontSize: T.title,
                 }}>
                   {"\u{1F511}"}
                 </div>
-                <p style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", marginBottom: 4 }}>
+                <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", marginBottom: 4 }}>
                   No API keys yet
                 </p>
-                <p style={{ fontSize: 13, color: C.textMute, fontFamily: "var(--sans)" }}>
+                <p style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)" }}>
                   Create a key to connect OpenClaw or other integrations.
                 </p>
               </div>
@@ -410,17 +417,17 @@ export default function SettingsPage() {
                     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
                   }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 4 }}>
+                      <div style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 4 }}>
                         {k.name}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 13, fontFamily: "var(--mono)", color: C.textSec }}>
+                        <span style={{ fontSize: T.bodySm, fontFamily: "var(--mono)", color: C.textSec }}>
                           {k.key_prefix}{"\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"}
                         </span>
-                        <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
+                        <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
                           Created {formatDate(k.created_at)}
                         </span>
-                        <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
+                        <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
                           {k.last_used_at ? `Last used ${timeAgo(k.last_used_at)}` : "Never used"}
                         </span>
                       </div>
@@ -430,7 +437,7 @@ export default function SettingsPage() {
                       style={{
                         padding: "6px 14px", borderRadius: 8,
                         border: "1px solid #FECACA", background: "transparent",
-                        fontSize: 12, fontWeight: 550, color: "#DC2626",
+                        fontSize: T.label, fontWeight: 550, color: "#DC2626",
                         cursor: "pointer", fontFamily: "var(--sans)",
                         transition: "all 0.12s",
                       }}
@@ -455,15 +462,15 @@ export default function SettingsPage() {
                 style={{
                   width: "100%", padding: "16px 20px", border: "none", background: "none",
                   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
-                  fontSize: 14, fontWeight: 600, color: C.text, fontFamily: "var(--sans)",
+                  fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)",
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>{"\u{1F99E}"}</span>
+                  <span style={{ fontSize: T.bodyLg }}>{"\u{1F99E}"}</span>
                   Connect with OpenClaw
                 </span>
                 <span style={{
-                  fontSize: 10, color: C.textMute,
+                  fontSize: T.badge, color: C.textMute,
                   transform: guideExpanded ? "rotate(180deg)" : "none",
                   transition: "transform 0.2s",
                 }}>
@@ -472,13 +479,13 @@ export default function SettingsPage() {
               </button>
               {guideExpanded && (
                 <div style={{ padding: "0 20px 20px", borderTop: `1px solid ${C.borderLight}` }}>
-                  <ol style={{ margin: "16px 0 0", paddingLeft: 20, fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.8 }}>
-                    <li>Install the <span style={{ fontFamily: "var(--mono)", fontSize: 13, background: C.bg, padding: "2px 6px", borderRadius: 4 }}>growthx-bx-submit</span> skill on OpenClaw</li>
+                  <ol style={{ margin: "16px 0 0", paddingLeft: 20, fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.8 }}>
+                    <li>Install the <span style={{ fontFamily: "var(--mono)", fontSize: T.bodySm, background: C.bg, padding: "2px 6px", borderRadius: 4 }}>growthx-bx-submit</span> skill on OpenClaw</li>
                     <li>
                       Set these environment variables in your OpenClaw config:
                       <div style={{
                         marginTop: 8, padding: "12px 14px", background: C.bg,
-                        borderRadius: 8, fontFamily: "var(--mono)", fontSize: 12.5,
+                        borderRadius: 8, fontFamily: "var(--mono)", fontSize: T.bodySm,
                         lineHeight: 1.8, color: C.text, border: `1px solid ${C.borderLight}`,
                       }}>
                         <div>GROWTHX_API_KEY = <span style={{ color: C.textMute }}>&lt;your key&gt;</span></div>
@@ -502,7 +509,7 @@ export default function SettingsPage() {
             background: "rgba(24,23,16,0.4)", backdropFilter: "blur(6px)",
             animation: "fadeIn 0.2s ease",
           }} />
-          <div style={{
+          <div className="responsive-modal" style={{
             position: "relative", width: "100%", maxWidth: 420,
             background: C.surface, borderRadius: 20,
             border: `1px solid ${C.border}`,
@@ -513,17 +520,17 @@ export default function SettingsPage() {
             <button onClick={() => setShowCreateModal(false)} style={{
               position: "absolute", top: 16, right: 16,
               background: "none", border: "none", cursor: "pointer",
-              fontSize: 18, color: C.textMute, lineHeight: 1,
+              fontSize: T.subtitle, color: C.textMute, lineHeight: 1,
             }}>{"\u00D7"}</button>
 
-            <h2 style={{ fontSize: 20, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", marginBottom: 6 }}>
+            <h2 style={{ fontSize: T.title, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", marginBottom: 6 }}>
               Create API key
             </h2>
-            <p style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", marginBottom: 20 }}>
+            <p style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", marginBottom: 20 }}>
               Give your key a name to remember what it&apos;s used for.
             </p>
 
-            <label style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 6, display: "block" }}>
+            <label style={{ fontSize: T.label, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 6, display: "block" }}>
               Key name
             </label>
             <input
@@ -536,7 +543,7 @@ export default function SettingsPage() {
               style={{
                 width: "100%", padding: "10px 14px", borderRadius: 10,
                 border: `1px solid ${C.border}`, background: C.bg,
-                fontSize: 14, fontFamily: "var(--sans)", color: C.text,
+                fontSize: T.body, fontFamily: "var(--sans)", color: C.text,
                 outline: "none", boxSizing: "border-box",
                 transition: "border-color 0.12s",
               }}
@@ -546,7 +553,7 @@ export default function SettingsPage() {
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, marginBottom: 16 }}>
               <span />
               <span style={{
-                fontSize: 11, fontFamily: "var(--sans)",
+                fontSize: T.caption, fontFamily: "var(--sans)",
                 color: newKeyName.length > 40 ? C.gold : C.textMute,
               }}>
                 {newKeyName.length}/50
@@ -557,7 +564,7 @@ export default function SettingsPage() {
               <div style={{
                 padding: "10px 14px", borderRadius: 8, marginBottom: 16,
                 background: "#FEF2F2", border: "1px solid #FECACA",
-                fontSize: 13, color: "#B91C1C", fontFamily: "var(--sans)",
+                fontSize: T.bodySm, color: "#B91C1C", fontFamily: "var(--sans)",
               }}>
                 {createError}
               </div>
@@ -567,7 +574,7 @@ export default function SettingsPage() {
               <button onClick={() => setShowCreateModal(false)} style={{
                 flex: 1, padding: "10px 0", borderRadius: 10,
                 border: `1px solid ${C.border}`, background: C.surface,
-                fontSize: 13, fontWeight: 550, color: C.textSec,
+                fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                 cursor: "pointer", fontFamily: "var(--sans)",
                 transition: "all 0.12s",
               }}
@@ -579,7 +586,7 @@ export default function SettingsPage() {
               <button onClick={handleCreateKey} disabled={!newKeyName.trim() || creating} style={{
                 flex: 1, padding: "10px 0", borderRadius: 10,
                 border: "none", background: !newKeyName.trim() ? C.borderLight : C.accent,
-                fontSize: 13, fontWeight: 600, color: !newKeyName.trim() ? C.textMute : "#fff",
+                fontSize: T.bodySm, fontWeight: 600, color: !newKeyName.trim() ? C.textMute : "#fff",
                 cursor: !newKeyName.trim() ? "not-allowed" : "pointer",
                 fontFamily: "var(--sans)", transition: "opacity 0.12s",
               }}
@@ -601,7 +608,7 @@ export default function SettingsPage() {
             background: "rgba(24,23,16,0.4)", backdropFilter: "blur(6px)",
             animation: "fadeIn 0.2s ease",
           }} />
-          <div style={{
+          <div className="responsive-modal" style={{
             position: "relative", width: "100%", maxWidth: 480,
             background: C.surface, borderRadius: 20,
             border: `1px solid ${C.border}`,
@@ -609,10 +616,10 @@ export default function SettingsPage() {
             padding: "32px 28px",
             animation: "fadeUp 0.25s ease-out",
           }}>
-            <h2 style={{ fontSize: 20, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", marginBottom: 6 }}>
+            <h2 style={{ fontSize: T.title, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", marginBottom: 6 }}>
               API key created
             </h2>
-            <p style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", marginBottom: 20 }}>
+            <p style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", marginBottom: 20 }}>
               Copy your API key now. It will not be shown again.
             </p>
 
@@ -620,7 +627,7 @@ export default function SettingsPage() {
             <div style={{
               padding: "14px 16px", background: C.bg, borderRadius: 10,
               border: `1px solid ${C.border}`, fontFamily: "var(--mono)",
-              fontSize: 13, color: C.text, wordBreak: "break-all",
+              fontSize: T.bodySm, color: C.text, wordBreak: "break-all",
               userSelect: "all", lineHeight: 1.5, marginBottom: 12,
             }}>
               {revealedKey}
@@ -630,7 +637,7 @@ export default function SettingsPage() {
             <button onClick={() => copyToClipboard(revealedKey)} style={{
               width: "100%", padding: "10px 0", borderRadius: 10,
               border: "none", background: copied ? C.green : C.accent,
-              fontSize: 13, fontWeight: 600, color: "#fff",
+              fontSize: T.bodySm, fontWeight: 600, color: "#fff",
               cursor: "pointer", fontFamily: "var(--sans)",
               transition: "all 0.15s", marginBottom: 12,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -654,8 +661,8 @@ export default function SettingsPage() {
               background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
               display: "flex", alignItems: "flex-start", gap: 10,
             }}>
-              <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{"\u26A0\uFE0F"}</span>
-              <span style={{ fontSize: 13, color: C.gold, fontFamily: "var(--sans)", lineHeight: 1.5, fontWeight: 500 }}>
+              <span style={{ fontSize: T.bodyLg, flexShrink: 0, marginTop: 1 }}>{"\u26A0\uFE0F"}</span>
+              <span style={{ fontSize: T.bodySm, color: C.gold, fontFamily: "var(--sans)", lineHeight: 1.5, fontWeight: 500 }}>
                 This key will not be shown again. Make sure you&apos;ve copied it before closing this dialog.
               </span>
             </div>
@@ -664,7 +671,7 @@ export default function SettingsPage() {
             <button onClick={() => { setShowRevealModal(false); setRevealedKey(null); setCopied(false); }} style={{
               width: "100%", padding: "10px 0", borderRadius: 10,
               border: `1px solid ${C.border}`, background: C.surface,
-              fontSize: 13, fontWeight: 550, color: C.textSec,
+              fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
               cursor: "pointer", fontFamily: "var(--sans)",
               transition: "all 0.12s",
             }}
@@ -685,7 +692,7 @@ export default function SettingsPage() {
             background: "rgba(24,23,16,0.4)", backdropFilter: "blur(6px)",
             animation: "fadeIn 0.2s ease",
           }} />
-          <div style={{
+          <div className="responsive-modal" style={{
             position: "relative", width: "100%", maxWidth: 400,
             background: C.surface, borderRadius: 20,
             border: `1px solid ${C.border}`,
@@ -696,13 +703,13 @@ export default function SettingsPage() {
             <button onClick={() => setRevokeTarget(null)} style={{
               position: "absolute", top: 16, right: 16,
               background: "none", border: "none", cursor: "pointer",
-              fontSize: 18, color: C.textMute, lineHeight: 1,
+              fontSize: T.subtitle, color: C.textMute, lineHeight: 1,
             }}>{"\u00D7"}</button>
 
-            <h2 style={{ fontSize: 20, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", marginBottom: 6 }}>
+            <h2 style={{ fontSize: T.title, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", marginBottom: 6 }}>
               Revoke API key
             </h2>
-            <p style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.5, marginBottom: 20 }}>
+            <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.5, marginBottom: 20 }}>
               Revoke <strong style={{ color: C.text }}>{revokeTarget.name}</strong>? Any agents using this key will stop working immediately.
             </p>
 
@@ -710,7 +717,7 @@ export default function SettingsPage() {
               <button onClick={() => setRevokeTarget(null)} style={{
                 flex: 1, padding: "10px 0", borderRadius: 10,
                 border: `1px solid ${C.border}`, background: C.surface,
-                fontSize: 13, fontWeight: 550, color: C.textSec,
+                fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                 cursor: "pointer", fontFamily: "var(--sans)",
                 transition: "all 0.12s",
               }}
@@ -722,7 +729,7 @@ export default function SettingsPage() {
               <button onClick={handleRevokeKey} disabled={revoking} style={{
                 flex: 1, padding: "10px 0", borderRadius: 10,
                 border: "none", background: "#DC2626",
-                fontSize: 13, fontWeight: 600, color: "#fff",
+                fontSize: T.bodySm, fontWeight: 600, color: "#fff",
                 cursor: revoking ? "not-allowed" : "pointer",
                 fontFamily: "var(--sans)", transition: "opacity 0.12s",
               }}

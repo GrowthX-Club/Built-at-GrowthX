@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, ROLES, type BuilderProfile } from "@/types";
+import { C, T, ROLES, type BuilderProfile } from "@/types";
 import Avatar from "./Avatar";
 
 export default function Header({
@@ -38,7 +38,7 @@ export default function Header({
         <span
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 22,
+            fontSize: T.logo,
             fontWeight: 600,
             color: C.text,
             letterSpacing: "-0.02em",
@@ -48,7 +48,7 @@ export default function Header({
         </span>
         <span
           style={{
-            fontSize: 11,
+            fontSize: T.caption,
             color: C.textMute,
             fontFamily: "var(--mono)",
             padding: "2px 8px",
@@ -63,7 +63,7 @@ export default function Header({
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <span
           style={{
-            fontSize: 12,
+            fontSize: T.label,
             color: C.textSec,
             fontFamily: "var(--mono)",
           }}
@@ -79,7 +79,7 @@ export default function Header({
               border: "none",
               borderRadius: 8,
               padding: "8px 16px",
-              fontSize: 13,
+              fontSize: T.bodySm,
               fontWeight: 600,
               cursor: "pointer",
               fontFamily: "var(--sans)",
@@ -105,7 +105,7 @@ export default function Header({
               }}
             >
               <Avatar initials={user.avatar} size={32} role={user.role} />
-              <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500 }}>
+              <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500 }}>
                 {user.name.split(" ")[0]}
               </span>
             </button>
@@ -117,7 +117,7 @@ export default function Header({
                 border: `1px solid ${C.border}`,
                 borderRadius: 8,
                 padding: "6px 14px",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 color: C.textSec,
                 cursor: "pointer",
                 fontFamily: "var(--sans)",
@@ -148,7 +148,7 @@ export default function Header({
                 style={{
                   padding: "12px 16px",
                   borderBottom: `1px solid ${C.borderLight}`,
-                  fontSize: 13,
+                  fontSize: T.bodySm,
                   fontWeight: 600,
                   color: C.text,
                 }}
@@ -181,16 +181,16 @@ export default function Header({
                   >
                     <Avatar initials={b.avatar} size={28} role={b.role} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>
+                      <div style={{ fontSize: T.bodySm, fontWeight: 500, color: C.text }}>
                         {b.name}
                       </div>
-                      <div style={{ fontSize: 11, color: C.textMute }}>
+                      <div style={{ fontSize: T.caption, color: C.textMute }}>
                         {b.city}
                       </div>
                     </div>
                     <span
                       style={{
-                        fontSize: 10,
+                        fontSize: T.badge,
                         color: roleInfo.color,
                         background: roleInfo.bg,
                         padding: "1px 6px",
@@ -214,7 +214,7 @@ export default function Header({
                     padding: "10px 16px",
                     background: "none",
                     border: "none",
-                    fontSize: 13,
+                    fontSize: T.bodySm,
                     color: C.textMute,
                     cursor: "pointer",
                     textAlign: "center",

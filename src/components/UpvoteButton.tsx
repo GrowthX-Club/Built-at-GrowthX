@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C } from "@/types";
+import { C, T } from "@/types";
 
 function fmt(n: number) {
   return n >= 1000 ? n.toLocaleString() : String(n);
@@ -52,6 +52,8 @@ export default function UpvoteButton({
     }
   };
 
+  const iconSize = isLarge ? 16 : 12;
+
   return (
     <button
       onClick={handleClick}
@@ -59,23 +61,28 @@ export default function UpvoteButton({
         display: "flex",
         flexDirection: isLarge ? "column" : "row",
         alignItems: "center",
-        gap: isLarge ? 2 : 3,
-        background: voted ? `${C.gold}10` : C.surfaceWarm,
-        borderRadius: isLarge ? 10 : 6,
-        padding: isLarge ? "10px 18px" : "3px 8px",
-        border: `1px solid ${voted ? C.goldBorder : C.borderLight}`,
+        gap: isLarge ? 2 : 4,
+        background: voted ? C.brandSoft : C.surface,
+        borderRadius: isLarge ? 10 : 8,
+        padding: isLarge ? "10px 18px" : "4px 10px",
+        border: voted ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
         cursor: "pointer",
-        transition: "all 0.15s",
+        transition: "border 0.25s, background 0.25s, color 0.25s",
         opacity: loading ? 0.6 : 1,
-        fontFamily: "var(--mono)",
+        fontFamily: "var(--sans)",
+        color: voted ? C.brand : C.text,
       }}
     >
-      <span style={{ fontSize: isLarge ? 14 : 10, color: voted ? C.gold : C.textMute }}>&#9650;</span>
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: iconSize, height: iconSize, flexShrink: 0 }}>
+        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+      </span>
       <span
         style={{
-          fontSize: isLarge ? 18 : 13,
-          fontWeight: 600,
-          color: voted ? C.gold : C.text,
+          fontSize: isLarge ? T.subtitle : T.bodySm,
+          fontWeight: 650,
+          color: voted ? C.brand : C.text,
         }}
       >
         {fmt(weighted)}

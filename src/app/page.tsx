@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   C,
+  T,
   ROLES,
   STACK_META,
   type Project,
@@ -55,20 +56,20 @@ function BuilderItem({ b }: { b: { name: string; company: string; companyColor: 
   return (
     <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{
-        fontSize: 13, fontWeight: 600, color: C.text,
+        fontSize: T.bodySm, fontWeight: 600, color: C.text,
         fontFamily: "var(--sans)", marginBottom: 2, lineHeight: 1.2,
       }}>
         {b.name}
       </div>
       <div style={{
         display: "flex", alignItems: "center", gap: 4,
-        fontSize: 11.5, fontFamily: "var(--sans)",
+        fontSize: T.label, fontFamily: "var(--sans)",
       }}>
         <span style={{
           width: 12, height: 12, borderRadius: 3,
           background: b.companyColor || C.accent,
           display: "inline-flex", alignItems: "center", justifyContent: "center",
-          fontSize: 6, fontWeight: 800, color: "#fff",
+          fontSize: T.micro, fontWeight: 800, color: "#fff",
           fontFamily: "var(--sans)", flexShrink: 0,
           overflow: "hidden", position: "relative",
         }}>
@@ -392,10 +393,10 @@ function HomePage() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
               <span style={{
-                fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
+                fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
                 color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
               }}>
-                Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+                Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
@@ -431,26 +432,26 @@ function HomePage() {
                       }}>
                         <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text,
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
@@ -459,7 +460,7 @@ function HomePage() {
                   <button onClick={handleSignIn} style={{
                     padding: "8px 14px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                     cursor: "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}>
@@ -473,16 +474,16 @@ function HomePage() {
               {/* Tablet / Desktop nav */}
               <div style={{ display: "flex", alignItems: "center", gap: isTablet ? 24 : 40 }}>
                 <span style={{
-                  fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
+                  fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
                   color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
                 }}>
-                  Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+                  Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
                 </span>
                 <div style={{ display: "flex", gap: 0 }}>
                   {tabs.map((t, i) => (
                     <button key={t.id} onClick={() => router.push(t.href)} style={{
                       padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                      fontSize: 13.5, fontWeight: i === 0 ? 600 : 400,
+                      fontSize: T.body, fontWeight: i === 0 ? 600 : 400,
                       color: i === 0 ? C.text : C.textMute,
                       fontFamily: "var(--sans)",
                       borderBottom: i === 0 ? `2px solid ${C.text}` : "2px solid transparent",
@@ -497,7 +498,7 @@ function HomePage() {
                 <button style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
-                  fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                  fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                   cursor: "pointer", fontFamily: "var(--sans)",
                   transition: "all 0.12s",
                   display: "flex", alignItems: "center", gap: 6,
@@ -522,7 +523,7 @@ function HomePage() {
                   <div ref={profileMenuRef} style={{ position: "relative" }}>
                     <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                       <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                      <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
+                      <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                       <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                     </button>
                     {showProfileMenu && (
@@ -533,26 +534,26 @@ function HomePage() {
                       }}>
                         <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text,
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
@@ -561,7 +562,7 @@ function HomePage() {
                   <button onClick={handleSignIn} style={{
                     padding: "8px 18px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                     cursor: "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}
@@ -609,10 +610,10 @@ function HomePage() {
               padding: "0 20px", height: 60, borderBottom: `1px solid ${C.borderLight}`,
             }}>
               <span style={{
-                fontSize: 20, fontWeight: 400, fontFamily: "var(--serif)",
+                fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)",
                 color: C.text, letterSpacing: "-0.02em",
               }}>
-                Built <span style={{ fontSize: 12, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -628,7 +629,7 @@ function HomePage() {
                 <button key={t.id} onClick={() => { setMobileMenuOpen(false); router.push(t.href); }} style={{
                   padding: "12px 14px", border: "none", background: i === 0 ? C.accentSoft : "none",
                   borderRadius: 10, cursor: "pointer",
-                  fontSize: 15, fontWeight: i === 0 ? 600 : 450,
+                  fontSize: T.body, fontWeight: i === 0 ? 600 : 450,
                   color: i === 0 ? C.text : C.textSec,
                   fontFamily: "var(--sans)", textAlign: "left",
                   transition: "all 0.15s",
@@ -644,7 +645,7 @@ function HomePage() {
                 }}
                 style={{
                   padding: "12px 14px", border: "none", background: "none", borderRadius: 10,
-                  cursor: "pointer", fontSize: 15, fontWeight: 500, color: C.textSec,
+                  cursor: "pointer", fontSize: T.body, fontWeight: 500, color: C.textSec,
                   fontFamily: "var(--sans)", textAlign: "left",
                   display: "flex", alignItems: "center", gap: 10,
                 }}
@@ -667,7 +668,7 @@ function HomePage() {
           }}>
             What the community shipped
           </h1>
-          <p style={{ fontSize: 16, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
+          <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
             Products built by the GrowthX community. Ranked by the people who build.
           </p>
         </div>
@@ -718,13 +719,13 @@ function HomePage() {
           }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🚀</div>
             <div style={{
-              fontSize: 20, fontWeight: 500, color: C.text,
+              fontSize: T.title, fontWeight: 500, color: C.text,
               fontFamily: "var(--serif)", marginBottom: 8,
             }}>
               No projects yet
             </div>
             <div style={{
-              fontSize: 15, color: C.textSec, fontFamily: "var(--sans)",
+              fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
               fontWeight: 400, maxWidth: 360, lineHeight: 1.5,
             }}>
               Be the first to submit your project and show the GrowthX community what you&apos;ve built.
@@ -740,7 +741,7 @@ function HomePage() {
                 borderRadius: 14, cursor: "pointer",
               }} onClick={() => router.push(`/projects/${fp.id}`)}>
                 <div style={{
-                  fontSize: 10, fontWeight: 720, color: C.gold,
+                  fontSize: T.badge, fontWeight: 720, color: C.gold,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   marginBottom: 12, fontFamily: "var(--sans)",
                 }}>
@@ -748,15 +749,15 @@ function HomePage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 17, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
+                    <div style={{ fontSize: T.subtitle, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
                       {fp.name}
                     </div>
-                    <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+                    <div style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
                       {fp.tagline}
                     </div>
                   </div>
                   <div style={{
-                    fontSize: 24, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
+                    fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
                   }}>
                     {fp.weighted.toLocaleString()}
                   </div>
@@ -788,13 +789,13 @@ function HomePage() {
                   {/* Left: product name + tagline */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{
-                      fontSize: 15.5, fontWeight: 560, color: C.text,
+                      fontSize: T.bodyLg, fontWeight: 560, color: C.text,
                       fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
                     }}>
                       {p.name}
                     </div>
                     <div className={isMobile ? "line-clamp-2" : undefined} style={{
-                      fontSize: 13, color: C.textMute, fontFamily: "var(--sans)",
+                      fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
                       fontWeight: 400, lineHeight: 1.3,
                       ...(isMobile ? {} : { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
                     }}>
@@ -840,7 +841,7 @@ function HomePage() {
                             </svg>
                           </span>
                         </span>
-                        <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: 12 }}>{p.weighted.toLocaleString()}</span>
+                        <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.label }}>{p.weighted.toLocaleString()}</span>
                       </div>
                     </div>
                   ) : (
@@ -864,7 +865,7 @@ function HomePage() {
                           minWidth: 72,
                           border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
                           background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
-                          fontSize: 15, fontWeight: 650,
+                          fontSize: T.body, fontWeight: 650,
                           color: votedIds.includes(p.id) ? C.brand : C.text,
                           fontFamily: "var(--sans)",
                           cursor: "pointer",
@@ -884,7 +885,7 @@ function HomePage() {
                             </svg>
                           </span>
                         </span>
-                        <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: 14 }}>{p.weighted.toLocaleString()}</span>
+                        <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body }}>{p.weighted.toLocaleString()}</span>
                       </div>
                     </>
                   )}
@@ -925,7 +926,7 @@ function HomePage() {
                 width: 32, height: 32, borderRadius: 32,
                 border: `1px solid ${C.borderLight}`, background: "transparent",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 18, color: C.textMute,
+                cursor: "pointer", fontSize: T.subtitle, color: C.textMute,
                 transition: "all 0.12s",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
@@ -937,18 +938,18 @@ function HomePage() {
               width: 56, height: 56, borderRadius: 56, margin: "0 auto 20px",
               background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 24,
+              fontSize: T.heading,
             }}>
               {"\u2726"}
             </div>
             <h3 style={{
-              fontSize: 20, fontWeight: 500, color: C.text,
+              fontSize: T.title, fontWeight: 500, color: C.text,
               fontFamily: "var(--serif)", marginBottom: 10, lineHeight: 1.3,
             }}>
               Reserved for GrowthX members
             </h3>
             <p style={{
-              fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
+              fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
               fontWeight: 400, lineHeight: 1.6, marginBottom: 28, maxWidth: 320, margin: "0 auto 28px",
             }}>
               Submitting projects is exclusively available to members with an active GrowthX membership.
@@ -960,7 +961,7 @@ function HomePage() {
               style={{
                 display: "inline-block", padding: "12px 28px", borderRadius: 10,
                 border: "none", background: C.accent, color: "#fff",
-                fontSize: 14, fontWeight: 600, fontFamily: "var(--sans)",
+                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
                 textDecoration: "none", transition: "opacity 0.15s",
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
@@ -999,12 +1000,12 @@ function HomePage() {
             ...(isMobile ? { height: "100%", maxHeight: "100vh" } : {}),
           }}>
             <style>{`
-              .submit-input { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: 14.5px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; }
+              .submit-input { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: ${T.body}px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; }
               .submit-input:focus { border-color: ${C.accent}; }
               .submit-input::placeholder { color: ${C.textMute}; }
-              .submit-input-lg { font-size: 22px; font-weight: 500; font-family: var(--serif); border: none; padding: 0; background: transparent; }
+              .submit-input-lg { font-size: ${T.logo}px; font-weight: 500; font-family: var(--serif); border: none; padding: 0; background: transparent; }
               .submit-input-lg:focus { border: none; }
-              .submit-textarea { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: 14px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; resize: vertical; min-height: 100px; line-height: 1.5; }
+              .submit-textarea { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: ${T.body}px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; resize: vertical; min-height: 100px; line-height: 1.5; }
               .submit-textarea:focus { border-color: ${C.accent}; }
               .submit-textarea::placeholder { color: ${C.textMute}; }
             `}</style>
@@ -1026,14 +1027,14 @@ function HomePage() {
             }}>
               <div>
                 <div style={{
-                  fontSize: 11, fontWeight: 600, color: C.textMute,
+                  fontSize: T.caption, fontWeight: 600, color: C.textMute,
                   fontFamily: "var(--sans)", letterSpacing: "0.04em",
                   textTransform: "uppercase", marginBottom: 4,
                 }}>
                   {["The basics", "The story", "Tech and team"][submitStep]}
                 </div>
                 <div style={{
-                  fontSize: 13, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 400,
+                  fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 400,
                 }}>
                   Step {submitStep + 1} of 3
                 </div>
@@ -1042,7 +1043,7 @@ function HomePage() {
                 width: 32, height: 32, borderRadius: 32,
                 border: `1px solid ${C.borderLight}`, background: "transparent",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 16, color: C.textMute,
+                cursor: "pointer", fontSize: T.bodyLg, color: C.textMute,
                 transition: "all 0.12s",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
@@ -1075,7 +1076,7 @@ function HomePage() {
                       style={{ borderColor: submitData.tagline.length >= 100 ? "#DC2626" : undefined }}
                     />
                     <div style={{
-                      fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                      fontSize: T.caption, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
                       color: submitData.tagline.length >= 90 ? (submitData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
                       fontWeight: submitData.tagline.length >= 100 ? 600 : 400,
                     }}>
@@ -1097,7 +1098,7 @@ function HomePage() {
               {submitStep === 1 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   <div style={{
-                    fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
+                    fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
                     fontWeight: 400, lineHeight: 1.55, marginBottom: 20,
                   }}>
                     Write like you&apos;re telling a friend what you built and why. The best submissions answer three things:
@@ -1114,12 +1115,12 @@ function HomePage() {
                         marginBottom: pi < 2 ? 8 : 0,
                       }}>
                         <span style={{
-                          fontSize: 12, fontWeight: 650, color: C.textMute,
+                          fontSize: T.label, fontWeight: 650, color: C.textMute,
                           fontFamily: "var(--mono)", minWidth: 16,
                         }}>
                           {pi + 1}.
                         </span>
-                        <span style={{ fontSize: 13.5, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
+                        <span style={{ fontSize: T.body, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
                           <span style={{ fontWeight: 580, color: C.text }}>{prompt.q}</span>
                           <span style={{ color: C.textMute, fontWeight: 400 }}> — {prompt.hint}</span>
                         </span>
@@ -1143,7 +1144,7 @@ function HomePage() {
                     autoFocus
                   />
                   <div style={{
-                    fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                    fontSize: T.caption, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
                     color: submitData.description.length >= 480 ? (submitData.description.length >= 500 ? "#DC2626" : "#B45309") : C.textMute,
                     fontWeight: submitData.description.length >= 500 ? 600 : 400,
                   }}>
@@ -1156,7 +1157,7 @@ function HomePage() {
               {submitStep === 2 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                   <div>
-                    <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 10 }}>
+                    <div style={{ fontSize: T.label, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 10 }}>
                       Tech stack
                     </div>
 
@@ -1171,14 +1172,14 @@ function HomePage() {
                               display: "inline-flex", alignItems: "center", gap: 7,
                               padding: "5px 10px 5px 6px", borderRadius: 20,
                               background: C.surface, border: `1.5px solid ${C.accent}`,
-                              fontSize: 12.5, color: C.text, fontWeight: 500,
+                              fontSize: T.bodySm, color: C.text, fontWeight: 500,
                               fontFamily: "var(--sans)",
                             }}>
                               <span style={{
                                 width: 20, height: 20, borderRadius: 5,
                                 background: meta.bg, color: meta.color,
                                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 8.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                fontSize: T.micro, fontWeight: 750, fontFamily: "var(--sans)",
                                 flexShrink: 0, letterSpacing: "-0.02em",
                                 position: "relative", overflow: "hidden",
                               }}>
@@ -1200,7 +1201,7 @@ function HomePage() {
                               <span
                                 onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, stack: d.stack.filter((_, idx) => idx !== si) })); }}
                                 style={{
-                                  cursor: "pointer", fontSize: 13, color: C.textMute,
+                                  cursor: "pointer", fontSize: T.bodySm, color: C.textMute,
                                   lineHeight: 1, marginLeft: 2,
                                   transition: "color 0.1s",
                                 }}
@@ -1225,7 +1226,7 @@ function HomePage() {
                       if (available.length === 0) return null;
                       return (
                         <div style={{ marginBottom: 12 }}>
-                          <div style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
+                          <div style={{ fontSize: T.caption, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
                             Popular — tap to add
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
@@ -1241,7 +1242,7 @@ function HomePage() {
                                     display: "inline-flex", alignItems: "center", gap: 6,
                                     padding: "4px 10px 4px 5px", borderRadius: 20,
                                     background: C.bg, border: `1px solid ${C.borderLight}`,
-                                    fontSize: 12, color: C.textSec, fontWeight: 450,
+                                    fontSize: T.label, color: C.textSec, fontWeight: 450,
                                     fontFamily: "var(--sans)", cursor: "pointer",
                                     transition: "all 0.15s",
                                   }}
@@ -1252,7 +1253,7 @@ function HomePage() {
                                     width: 18, height: 18, borderRadius: 4,
                                     background: meta.bg, color: meta.color,
                                     display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                    fontSize: 7.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                    fontSize: T.micro, fontWeight: 750, fontFamily: "var(--sans)",
                                     flexShrink: 0, letterSpacing: "-0.02em",
                                     position: "relative", overflow: "hidden",
                                   }}>
@@ -1317,7 +1318,7 @@ function HomePage() {
                           style={{
                             padding: "0 14px", borderRadius: 8,
                             border: "none", background: C.accent,
-                            fontSize: 12, fontWeight: 600, color: "#fff",
+                            fontSize: T.label, fontWeight: 600, color: "#fff",
                             cursor: "pointer", fontFamily: "var(--sans)",
                             whiteSpace: "nowrap", transition: "opacity 0.12s",
                           }}
@@ -1326,7 +1327,7 @@ function HomePage() {
                         >Add</button>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
+                    <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
                       Press enter or click Add
                     </div>
                   </div>
@@ -1334,7 +1335,7 @@ function HomePage() {
                   <div style={{ height: 1, background: C.borderLight }} />
 
                   <div ref={collabDropdownRef}>
-                    <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 8 }}>
+                    <div style={{ fontSize: T.label, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 8 }}>
                       Team members (optional)
                     </div>
                     <div style={{ position: "relative", marginBottom: 10 }}>
@@ -1346,12 +1347,12 @@ function HomePage() {
                         onFocus={() => { if (collabResults.length > 0) setShowCollabDropdown(true); }}
                       />
                       {searchingCollabs && (
-                        <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}>
+                        <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: T.caption, color: C.textMute }}>
                           Searching...
                         </span>
                       )}
                       {!searchingCollabs && submitData.teamInput.trim().length >= 2 && collabResults.length === 0 && (
-                        <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
+                        <div style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
                           No members found for &ldquo;{submitData.teamInput.trim()}&rdquo;
                         </div>
                       )}
@@ -1377,15 +1378,15 @@ function HomePage() {
                                   width: 28, height: 28, borderRadius: 28,
                                   background: C.accentSoft, color: C.textSec,
                                   display: "flex", alignItems: "center", justifyContent: "center",
-                                  fontSize: 10, fontWeight: 650, fontFamily: "var(--sans)",
+                                  fontSize: T.badge, fontWeight: 650, fontFamily: "var(--sans)",
                                   border: `1px solid ${C.borderLight}`, flexShrink: 0,
                                 }}>
                                   {u.avatar.length <= 3 ? u.avatar : u.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 13, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>{u.name}</div>
+                                  <div style={{ fontSize: T.bodySm, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>{u.name}</div>
                                   {(u.role || u.company) && (
-                                    <div style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)" }}>
+                                    <div style={{ fontSize: T.caption, color: C.textMute, fontFamily: "var(--sans)" }}>
                                       {u.role}{u.role && u.company ? " \u00B7 " : ""}{u.company}
                                     </div>
                                   )}
@@ -1403,14 +1404,14 @@ function HomePage() {
                             display: "inline-flex", alignItems: "center", gap: 6,
                             padding: "5px 10px 5px 8px", borderRadius: 8,
                             background: C.accentSoft, border: `1px solid ${C.borderLight}`,
-                            fontSize: 12.5, color: C.text, fontWeight: 480,
+                            fontSize: T.bodySm, color: C.text, fontWeight: 480,
                             fontFamily: "var(--sans)",
                           }}>
                             <span style={{
                               width: 18, height: 18, borderRadius: 18,
                               background: C.borderLight, color: C.textSec,
                               display: "inline-flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 7, fontWeight: 650, flexShrink: 0,
+                              fontSize: T.micro, fontWeight: 650, flexShrink: 0,
                             }}>
                               {c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                             </span>
@@ -1427,7 +1428,7 @@ function HomePage() {
                                 }));
                               }}
                               style={{
-                                fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                                fontSize: T.badge, fontWeight: 650, letterSpacing: "0.03em",
                                 padding: "2px 7px", borderRadius: 4, cursor: "pointer",
                                 fontFamily: "var(--sans)", userSelect: "none",
                                 background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
@@ -1440,7 +1441,7 @@ function HomePage() {
                             <span
                               onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, team: d.team.filter((_, idx) => idx !== ci) })); }}
                               style={{
-                                cursor: "pointer", fontSize: 14, color: C.textMute,
+                                cursor: "pointer", fontSize: T.body, color: C.textMute,
                                 lineHeight: 1, marginTop: -1,
                               }}
                             >{"\u00D7"}</span>
@@ -1448,7 +1449,7 @@ function HomePage() {
                         ))}
                       </div>
                     )}
-                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
+                    <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
                       Search for GrowthX members — tap role to toggle Creator / Collaborator
                     </div>
                   </div>
@@ -1460,7 +1461,7 @@ function HomePage() {
                 <div style={{
                   marginTop: 16, padding: "10px 14px", borderRadius: 10,
                   background: "#FEF2F2", border: "1px solid #FECACA",
-                  fontSize: 13, color: "#B91C1C", fontFamily: "var(--sans)",
+                  fontSize: T.bodySm, color: "#B91C1C", fontFamily: "var(--sans)",
                   fontWeight: 450, lineHeight: 1.45,
                 }}>
                   {submitError}
@@ -1476,7 +1477,7 @@ function HomePage() {
                   <button onClick={() => { setSubmitError(""); setSubmitStep(s => s - 1); }} disabled={submitting} style={{
                     padding: "9px 20px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: "transparent",
-                    fontSize: 13, fontWeight: 500, color: C.textSec,
+                    fontSize: T.bodySm, fontWeight: 500, color: C.textSec,
                     cursor: submitting ? "default" : "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s", opacity: submitting ? 0.5 : 1,
                   }}
@@ -1507,7 +1508,7 @@ function HomePage() {
                     padding: "9px 24px", borderRadius: 10,
                     border: "none",
                     background: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.borderLight : C.accent,
-                    fontSize: 13, fontWeight: 600,
+                    fontSize: T.bodySm, fontWeight: 600,
                     color: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.textMute : "#fff",
                     cursor: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? "default" : "pointer",
                     fontFamily: "var(--sans)",

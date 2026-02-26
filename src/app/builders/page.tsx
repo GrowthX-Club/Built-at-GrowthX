@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import {
   C,
+  T,
   ROLES,
   type BuilderProfile,
   type Project,
@@ -56,7 +57,7 @@ function Badge({ role }: { role: string }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 3,
-      fontSize: 9.5, fontWeight: 650, letterSpacing: "0.04em",
+      fontSize: T.badge, fontWeight: 650, letterSpacing: "0.04em",
       padding: "2px 6px", borderRadius: 4,
       color: r.color, background: r.bg,
       fontFamily: "var(--sans)", textTransform: "uppercase", lineHeight: 1,
@@ -71,14 +72,14 @@ function CompanyTag({ company, companyColor }: { company?: string; companyColor?
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
-      fontSize: 10.5, fontWeight: 550, color: C.textSec,
+      fontSize: T.caption, fontWeight: 550, color: C.textSec,
       fontFamily: "var(--sans)",
     }}>
       <span style={{
         width: 14, height: 14, borderRadius: 4,
         background: companyColor || C.textMute, flexShrink: 0,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
-        fontSize: 7, fontWeight: 800, color: "#fff",
+        fontSize: T.micro, fontWeight: 800, color: "#fff",
         overflow: "hidden", position: "relative",
       }}>
         {company[0]}
@@ -184,8 +185,8 @@ export default function BuildersPage() {
               <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
-              <span onClick={() => router.push("/")} style={{ fontSize: 20, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
-                Built <span style={{ fontSize: 12, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              <span onClick={() => router.push("/")} style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
+                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
@@ -214,24 +215,24 @@ export default function BuildersPage() {
                       }}>
                         <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text,
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                         }}>
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                         }}>
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: 12, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
+                  <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: T.label, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
                     Sign in
                   </button>
                 )}
@@ -243,17 +244,17 @@ export default function BuildersPage() {
                 <span
                   onClick={() => router.push("/")}
                   style={{
-                    fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
+                    fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
                     color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
                   }}
                 >
-                  Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+                  Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
                 </span>
                 <div style={{ display: "flex", gap: 0 }}>
                   {NAV_TABS.map(t => (
                     <button key={t.href} onClick={() => router.push(t.href)} style={{
                       padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                      fontSize: 13.5, fontWeight: pathname === t.href ? 600 : 400,
+                      fontSize: T.body, fontWeight: pathname === t.href ? 600 : 400,
                       color: pathname === t.href ? C.text : C.textMute,
                       fontFamily: "var(--sans)",
                       borderBottom: pathname === t.href ? `2px solid ${C.text}` : "2px solid transparent",
@@ -268,7 +269,7 @@ export default function BuildersPage() {
                 <button style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
-                  fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                  fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                   cursor: "pointer", fontFamily: "var(--sans)",
                   transition: "all 0.12s",
                   display: "flex", alignItems: "center", gap: 6,
@@ -286,7 +287,7 @@ export default function BuildersPage() {
                   <div ref={profileMenuRef} style={{ position: "relative" }}>
                     <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                       <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                      <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
+                      <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                       <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                     </button>
                     {showProfileMenu && (
@@ -297,26 +298,26 @@ export default function BuildersPage() {
                       }}>
                         <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          fontSize: 13, fontWeight: 500, color: C.text,
+                          fontSize: T.bodySm, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                          fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
@@ -325,7 +326,7 @@ export default function BuildersPage() {
                   <button onClick={handleSignIn} style={{
                     padding: "8px 18px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                     fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}
@@ -369,8 +370,8 @@ export default function BuildersPage() {
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "0 20px", height: 60, borderBottom: `1px solid ${C.borderLight}`,
             }}>
-              <span style={{ fontSize: 20, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em" }}>
-                Built <span style={{ fontSize: 12, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              <span style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em" }}>
+                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <button onClick={() => setMobileMenuOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.textMute} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -380,7 +381,7 @@ export default function BuildersPage() {
               {NAV_TABS.map(t => (
                 <button key={t.href} onClick={() => { setMobileMenuOpen(false); router.push(t.href); }} style={{
                   padding: "12px 14px", border: "none", background: pathname === t.href ? C.accentSoft : "none",
-                  borderRadius: 10, cursor: "pointer", fontSize: 15,
+                  borderRadius: 10, cursor: "pointer", fontSize: T.body,
                   fontWeight: pathname === t.href ? 600 : 450,
                   color: pathname === t.href ? C.text : C.textSec,
                   fontFamily: "var(--sans)", textAlign: "left",
@@ -391,7 +392,7 @@ export default function BuildersPage() {
               <div style={{ height: 1, background: C.borderLight, margin: "8px 6px" }} />
               <button onClick={() => { setMobileMenuOpen(false); router.push("/"); }} style={{
                 padding: "12px 14px", border: "none", background: "none", borderRadius: 10,
-                cursor: "pointer", fontSize: 15, fontWeight: 500, color: C.textSec,
+                cursor: "pointer", fontSize: T.body, fontWeight: 500, color: C.textSec,
                 fontFamily: "var(--sans)", textAlign: "left",
                 display: "flex", alignItems: "center", gap: 10,
               }}>
@@ -409,7 +410,7 @@ export default function BuildersPage() {
           <h1 className="responsive-h1" style={{ fontSize: 44, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>
             The people who build
           </h1>
-          <p style={{ fontSize: 16, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
+          <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
             Reputation is earned by shipping. Ranked by cumulative score across projects, buildathons, and collaborations.
           </p>
         </div>
@@ -439,7 +440,7 @@ export default function BuildersPage() {
               </div>
             ))
           ) : builders.length === 0 ? (
-            <p style={{ fontSize: 14, color: C.textMute, padding: "40px 0", textAlign: "center" }}>
+            <p style={{ fontSize: T.body, color: C.textMute, padding: "40px 0", textAlign: "center" }}>
               No builders found.
             </p>
           ) : null}
@@ -459,7 +460,7 @@ export default function BuildersPage() {
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "none"; }}
             >
               <div style={{
-                fontSize: 14, fontWeight: 650, color: C.textMute,
+                fontSize: T.body, fontWeight: 650, color: C.textMute,
                 fontFamily: "var(--sans)", width: 28, textAlign: "center", flexShrink: 0,
               }}>
                 {i + 1}
@@ -467,14 +468,14 @@ export default function BuildersPage() {
               <Av initials={b.avatar} size={isMobile ? 36 : 44} role={b.role} src={b.avatarUrl} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>{b.name}</span>
+                  <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>{b.name}</span>
                   <Badge role={b.role} />
                   <CompanyTag company={b.company} companyColor={b.companyColor} />
                 </div>
                 {b.bio && (
-                  <p style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", margin: "0 0 4px", fontWeight: 400 }}>{b.bio}</p>
+                  <p style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", margin: "0 0 4px", fontWeight: 400 }}>{b.bio}</p>
                 )}
-                <div style={{ display: "flex", gap: 16, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
+                <div style={{ display: "flex", gap: 16, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
                   {b.city && <span>{b.city}</span>}
                   <span>{b.shipped} shipped</span>
                 </div>
@@ -512,13 +513,13 @@ export default function BuildersPage() {
                 <Av initials={selectedBuilder.avatar} size={52} role={selectedBuilder.role} src={selectedBuilder.avatarUrl} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 2 }}>
-                    <span style={{ fontSize: 18, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>{selectedBuilder.name}</span>
+                    <span style={{ fontSize: T.subtitle, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>{selectedBuilder.name}</span>
                     <Badge role={selectedBuilder.role} />
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <CompanyTag company={selectedBuilder.company} companyColor={selectedBuilder.companyColor} />
                     {selectedBuilder.city && (
-                      <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>{selectedBuilder.city}</span>
+                      <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>{selectedBuilder.city}</span>
                     )}
                   </div>
                 </div>
@@ -528,7 +529,7 @@ export default function BuildersPage() {
                     width: 32, height: 32, borderRadius: 32,
                     border: `1px solid ${C.borderLight}`, background: "transparent",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", fontSize: 16, color: C.textMute,
+                    cursor: "pointer", fontSize: T.bodyLg, color: C.textMute,
                     transition: "all 0.12s", flexShrink: 0,
                   }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
@@ -536,7 +537,7 @@ export default function BuildersPage() {
                 >{"\u00D7"}</button>
               </div>
               {selectedBuilder.bio && (
-                <p style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, margin: "12px 0 0", lineHeight: 1.5 }}>
+                <p style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, margin: "12px 0 0", lineHeight: 1.5 }}>
                   {selectedBuilder.bio}
                 </p>
               )}
@@ -545,16 +546,16 @@ export default function BuildersPage() {
             {/* Projects */}
             <div style={{ padding: "20px 28px 28px", overflowY: "auto", flex: 1 }}>
               <div style={{
-                fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em",
+                fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em",
                 textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)",
               }}>
                 Projects ({loadingProjects ? "..." : builderProjects.length})
               </div>
 
               {loadingProjects ? (
-                <p style={{ fontSize: 13, color: C.textMute, textAlign: "center", padding: "24px 0" }}>Loading...</p>
+                <p style={{ fontSize: T.bodySm, color: C.textMute, textAlign: "center", padding: "24px 0" }}>Loading...</p>
               ) : builderProjects.length === 0 ? (
-                <p style={{ fontSize: 13, color: C.textMute, textAlign: "center", padding: "24px 0" }}>No projects yet.</p>
+                <p style={{ fontSize: T.bodySm, color: C.textMute, textAlign: "center", padding: "24px 0" }}>No projects yet.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {builderProjects.map(p => {
@@ -572,11 +573,11 @@ export default function BuildersPage() {
                         onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.transform = "none"; }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                          <div style={{ fontSize: 14.5, fontWeight: 560, color: C.text, fontFamily: "var(--sans)" }}>
+                          <div style={{ fontSize: T.body, fontWeight: 560, color: C.text, fontFamily: "var(--sans)" }}>
                             {p.name}
                           </div>
                           <span style={{
-                            fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                            fontSize: T.badge, fontWeight: 650, letterSpacing: "0.03em",
                             padding: "2px 7px", borderRadius: 4,
                             fontFamily: "var(--sans)",
                             background: isCreator ? "#D1FAE5" : C.accentSoft,
@@ -585,12 +586,12 @@ export default function BuildersPage() {
                             {isCreator ? "Creator" : "Collaborator"}
                           </span>
                         </div>
-                        <div style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, marginBottom: 8 }}>
+                        <div style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, marginBottom: 8 }}>
                           {p.tagline}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
                           <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <span style={{ fontSize: 12, opacity: 0.5 }}>{"\u25B3"}</span>
+                            <span style={{ fontSize: T.label, opacity: 0.5 }}>{"\u25B3"}</span>
                             {p.weighted.toLocaleString()}
                           </span>
                           {p.stack && p.stack.length > 0 && (

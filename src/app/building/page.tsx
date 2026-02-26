@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import {
   C,
+  T,
   ROLES,
   type BuildingProject,
   type BuilderProfile,
@@ -52,7 +53,7 @@ function StatusDot({ status }: { status: string }) {
   const s = map[status] || map.idea;
   return (
     <span style={{
-      fontSize: 10, fontWeight: 650, padding: "3px 10px", borderRadius: 20,
+      fontSize: T.badge, fontWeight: 650, padding: "3px 10px", borderRadius: 20,
       background: s.bg, color: s.color,
       fontFamily: "var(--sans)", textTransform: "uppercase", letterSpacing: "0.04em",
     }}>
@@ -131,8 +132,8 @@ export default function BuildingPage() {
               <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
-              <span onClick={() => router.push("/")} style={{ fontSize: 20, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
-                Built <span style={{ fontSize: 12, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              <span onClick={() => router.push("/")} style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
+                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
@@ -155,18 +156,18 @@ export default function BuildingPage() {
                     </button>
                     {showProfileMenu && (
                       <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100 }}>
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: 12, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
+                  <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: T.label, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
                     Sign in
                   </button>
                 )}
@@ -178,17 +179,17 @@ export default function BuildingPage() {
                 <span
                   onClick={() => router.push("/")}
                   style={{
-                    fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
+                    fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)",
                     color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
                   }}
                 >
-                  Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+                  Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
                 </span>
                 <div style={{ display: "flex", gap: 0 }}>
                   {NAV_TABS.map(t => (
                     <button key={t.href} onClick={() => router.push(t.href)} style={{
                       padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                      fontSize: 13.5, fontWeight: pathname === t.href ? 600 : 400,
+                      fontSize: T.body, fontWeight: pathname === t.href ? 600 : 400,
                       color: pathname === t.href ? C.text : C.textMute,
                       fontFamily: "var(--sans)",
                       borderBottom: pathname === t.href ? `2px solid ${C.text}` : "2px solid transparent",
@@ -203,7 +204,7 @@ export default function BuildingPage() {
                 <button style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
-                  fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                  fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                   cursor: "pointer", fontFamily: "var(--sans)",
                   transition: "all 0.12s",
                   display: "flex", alignItems: "center", gap: 6,
@@ -221,7 +222,7 @@ export default function BuildingPage() {
                   <div ref={profileMenuRef} style={{ position: "relative" }}>
                     <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                       <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                      <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
+                      <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                       <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                     </button>
                     {showProfileMenu && (
@@ -232,26 +233,26 @@ export default function BuildingPage() {
                       }}>
                         <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text,
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
@@ -260,7 +261,7 @@ export default function BuildingPage() {
                   <button onClick={handleSignIn} style={{
                     padding: "8px 18px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                     cursor: "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}
@@ -291,8 +292,8 @@ export default function BuildingPage() {
             display: "flex", flexDirection: "column", visibility: mobileMenuOpen ? "visible" : "hidden",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 60, borderBottom: `1px solid ${C.borderLight}` }}>
-              <span style={{ fontSize: 20, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em" }}>
-                Built <span style={{ fontSize: 12, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              <span style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em" }}>
+                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <button onClick={() => setMobileMenuOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.textMute} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -302,14 +303,14 @@ export default function BuildingPage() {
               {NAV_TABS.map(t => (
                 <button key={t.href} onClick={() => { setMobileMenuOpen(false); router.push(t.href); }} style={{
                   padding: "12px 14px", border: "none", background: pathname === t.href ? C.accentSoft : "none",
-                  borderRadius: 10, cursor: "pointer", fontSize: 15, fontWeight: pathname === t.href ? 600 : 450,
+                  borderRadius: 10, cursor: "pointer", fontSize: T.body, fontWeight: pathname === t.href ? 600 : 450,
                   color: pathname === t.href ? C.text : C.textSec, fontFamily: "var(--sans)", textAlign: "left",
                 }}>{t.label}</button>
               ))}
               <div style={{ height: 1, background: C.borderLight, margin: "8px 6px" }} />
               <button onClick={() => { setMobileMenuOpen(false); router.push("/"); }} style={{
                 padding: "12px 14px", border: "none", background: "none", borderRadius: 10, cursor: "pointer",
-                fontSize: 15, fontWeight: 500, color: C.textSec, fontFamily: "var(--sans)", textAlign: "left",
+                fontSize: T.body, fontWeight: 500, color: C.textSec, fontFamily: "var(--sans)", textAlign: "left",
                 display: "flex", alignItems: "center", gap: 10,
               }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -363,17 +364,17 @@ export default function BuildingPage() {
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 18, fontWeight: 500, color: C.text, fontFamily: "var(--serif)" }}>{p.name}</span>
+                    <span style={{ fontSize: T.subtitle, fontWeight: 500, color: C.text, fontFamily: "var(--serif)" }}>{p.name}</span>
                     <StatusDot status={p.status} />
                   </div>
-                  <p style={{ fontSize: 14.5, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, margin: 0 }}>
+                  <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, margin: 0 }}>
                     {p.tagline}
                   </p>
                 </div>
                 <div style={{
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "6px 14px", borderRadius: 8, background: C.accentSoft,
-                  fontSize: 13, fontWeight: 600, color: C.textSec, fontFamily: "var(--sans)", flexShrink: 0,
+                  fontSize: T.bodySm, fontWeight: 600, color: C.textSec, fontFamily: "var(--sans)", flexShrink: 0,
                 }}>
                   {"\uD83D\uDC40"} {p.watchers}
                 </div>
@@ -386,12 +387,12 @@ export default function BuildingPage() {
                 marginBottom: 16,
               }}>
                 <p style={{
-                  fontSize: 13.5, lineHeight: 1.55, color: C.text,
+                  fontSize: T.body, lineHeight: 1.55, color: C.text,
                   fontFamily: "var(--mono)", margin: 0,
                 }}>
                   {p.log}
                 </p>
-                <span style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6, display: "block" }}>
+                <span style={{ fontSize: T.caption, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6, display: "block" }}>
                   {p.logDate}
                 </span>
               </div>
@@ -401,7 +402,7 @@ export default function BuildingPage() {
                   padding: "10px 16px", borderRadius: 10,
                   background: C.blueSoft, border: "1px solid #BFDBFE", marginBottom: 16,
                 }}>
-                  <span style={{ fontSize: 13, color: C.blue, fontFamily: "var(--sans)", fontWeight: 500 }}>
+                  <span style={{ fontSize: T.bodySm, color: C.blue, fontFamily: "var(--sans)", fontWeight: 500 }}>
                     {"\uD83E\uDD1D"} {p.help}
                   </span>
                 </div>
@@ -410,15 +411,15 @@ export default function BuildingPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <Av initials={p.builder.avatar} size={24} />
-                  <span style={{ fontSize: 13, color: C.textSec, fontWeight: 500 }}>{p.builder.name}</span>
-                  <span style={{ color: C.textMute, fontSize: 8 }}>{"\u25CF"}</span>
-                  <span style={{ fontSize: 12, color: C.textMute }}>{p.builder.city}</span>
+                  <span style={{ fontSize: T.bodySm, color: C.textSec, fontWeight: 500 }}>{p.builder.name}</span>
+                  <span style={{ color: C.textMute, fontSize: T.micro }}>{"\u25CF"}</span>
+                  <span style={{ fontSize: T.label, color: C.textMute }}>{p.builder.city}</span>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button style={{
                     padding: "8px 20px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                    cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
                     color: C.text, fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}
@@ -431,7 +432,7 @@ export default function BuildingPage() {
                     <button style={{
                       padding: "8px 20px", borderRadius: 10,
                       border: "none", background: C.accent,
-                      cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                      cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
                       color: "#fff", fontFamily: "var(--sans)",
                       transition: "opacity 0.12s",
                     }}

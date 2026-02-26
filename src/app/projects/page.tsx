@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import {
   C,
+  T,
   ROLES,
   type Project,
   type BuilderProfile,
@@ -49,13 +50,13 @@ function BuilderItemP({ b }: { b: { name: string; company: string; companyColor:
     <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{
         display: "flex", alignItems: "center", gap: 4,
-        fontSize: 13, fontFamily: "var(--sans)", marginBottom: 2,
+        fontSize: T.bodySm, fontFamily: "var(--sans)", marginBottom: 2,
       }}>
         <span style={{
           width: 14, height: 14, borderRadius: 4,
           background: b.companyColor || C.accent,
           display: "inline-flex", alignItems: "center", justifyContent: "center",
-          fontSize: 7, fontWeight: 800, color: "#fff",
+          fontSize: T.micro, fontWeight: 800, color: "#fff",
           fontFamily: "var(--sans)", flexShrink: 0,
           overflow: "hidden", position: "relative",
         }}>
@@ -65,7 +66,7 @@ function BuilderItemP({ b }: { b: { name: string; company: string; companyColor:
         <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
       </div>
       <div style={{
-        fontSize: 11.5, fontWeight: 400, color: C.textMute,
+        fontSize: T.label, fontWeight: 400, color: C.textMute,
         fontFamily: "var(--sans)", lineHeight: 1.2,
       }}>
         {b.name}
@@ -229,8 +230,8 @@ export default function ProjectsPage() {
               <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               </button>
-              <span onClick={() => router.push("/")} style={{ fontSize: 20, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
-                Built <span style={{ fontSize: 12, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              <span onClick={() => router.push("/")} style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
+                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
@@ -253,18 +254,18 @@ export default function ProjectsPage() {
                     </button>
                     {showProfileMenu && (
                       <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100 }}>
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: 12, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
+                  <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: T.label, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
                     Sign in
                   </button>
                 )}
@@ -273,14 +274,14 @@ export default function ProjectsPage() {
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: isTablet ? 24 : 40 }}>
-                <span onClick={() => router.push("/")} style={{ fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
-                  Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+                <span onClick={() => router.push("/")} style={{ fontSize: T.logo, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em", cursor: "pointer" }}>
+                  Built <span style={{ fontSize: T.bodySm, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
                 </span>
                 <div style={{ display: "flex", gap: 0 }}>
                   {NAV_TABS.map(t => (
                     <button key={t.href} onClick={() => router.push(t.href)} style={{
                       padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                      fontSize: 13.5, fontWeight: pathname === t.href ? 600 : 400,
+                      fontSize: T.body, fontWeight: pathname === t.href ? 600 : 400,
                       color: pathname === t.href ? C.text : C.textMute,
                       fontFamily: "var(--sans)",
                       borderBottom: pathname === t.href ? `2px solid ${C.text}` : "2px solid transparent",
@@ -295,7 +296,7 @@ export default function ProjectsPage() {
                 <button style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
-                  fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                  fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                   cursor: "pointer", fontFamily: "var(--sans)",
                   transition: "all 0.12s",
                   display: "flex", alignItems: "center", gap: 6,
@@ -313,7 +314,7 @@ export default function ProjectsPage() {
                   <div ref={profileMenuRef} style={{ position: "relative" }}>
                     <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                       <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                      <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
+                      <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
                       <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                     </button>
                     {showProfileMenu && (
@@ -324,26 +325,26 @@ export default function ProjectsPage() {
                       }}>
                         <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text,
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
+                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
-                          <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
+                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
                     )}
@@ -352,7 +353,7 @@ export default function ProjectsPage() {
                   <button onClick={handleSignIn} style={{
                     padding: "8px 18px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    fontSize: 12.5, fontWeight: 550, color: C.textSec,
+                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
                     cursor: "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}
@@ -383,8 +384,8 @@ export default function ProjectsPage() {
             display: "flex", flexDirection: "column", visibility: mobileMenuOpen ? "visible" : "hidden",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 60, borderBottom: `1px solid ${C.borderLight}` }}>
-              <span style={{ fontSize: 20, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em" }}>
-                Built <span style={{ fontSize: 12, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
+              <span style={{ fontSize: T.title, fontWeight: 400, fontFamily: "var(--serif)", color: C.text, letterSpacing: "-0.02em" }}>
+                Built <span style={{ fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
               </span>
               <button onClick={() => setMobileMenuOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.textMute} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -394,14 +395,14 @@ export default function ProjectsPage() {
               {NAV_TABS.map(t => (
                 <button key={t.href} onClick={() => { setMobileMenuOpen(false); router.push(t.href); }} style={{
                   padding: "12px 14px", border: "none", background: pathname === t.href ? C.accentSoft : "none",
-                  borderRadius: 10, cursor: "pointer", fontSize: 15, fontWeight: pathname === t.href ? 600 : 450,
+                  borderRadius: 10, cursor: "pointer", fontSize: T.body, fontWeight: pathname === t.href ? 600 : 450,
                   color: pathname === t.href ? C.text : C.textSec, fontFamily: "var(--sans)", textAlign: "left",
                 }}>{t.label}</button>
               ))}
               <div style={{ height: 1, background: C.borderLight, margin: "8px 6px" }} />
               <button onClick={() => { setMobileMenuOpen(false); router.push("/"); }} style={{
                 padding: "12px 14px", border: "none", background: "none", borderRadius: 10, cursor: "pointer",
-                fontSize: 15, fontWeight: 500, color: C.textSec, fontFamily: "var(--sans)", textAlign: "left",
+                fontSize: T.body, fontWeight: 500, color: C.textSec, fontFamily: "var(--sans)", textAlign: "left",
                 display: "flex", alignItems: "center", gap: 10,
               }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -421,7 +422,7 @@ export default function ProjectsPage() {
           }}>
             What the community shipped
           </h1>
-          <p style={{ fontSize: 16, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
+          <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
             Products built by the GrowthX community. Ranked by the people who build.
           </p>
         </div>
@@ -462,7 +463,7 @@ export default function ProjectsPage() {
                 borderRadius: 14, cursor: "pointer",
               }} onClick={() => router.push(`/projects/${fp.id}`)}>
                 <div style={{
-                  fontSize: 10, fontWeight: 720, color: C.gold,
+                  fontSize: T.badge, fontWeight: 720, color: C.gold,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   marginBottom: 12, fontFamily: "var(--sans)",
                 }}>
@@ -470,15 +471,15 @@ export default function ProjectsPage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 17, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
+                    <div style={{ fontSize: T.subtitle, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
                       {fp.name}
                     </div>
-                    <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+                    <div style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
                       {fp.tagline}
                     </div>
                   </div>
                   <div style={{
-                    fontSize: 24, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
+                    fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
                   }}>
                     {fp.weighted.toLocaleString()}
                   </div>
@@ -507,13 +508,13 @@ export default function ProjectsPage() {
                   {/* Left: product name + tagline */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{
-                      fontSize: 15.5, fontWeight: 560, color: C.text,
+                      fontSize: T.bodyLg, fontWeight: 560, color: C.text,
                       fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
                     }}>
                       {p.name}
                     </div>
                     <div className={isMobile ? "line-clamp-2" : undefined} style={{
-                      fontSize: 13, color: C.textMute, fontFamily: "var(--sans)",
+                      fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
                       fontWeight: 400, lineHeight: 1.3,
                       ...(!isMobile ? { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } : {}),
                     }}>
@@ -547,14 +548,19 @@ export default function ProjectsPage() {
                         style={{
                           flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                           padding: "7px 14px", borderRadius: 10, minWidth: 72,
-                          border: votedIds.includes(p.id) ? `1px solid ${C.goldBorder}` : `1px solid ${C.border}`,
-                          background: votedIds.includes(p.id) ? C.goldSoft : C.surface,
-                          fontSize: 15, fontWeight: 650,
-                          color: votedIds.includes(p.id) ? C.gold : C.text,
+                          border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                          background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                          fontSize: T.body, fontWeight: 650,
+                          color: votedIds.includes(p.id) ? C.brand : C.text,
                           fontFamily: "var(--sans)", cursor: "pointer",
+                          transition: "border 0.25s, background 0.25s, color 0.25s",
                         }}>
-                        <span style={{ fontSize: 13, opacity: 0.5, lineHeight: 1, display: "inline-flex" }}>{"\u25B3"}</span>
-                        <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: 14, lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
+                        <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                          </svg>
+                        </span>
+                        <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body, lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
                       </div>
                     </div>
                   ) : (
@@ -563,14 +569,19 @@ export default function ProjectsPage() {
                       style={{
                         flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         padding: "7px 14px", borderRadius: 10, minWidth: 72,
-                        border: votedIds.includes(p.id) ? `1px solid ${C.goldBorder}` : `1px solid ${C.border}`,
-                        background: votedIds.includes(p.id) ? C.goldSoft : C.surface,
-                        fontSize: 15, fontWeight: 650,
-                        color: votedIds.includes(p.id) ? C.gold : C.text,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                        fontSize: T.body, fontWeight: 650,
+                        color: votedIds.includes(p.id) ? C.brand : C.text,
                         fontFamily: "var(--sans)", cursor: "pointer",
+                        transition: "border 0.25s, background 0.25s, color 0.25s",
                       }}>
-                      <span style={{ fontSize: 13, opacity: 0.5, lineHeight: 1, display: "inline-flex" }}>{"\u25B3"}</span>
-                      <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: 14, lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
+                      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <span style={{ fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body, lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
                     </div>
                   )}
                 </div>
