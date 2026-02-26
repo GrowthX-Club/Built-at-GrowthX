@@ -18,11 +18,40 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 // ---- Inline Components ----
 
 function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; companyColor: string }; horizontal?: boolean }) {
+  if (horizontal) {
+    return (
+      <div style={{ height: 36, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 4,
+          fontSize: T.bodySm, fontFamily: "var(--sans)",
+        }}>
+          <span style={{
+            width: 14, height: 14, borderRadius: 4,
+            background: b.companyColor || C.accent,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontSize: T.micro, fontWeight: 800, color: "#fff",
+            fontFamily: "var(--sans)", flexShrink: 0,
+            overflow: "hidden", position: "relative",
+          }}>
+            {b.company[0]}
+            {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+          </span>
+          <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
+        </div>
+        <div style={{
+          fontSize: T.label, fontWeight: 400, color: C.textMute,
+          fontFamily: "var(--sans)", lineHeight: 1.2,
+        }}>
+          {b.name}
+        </div>
+      </div>
+    );
+  }
   return (
-    <div style={{ height: 36, display: "flex", flexDirection: horizontal ? "row" : "column", justifyContent: horizontal ? "flex-start" : "center", alignItems: horizontal ? "center" : undefined, gap: horizontal ? 8 : 0 }}>
+    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{
         display: "flex", alignItems: "center", gap: 4,
-        fontSize: T.bodySm, fontFamily: "var(--sans)", marginBottom: horizontal ? 0 : 2,
+        fontSize: T.bodySm, fontFamily: "var(--sans)", marginBottom: 2,
       }}>
         <span style={{
           width: 14, height: 14, borderRadius: 4,
@@ -37,7 +66,6 @@ function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; c
         </span>
         <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
       </div>
-      {horizontal && <span style={{ color: C.borderLight, fontSize: T.label }}>·</span>}
       <div style={{
         fontSize: T.label, fontWeight: 400, color: C.textMute,
         fontFamily: "var(--sans)", lineHeight: 1.2,
@@ -251,7 +279,7 @@ export default function ProjectsPage() {
                 >
                   {/* Top: product name + tagline + upvote (mobile: row with square button) */}
                   {isMobile ? (
-                    <div style={{ display: "flex", alignItems: "stretch", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                         <div style={{
                           fontSize: T.bodyLg, fontWeight: 560, color: C.text,
