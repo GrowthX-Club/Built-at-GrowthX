@@ -415,9 +415,9 @@ function LoginDialogInner() {
 
         {/* Logo + subtitle */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <BuiltLogo height={48} style={{ margin: "0 auto" }} />
+          <BuiltLogo height={77} style={{ margin: "0 auto" }} />
           <p style={{
-            fontSize: T.body, color: C.textSec, marginTop: 8,
+            fontSize: T.bodySm, color: C.textSec, marginTop: 16,
             fontFamily: "var(--sans)", fontWeight: 400,
           }}>
             {mode === "signin"

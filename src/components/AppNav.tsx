@@ -324,7 +324,7 @@ export default function AppNav() {
         </div>
       </nav>
       {/* Spacer to offset fixed nav height */}
-      <div style={{ height: isMobile ? 60 : 65 }} />
+      <div className="nav-spacer" />
 
       {/* Mobile side drawer — portaled to body */}
       {portalMounted && createPortal(

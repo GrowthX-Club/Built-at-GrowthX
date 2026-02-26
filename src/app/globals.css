@@ -145,6 +145,9 @@ body {
   background: #A09A8C;
 }
 
+/* Nav spacer — matches nav height per breakpoint */
+.nav-spacer { height: 65px; }
+
 /* ---- Responsive utilities ---- */
 
 .line-clamp-2 {
@@ -168,6 +171,9 @@ body {
 
 /* Mobile: ≤640px */
 @media (max-width: 640px) {
+  .nav-spacer {
+    height: 60px;
+  }
   .responsive-main {
     padding-left: 16px !important;
     padding-right: 16px !important;
