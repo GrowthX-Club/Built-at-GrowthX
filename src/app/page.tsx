@@ -378,10 +378,10 @@ function HomePage() {
       <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0 96px",
+        borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0 32px",
       }}>
         <div style={{
-          
+          maxWidth: 960, margin: "0 auto",
           display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? 60 : 65,
         }}>
           {isMobile ? (
@@ -645,7 +645,7 @@ function HomePage() {
         document.body
       )}
 
-      <main className="responsive-main" style={{ padding: isMobile ? "20px 16px 80px" : "32px 96px 100px" }}>
+      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "32px 32px 100px" }}>
         {/* Header */}
         <div className="fade-up" style={{ marginBottom: 36 }}>
           <h1 className="responsive-h1 hero-title" style={{

@@ -221,7 +221,7 @@ export default function SettingsPage() {
       <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 96px",
+        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
       }}>
         <div style={{
           maxWidth: 960, margin: "0 auto",
@@ -281,7 +281,7 @@ export default function SettingsPage() {
         </div>
       </nav>
 
-      <main className="responsive-main" style={{ padding: "32px 96px 100px" }}>
+      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
         {/* Page header */}
         <div className="fade-up" style={{ marginBottom: 36 }}>
           <h1 className="responsive-h1" style={{ fontSize: T.pageTitle, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>

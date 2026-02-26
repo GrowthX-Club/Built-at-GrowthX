@@ -125,7 +125,7 @@ export default function BuildingPage() {
         borderBottom: `1px solid ${C.border}`, padding: "0 32px",
       }}>
         <div style={{
-          
+          maxWidth: 960, margin: "0 auto",
           display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? 60 : 65,
         }}>
           {isMobile ? (
@@ -310,7 +310,7 @@ export default function BuildingPage() {
         </>, document.body
       )}
 
-      <main className="responsive-main" style={{ padding: "32px 96px 100px" }}>
+      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
         {/* <div className="fade-up" style={{ marginBottom: 36 }}>
           <h1 className="responsive-h1" style={{ fontSize: 44, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10 }}>
             What&apos;s being built right now
