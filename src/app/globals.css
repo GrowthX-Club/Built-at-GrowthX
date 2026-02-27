@@ -404,6 +404,147 @@ body {
   .skeleton-card .desktop-tablet-only-block { display: none; }
 }
 
+/* ---- Theme transition: light source animation ---- */
+
+/* Tubelight flicker — edges glow first, light fills inward, then catches.
+   Uses gradient backgrounds that snap between states (linear timing).
+   No position/opacity changes — only the background. */
+@keyframes tubelight-flicker {
+  /* Dead */
+  0%   { background: #1A1918; }
+  /* 1st sputter — just the edges glow */
+  4%   { background: linear-gradient(to right, #FFF8E8 0%, #1A1918 18%, #1A1918 82%, #FFF8E8 100%); }
+  6%   { background: #1A1918; }
+  /* 2nd sputter — edges again, slightly wider */
+  14%  { background: linear-gradient(to right, #FFF6E0 0%, #1A1918 22%, #1A1918 78%, #FFF6E0 100%); }
+  16%  { background: #1A1918; }
+  /* Dark gap */
+  24%  { background: #1A1918; }
+  /* 3rd — edges brighter, warmth creeping inward */
+  30%  { background: linear-gradient(to right, #E8DCC0 0%, #3A3020 28%, #3A3020 72%, #E8DCC0 100%); }
+  32%  { background: #1A1918; }
+  /* 4th — light fills from edges, center still dark */
+  40%  { background: linear-gradient(to right, #FFF8E8 0%, #FFF8E8 22%, #1E1D1B 38%, #1E1D1B 62%, #FFF8E8 78%, #FFF8E8 100%); }
+  42%  { background: #1E1D1B; }
+  /* Dark gap */
+  52%  { background: #1A1918; }
+  /* Almost — most of bar lit, just the center gap remaining */
+  60%  { background: linear-gradient(to right, #D0C8A8 0%, #D0C8A8 28%, #2A2520 42%, #2A2520 58%, #D0C8A8 72%, #D0C8A8 100%); }
+  62%  { background: #1A1918; }
+  /* Strong flash — nearly full, center just slightly dimmer */
+  68%  { background: linear-gradient(to right, #FFF8E8 0%, #FFF8E8 35%, #E8DCC0 50%, #FFF8E8 65%, #FFF8E8 100%); }
+  72%  { background: #2A2520; }
+  /* Catches — fully lit */
+  78%  { background: #F8F7F4; }
+  82%  { background: #E8E0D0; }
+  88%  { background: #F8F7F4; }
+  100% { background: #F8F7F4; }
+}
+
+/* Applied to the <nav> — whole bar flickers via background only */
+.nav-flicker-active {
+  animation: tubelight-flicker 800ms linear forwards !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Warm glow spill underneath the nav during flicker */
+@keyframes glow-flicker {
+  0%   { opacity: 0; }
+  4%   { opacity: 0.6; }
+  8%   { opacity: 0.05; }
+  14%  { opacity: 0.7; }
+  18%  { opacity: 0; }
+  24%  { opacity: 0; }
+  30%  { opacity: 0.5; }
+  34%  { opacity: 0.08; }
+  40%  { opacity: 0.6; }
+  44%  { opacity: 0; }
+  52%  { opacity: 0; }
+  60%  { opacity: 0.35; }
+  68%  { opacity: 0.6; }
+  72%  { opacity: 0.15; }
+  78%  { opacity: 0.7; }
+  85%  { opacity: 0.5; }
+  92%  { opacity: 0.7; }
+  100% { opacity: 0.7; }
+}
+
+.tubelight-glow {
+  position: fixed;
+  top: 50px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  z-index: 49;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 100% at 50% 0%, rgba(255,240,200,0.5) 0%, transparent 80%);
+  animation: glow-flicker 800ms ease-in-out forwards;
+}
+
+/* Fly particles — erratic zig-zag near the tubelight */
+@keyframes fly-buzz {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  8%   { opacity: 0.8; }
+  15%  { transform: translate(8px, -14px); }
+  25%  { transform: translate(-6px, 5px); }
+  35%  { transform: translate(12px, -8px); opacity: 0.9; }
+  45%  { transform: translate(-10px, -12px); }
+  55%  { transform: translate(5px, 10px); opacity: 0.7; }
+  65%  { transform: translate(-8px, -6px); }
+  75%  { transform: translate(6px, 12px); opacity: 0.4; }
+  85%  { transform: translate(-4px, -10px); opacity: 0.15; }
+  100% { transform: translate(0, 0); opacity: 0; }
+}
+
+.fly-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  z-index: 51;
+  pointer-events: none;
+}
+
+.fly-particle {
+  position: absolute;
+  top: 48px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #FFE4A0;
+  box-shadow: 0 0 6px 2px rgba(255,228,160,0.6);
+  animation: fly-buzz 2s ease-in-out forwards;
+}
+
+/* Nav absorb glow — light being "absorbed" into the fixture */
+@keyframes nav-absorb-fade {
+  0%   { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+.nav-absorb-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 65px;
+  z-index: 46;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 120% at 50% 100%, rgba(255,240,200,0.4) 0%, transparent 70%);
+  animation: nav-absorb-fade 400ms ease-out forwards;
+}
+
+/* Mobile adjustments for theme transition */
+@media (max-width: 640px) {
+  .tubelight-glow { top: 45px; height: 55px; }
+  .fly-container { height: 75px; }
+  .fly-particle { top: 42px; }
+  .nav-absorb-glow { height: 60px; }
+}
+
 /* Dark mode overrides */
 [data-theme="dark"] .hero-title {
   background: linear-gradient(180deg, #f0f0f0 0%, #bbb 45%, #e0e0e0 55%, #ccc 100%);
