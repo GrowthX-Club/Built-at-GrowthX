@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   C,
+  T,
   ROLES,
   CUSTOM_EMOJIS,
   type Project,
@@ -21,6 +22,8 @@ import {
 } from "@/types";
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useNavOverride } from "@/context/NavContext";
+import { useResponsive } from "@/hooks/useMediaQuery";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -67,7 +70,7 @@ function Av({ initials, size = 32, highlight, role, src }: { initials: string; s
 function Badge({ role, size = "sm" }: { role: string; size?: "sm" | "md" }) {
   const r = ROLES[role];
   if (!r) return null;
-  const s = size === "sm" ? { fs: 9.5, px: 6, py: 2 } : { fs: 10.5, px: 8, py: 3 };
+  const s = size === "sm" ? { fs: T.badge, px: 6, py: 2 } : { fs: T.caption, px: 8, py: 3 };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 3,
@@ -86,7 +89,7 @@ function CompanyTag({ title, company, companyColor }: { title?: string; company?
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
-      fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450,
+      fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450,
     }}>
       {title && <span>{title}</span>}
       <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
@@ -94,7 +97,7 @@ function CompanyTag({ title, company, companyColor }: { title?: string; company?
           width: 14, height: 14, borderRadius: 4,
           background: companyColor || C.accent,
           display: "inline-flex", alignItems: "center", justifyContent: "center",
-          fontSize: 7, fontWeight: 800, color: "#fff",
+          fontSize: T.micro, fontWeight: 800, color: "#fff",
           fontFamily: "var(--sans)", letterSpacing: "-0.02em", flexShrink: 0,
           overflow: "hidden", position: "relative",
         }}>
@@ -108,6 +111,7 @@ function CompanyTag({ title, company, companyColor }: { title?: string; company?
 }
 
 function Reactions({ reactions: initialReactions, onReact }: { reactions: Reaction[]; onReact?: (emojiCode: string) => boolean }) {
+  const { isMobile } = useResponsive();
   const [local, setLocal] = useState(initialReactions.map(r => ({ ...r })));
   const [picker, setPicker] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -150,11 +154,11 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
           padding: "4px 10px", borderRadius: 20,
           border: r.mine ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
           background: r.mine ? C.accentSoft : C.surface,
-          cursor: "pointer", fontSize: 13, fontFamily: "var(--sans)",
+          cursor: "pointer", fontSize: T.bodySm, fontFamily: "var(--sans)",
           color: C.text, transition: "all 0.12s",
         }}>
-          <span style={{ fontSize: 14, color: r.emoji.special ? C.gold : "inherit", fontWeight: r.emoji.special ? 700 : 400 }}>{r.emoji.display}</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
+          <span style={{ fontSize: T.body, color: r.emoji.special ? C.gold : "inherit", fontWeight: r.emoji.special ? 700 : 400 }}>{r.emoji.display}</span>
+          <span style={{ fontSize: T.caption, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
         </button>
       ))}
       <div style={{ position: "relative" }}>
@@ -168,7 +172,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
         onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.accentSoft; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "transparent"; }}
         >
-          <span style={{ fontSize: 15, lineHeight: 1, opacity: 0.55 }}>{"\u{1F642}"}</span>
+          <span style={{ fontSize: T.body, lineHeight: 1, opacity: 0.55 }}>{"\u{1F642}"}</span>
           <span style={{
             position: "absolute", bottom: -1, right: -1,
             width: 12, height: 12, borderRadius: 12,
@@ -179,7 +183,9 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
         </button>
         {picker && (
           <div style={{
-            position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+            position: "absolute", bottom: "calc(100% + 6px)",
+            left: isMobile ? 0 : "50%",
+            transform: isMobile ? "none" : "translateX(-50%)",
             padding: 10, background: C.surface,
             border: `1px solid ${C.border}`, borderRadius: 14,
             boxShadow: "0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
@@ -190,7 +196,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
               <button key={i} onClick={() => handlePick(e)} title={e.label} style={{
                 padding: 7, borderRadius: 8, border: "none",
                 background: "transparent", cursor: "pointer",
-                fontSize: 18, transition: "all 0.1s",
+                fontSize: T.subtitle, transition: "all 0.1s",
                 color: e.special ? C.gold : "inherit",
                 fontWeight: e.special ? 700 : 400,
               }}
@@ -208,6 +214,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
 }
 
 function ThreadBlock({ thread }: { thread: ThreadData }) {
+  const { isMobile } = useResponsive();
   const [open, setOpen] = useState(false);
   return (
     <div style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
@@ -215,12 +222,12 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
         <Av initials={thread.author.avatar} size={38} role={thread.author.role} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>{thread.author.name}</span>
+            <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>{thread.author.name}</span>
             <CompanyTag title={thread.author.title} company={thread.author.company} companyColor={thread.author.companyColor} />
             <Badge role={thread.author.role} />
-            <span style={{ fontSize: 12, color: C.textMute }}>{thread.time}</span>
+            <span style={{ fontSize: T.label, color: C.textMute }}>{thread.time}</span>
           </div>
-          <p style={{ fontSize: 15, lineHeight: 1.65, color: C.text, fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400 }}>{thread.content}</p>
+          <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400 }}>{thread.content}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
             <Reactions reactions={thread.reactions} />
             {thread.replies.length > 0 && (
@@ -228,7 +235,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                 display: "inline-flex", alignItems: "center", gap: 5,
                 padding: "5px 12px", borderRadius: 8,
                 border: "none", background: open ? C.accentSoft : "transparent",
-                cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
                 color: C.blue, fontFamily: "var(--sans)",
               }}>
                 {thread.replies.length} {thread.replies.length === 1 ? "reply" : "replies"}
@@ -236,11 +243,11 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
               </button>
             )}
             {thread.replies.length === 0 && (
-              <button style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", fontSize: 12, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)" }}>Reply</button>
+              <button style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", fontSize: T.label, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)" }}>Reply</button>
             )}
           </div>
           {open && (
-            <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: 20, marginLeft: 2 }}>
+            <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
               {thread.replies.map((reply, i) => (
                 <div key={i} style={{ padding: "16px 0", borderBottom: i < thread.replies.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
                   {reply.author.isCreator ? (
@@ -253,13 +260,13 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                         <Av initials={reply.author.avatar} size={30} highlight role={reply.author.role} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
+                            <span style={{ fontSize: T.bodySm, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
                             <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             <Badge role={reply.author.role} />
-                            <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
+                            <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
                           </div>
-                          <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
+                          <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
                           <Reactions reactions={reply.reactions} />
                         </div>
                       </div>
@@ -269,12 +276,12 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                       <Av initials={reply.author.avatar} size={30} role={reply.author.role} />
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
+                          <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
                           <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
                           <Badge role={reply.author.role} />
-                          <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
+                          <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
                         </div>
-                        <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
+                        <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
                         <Reactions reactions={reply.reactions} />
                       </div>
                     </div>
@@ -293,6 +300,8 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
+  const { setNavOverride, clearNavOverride } = useNavOverride();
+  const { isMobile } = useResponsive();
   const [project, setProject] = useState<Project | null>(null);
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
@@ -327,6 +336,13 @@ export default function ProjectDetailPage() {
         setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
       });
   }, [params.id]);
+
+  useEffect(() => {
+    if (project) {
+      setNavOverride({ title: project.name, backHref: "/" });
+    }
+    return () => clearNavOverride();
+  }, [project, setNavOverride, clearNavOverride]);
 
   const reloadUser = () => {
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
@@ -433,115 +449,60 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-        <nav style={{
-          position: "sticky", top: 0, zIndex: 50,
-          background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${C.border}`, padding: "0 32px",
+      <main className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "40px 32px 100px", fontFamily: "var(--sans)" }}>
+        <div className="fade-up" style={{ marginBottom: 32 }}>
+          <div className="skeleton" style={{ height: 36, width: "60%", marginBottom: 12 }} />
+          <div className="skeleton" style={{ height: 16, width: "80%", marginBottom: 20 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <div className="skeleton" style={{ width: 36, height: 36, borderRadius: 36 }} />
+            <div>
+              <div className="skeleton" style={{ height: 14, width: 100, marginBottom: 4 }} />
+              <div className="skeleton" style={{ height: 11, width: 70 }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+            <div className="skeleton" style={{ height: 24, width: 60, borderRadius: 6 }} />
+            <div className="skeleton" style={{ height: 24, width: 75, borderRadius: 6 }} />
+            <div className="skeleton" style={{ height: 24, width: 55, borderRadius: 6 }} />
+          </div>
+        </div>
+        <div className="fade-up stagger-2">
+          <div className="skeleton" style={{ height: 14, width: "100%", marginBottom: 10 }} />
+          <div className="skeleton" style={{ height: 14, width: "95%", marginBottom: 10 }} />
+          <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 10 }} />
+          <div className="skeleton" style={{ height: 14, width: "85%", marginBottom: 24 }} />
+        </div>
+        <div className="fade-up stagger-3" style={{
+          padding: "24px 28px", background: C.surface,
+          border: `1px solid ${C.border}`, borderRadius: 14, marginTop: 32,
         }}>
-          <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: 20 }}>
-            <div className="skeleton" style={{ height: 14, width: 180, borderRadius: 4 }} />
-            <div className="skeleton" style={{ height: 14, width: 100, borderRadius: 4 }} />
-            <div className="skeleton" style={{ height: 30, width: 130, borderRadius: 8 }} />
-          </div>
-        </nav>
-        <main style={{ maxWidth: 800, margin: "0 auto", padding: "40px 32px 100px" }}>
-          <div className="fade-up" style={{ marginBottom: 32 }}>
-            <div className="skeleton" style={{ height: 36, width: "60%", marginBottom: 12 }} />
-            <div className="skeleton" style={{ height: 16, width: "80%", marginBottom: 20 }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-              <div className="skeleton" style={{ width: 36, height: 36, borderRadius: 36 }} />
-              <div>
-                <div className="skeleton" style={{ height: 14, width: 100, marginBottom: 4 }} />
-                <div className="skeleton" style={{ height: 11, width: 70 }} />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-              <div className="skeleton" style={{ height: 24, width: 60, borderRadius: 6 }} />
-              <div className="skeleton" style={{ height: 24, width: 75, borderRadius: 6 }} />
-              <div className="skeleton" style={{ height: 24, width: 55, borderRadius: 6 }} />
-            </div>
-          </div>
-          <div className="fade-up stagger-2">
-            <div className="skeleton" style={{ height: 14, width: "100%", marginBottom: 10 }} />
-            <div className="skeleton" style={{ height: 14, width: "95%", marginBottom: 10 }} />
-            <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 10 }} />
-            <div className="skeleton" style={{ height: 14, width: "85%", marginBottom: 24 }} />
-          </div>
-          <div className="fade-up stagger-3" style={{
-            padding: "24px 28px", background: C.surface,
-            border: `1px solid ${C.border}`, borderRadius: 14, marginTop: 32,
-          }}>
-            <div className="skeleton" style={{ height: 18, width: 120, marginBottom: 16 }} />
-            <div className="skeleton" style={{ height: 60, width: "100%", borderRadius: 10 }} />
-          </div>
-        </main>
-      </div>
+          <div className="skeleton" style={{ height: 18, width: 120, marginBottom: 16 }} />
+          <div className="skeleton" style={{ height: 60, width: "100%", borderRadius: 10 }} />
+        </div>
+      </main>
     );
   }
 
   const p = project;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
-      }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, gap: 20 }}>
-          <button onClick={() => router.push("/")} style={{
-            border: "none", background: "none", cursor: "pointer",
-            fontSize: 13.5, color: C.textSec, fontFamily: "var(--sans)",
-            fontWeight: 500, display: "flex", alignItems: "center", gap: 6,
-            padding: 0, transition: "color 0.12s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = C.text}
-          onMouseLeave={e => e.currentTarget.style.color = C.textSec}
-          >
-            {"\u2190"} Back to Built at GrowthX
-          </button>
-          <span style={{
-            fontSize: 14, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            flex: 1, textAlign: "center",
-          }}>
-            {p.name}
-          </span>
-          <button onClick={() => router.push("/?submit=1")} style={{
-            padding: "6px 16px", borderRadius: 8,
-            border: `1.5px solid ${C.accent}`, background: C.surface,
-            fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-            fontFamily: "var(--sans)", color: C.text,
-            transition: "all 0.15s", flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 6,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.accent; e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.text; }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            Submit your project
-          </button>
-        </div>
-      </nav>
-
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px" }}>
+    <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px", fontFamily: "var(--sans)" }}>
         {/* Hero */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
             <div style={{ flex: 1, paddingTop: 2 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
-                <h1 style={{ fontSize: 36, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
+                <h1 className="responsive-h1" style={{ fontSize: T.pageTitle, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
                 {p.featured && (
                   <span style={{
-                    fontSize: 9.5, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
+                    fontSize: T.badge, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
                     background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
                     letterSpacing: "0.06em", textTransform: "uppercase",
                   }}>{"\u2726"} Featured</span>
                 )}
               </div>
-              <p style={{ fontSize: 18, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 10px" }}>{p.tagline}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
+              <p style={{ fontSize: T.subtitle, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 10px" }}>{p.tagline}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
                 <span>{p.date}</span>
                 {p.buildathon && (
                   <>
@@ -551,13 +512,13 @@ export default function ProjectDetailPage() {
                 )}
               </div>
             </div>
-            <div style={{ flexShrink: 0, display: "flex", gap: 8 }}>
+            <div style={{ flexShrink: 0, display: "flex", gap: 8, ...(isMobile ? { width: "100%" } : {}) }}>
               <button onClick={handleVote} style={{
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 20px", borderRadius: 10,
                 border: hasVoted ? `1.5px solid ${C.brand}` : `1.5px solid ${C.accent}`,
                 background: hasVoted ? C.brandSoft : C.surface,
-                cursor: "pointer", fontSize: 16, fontWeight: 650,
+                cursor: "pointer", fontSize: T.bodyLg, fontWeight: 650,
                 fontFamily: "var(--sans)", color: hasVoted ? C.brand : C.text,
                 transition: "border 0.25s, background 0.25s, color 0.25s",
                 position: "relative", overflow: "visible",
@@ -584,7 +545,7 @@ export default function ProjectDetailPage() {
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
                   padding: "10px 24px", borderRadius: 10,
                   border: "none", background: C.accent, color: "#fff",
-                  fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+                  fontSize: T.body, fontWeight: 600, cursor: "pointer",
                   fontFamily: "var(--sans)", transition: "opacity 0.15s",
                   textDecoration: "none", display: "inline-flex", alignItems: "center",
                 }}
@@ -600,23 +561,25 @@ export default function ProjectDetailPage() {
 
         {/* Product info */}
         <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: C.text, fontFamily: "var(--sans)", fontWeight: 400, margin: "0 0 28px", maxWidth: 620 }}>{p.description}</p>
+          <p style={{ fontSize: T.bodyLg, lineHeight: 1.7, color: C.text, fontFamily: "var(--sans)", fontWeight: 400, margin: "0 0 28px", maxWidth: 620 }}>{p.description}</p>
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>
+            <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>
               {(p.creators || []).length > 0 ? "Creators" : "Creator"}
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
+            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
+            <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "10px 16px", borderRadius: 12,
-                background: C.surface, border: `1px solid ${C.border}`,
+                background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
               }}>
-                <Av initials={p.builder.avatar} size={34} />
+                <Av initials={p.builder.avatar} size={34} src={p.builder.avatarUrl} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
+                  <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
                     <span>{p.builder.title}</span>
                     {p.builder.company && (
                       <>
@@ -624,7 +587,7 @@ export default function ProjectDetailPage() {
                           width: 14, height: 14, borderRadius: 4,
                           background: p.builder.companyColor || C.accent,
                           display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 7, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
+                          fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
                           overflow: "hidden", position: "relative",
                         }}>
                           {p.builder.company[0]}
@@ -642,19 +605,19 @@ export default function ProjectDetailPage() {
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 16px", borderRadius: 12,
-                  background: C.surface, border: `1px solid ${C.border}`,
+                  background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
                 }}>
-                  <Av initials={c.avatar} size={30} />
+                  <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
+                    <span style={{ fontSize: T.bodySm, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
                     {c.title && c.company && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
                         <span>{c.title}</span>
                         <span style={{
                           width: 13, height: 13, borderRadius: 3,
                           background: c.companyColor || C.accent,
                           display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 6.5, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
+                          fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
                           overflow: "hidden", position: "relative",
                         }}>
                           {c.company[0]}
@@ -667,30 +630,33 @@ export default function ProjectDetailPage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
 
           {/* Collaborators */}
           {p.collabs.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Collaborators</div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Collaborators</div>
+              <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
+              {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
+              <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
                 {p.collabs.map((c, i) => (
                   <div key={i} style={{
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "10px 16px", borderRadius: 12,
-                    background: C.surface, border: `1px solid ${C.border}`,
+                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
                   }}>
-                    <Av initials={c.avatar} size={30} />
+                    <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span style={{ fontSize: 13, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
+                      <span style={{ fontSize: T.bodySm, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
                       {c.title && c.company && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
                           <span>{c.title}</span>
                           <span style={{
                             width: 13, height: 13, borderRadius: 3,
                             background: c.companyColor || C.accent,
                             display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 6.5, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
+                            fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
                             overflow: "hidden", position: "relative",
                           }}>
                             {c.company[0]}
@@ -703,13 +669,16 @@ export default function ProjectDetailPage() {
                   </div>
                 ))}
               </div>
+              </div>
             </div>
           )}
 
           {/* Tech stack */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
+            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
+            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
+            <div style={{ display: "flex", gap: 8, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
               {p.stack.map((t, i) => {
                 const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: "#fff" };
                 const logoUrl = getStackLogoUrl(t);
@@ -717,13 +686,13 @@ export default function ProjectDetailPage() {
                   <div key={i} style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "6px 16px 6px 8px", borderRadius: 40,
-                    background: C.surface, border: `1px solid ${C.border}`,
+                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
                   }}>
                     <div style={{
                       width: 22, height: 22, borderRadius: 6,
                       background: meta.bg, color: meta.color,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 9.5, fontWeight: 750, fontFamily: "var(--sans)",
+                      fontSize: T.badge, fontWeight: 750, fontFamily: "var(--sans)",
                       flexShrink: 0, letterSpacing: "-0.02em",
                       position: "relative", overflow: "hidden",
                     }}>
@@ -741,10 +710,11 @@ export default function ProjectDetailPage() {
                         />
                       )}
                     </div>
-                    <span style={{ fontSize: 13, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
+                    <span style={{ fontSize: T.bodySm, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
         </div>
@@ -752,7 +722,7 @@ export default function ProjectDetailPage() {
         {/* DISCUSSION */}
         <div className="fade-up stagger-3" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ fontSize: 28, fontWeight: 400, color: C.text, fontFamily: "var(--serif)" }}>Discussion</h2>
+            <h2 style={{ fontSize: T.headingLg, fontWeight: 400, color: C.text, fontFamily: "var(--serif)" }}>Discussion</h2>
           </div>
 
           <div style={{
@@ -760,7 +730,7 @@ export default function ProjectDetailPage() {
             background: C.surface, border: `1px solid ${C.border}`,
             borderRadius: 14, marginBottom: 4,
           }}>
-            <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} />
+            <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} src={user?.avatarUrl} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
               <textarea
                 value={comment}
@@ -769,7 +739,7 @@ export default function ProjectDetailPage() {
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostComment(); }}}
                 style={{
                   width: "100%", padding: "11px 16px", borderRadius: 10,
-                  border: `1px solid ${C.borderLight}`, fontSize: 14.5,
+                  border: `1px solid ${C.borderLight}`, fontSize: T.body,
                   color: C.text, fontFamily: "var(--sans)",
                   background: "transparent", outline: "none",
                   resize: "none", minHeight: 44, lineHeight: 1.5,
@@ -788,7 +758,7 @@ export default function ProjectDetailPage() {
                     style={{
                       padding: "7px 18px", borderRadius: 8,
                       border: "none", background: C.accent, color: "#fff",
-                      fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                      fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
                       fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                     }}
                   >
@@ -809,20 +779,20 @@ export default function ProjectDetailPage() {
                   <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
+                      <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
                         {root.authorName || "Anonymous"}
                       </span>
                       <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} />
                       {isRootOP && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                       )}
                       <Badge role={root.authorRole || "member"} />
-                      <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>
+                      <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
                         {timeAgo(root.createdAt)}
                       </span>
                     </div>
                     <p style={{
-                      fontSize: 15, lineHeight: 1.65, color: C.text,
+                      fontSize: T.body, lineHeight: 1.65, color: C.text,
                       fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400,
                       whiteSpace: "pre-wrap",
                     }}>
@@ -835,7 +805,7 @@ export default function ProjectDetailPage() {
                           display: "inline-flex", alignItems: "center", gap: 5,
                           padding: "5px 12px", borderRadius: 8,
                           border: "none", background: replyingTo === root.id ? C.accentSoft : "transparent",
-                          cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
                           color: C.blue, fontFamily: "var(--sans)",
                         }}>
                           {replies.length} {replies.length === 1 ? "reply" : "replies"}
@@ -849,14 +819,14 @@ export default function ProjectDetailPage() {
                         }} style={{
                           padding: "5px 12px", borderRadius: 8, border: "none",
                           background: "transparent", cursor: "pointer",
-                          fontSize: 12, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)",
+                          fontSize: T.label, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)",
                         }}>Reply</button>
                       )}
                     </div>
 
                     {/* Nested replies */}
                     {(replyingTo === root.id || replies.length > 0) && replyingTo === root.id && (
-                      <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: 20, marginLeft: 2 }}>
+                      <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
                         {replies.map((reply, i) => {
                           const replyInitials = reply.authorAvatar || (reply.authorName ? reply.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
                           const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
@@ -872,13 +842,13 @@ export default function ProjectDetailPage() {
                                     <Av initials={replyInitials} size={30} highlight role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                                     <div style={{ flex: 1 }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                                        <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
+                                        <span style={{ fontSize: T.bodySm, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
                                         <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} />
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                                         <Badge role={reply.authorRole || "member"} />
-                                        <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                                        <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                       </div>
-                                      <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
+                                      <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
                                       <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
                                     </div>
                                   </div>
@@ -888,12 +858,12 @@ export default function ProjectDetailPage() {
                                   <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                                   <div style={{ flex: 1 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                                      <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
+                                      <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
                                       <CompanyTag title={reply.authorTitle} company={reply.authorCompany} companyColor={reply.authorCompanyColor} />
                                       <Badge role={reply.authorRole || "member"} />
-                                      <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                                      <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                     </div>
-                                    <p style={{ fontSize: 14, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
+                                    <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
                                     <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
                                   </div>
                                 </div>
@@ -905,7 +875,7 @@ export default function ProjectDetailPage() {
                         {/* Reply compose */}
                         {user && (
                           <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
-                            <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} />
+                            <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} src={user.avatarUrl} />
                             <div style={{ flex: 1, display: "flex", gap: 8 }}>
                               <input
                                 value={replyText}
@@ -914,7 +884,7 @@ export default function ProjectDetailPage() {
                                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostReply(root.id); }}}
                                 style={{
                                   flex: 1, padding: "8px 14px", borderRadius: 8,
-                                  border: `1px solid ${C.borderLight}`, fontSize: 13.5,
+                                  border: `1px solid ${C.borderLight}`, fontSize: T.body,
                                   color: C.text, fontFamily: "var(--sans)",
                                   background: "transparent", outline: "none",
                                 }}
@@ -926,7 +896,7 @@ export default function ProjectDetailPage() {
                                   style={{
                                     padding: "7px 14px", borderRadius: 8,
                                     border: "none", background: C.accent, color: "#fff",
-                                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                                    fontSize: T.label, fontWeight: 600, cursor: "pointer",
                                     fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                                     whiteSpace: "nowrap",
                                   }}
@@ -947,7 +917,6 @@ export default function ProjectDetailPage() {
 
           {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
-      </div>
     </div>
   );
 }

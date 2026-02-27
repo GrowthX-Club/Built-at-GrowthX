@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { C } from "@/types";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { C, T } from "@/types";
 import { gxApi, setToken } from "@/lib/api";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import { useResponsive } from "@/hooks/useMediaQuery";
+import BuiltLogo from "./BuiltLogo";
 
 type Mode = "signin" | "signup";
 type Step = "name" | "phone" | "otp";
@@ -63,12 +65,13 @@ const EMAIL_REGEX = /^([A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*)@([a-z0-9]+(?:[.-][a-z
 const inputStyle = {
   width: "100%", padding: "12px 14px", borderRadius: 10,
   border: `1px solid ${C.border}`, background: C.bg,
-  fontSize: 15, color: C.text, fontFamily: "var(--sans)",
+  fontSize: T.body, color: C.text, fontFamily: "var(--sans)",
   outline: "none",
 };
 
 function LoginDialogInner() {
   const { closeLoginDialog, onLoginSuccess } = useLoginDialog();
+  const { isMobile } = useResponsive();
   const [mode, setMode] = useState<Mode>("signin");
   const [step, setStep] = useState<Step>("phone");
   // Shared fields
@@ -87,6 +90,16 @@ function LoginDialogInner() {
   // Signup-only fields
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+
+  // Smooth height animation
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [cardHeight, setCardHeight] = useState<number | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      setCardHeight(contentRef.current.scrollHeight);
+    }
+  }, [mode, step, error, ccOpen]);
 
   const captchaAction = mode === "signin"
     ? `MEMBER_LOGIN_${captchaVersion.toUpperCase()}`
@@ -367,7 +380,7 @@ function LoginDialogInner() {
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 24,
+        padding: isMobile ? 0 : 24,
       }}
     >
       {/* Backdrop */}
@@ -382,15 +395,20 @@ function LoginDialogInner() {
 
       {/* Card */}
       <div
+        className="responsive-modal"
         style={{
           position: "relative", width: "100%", maxWidth: 420,
-          background: C.surface, borderRadius: 20,
+          background: C.surface, borderRadius: isMobile ? "16px 16px 0 0" : 20,
           border: `1px solid ${C.border}`,
           boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
           animation: "fadeUp 0.25s ease-out",
-          padding: "32px 28px",
+          alignSelf: isMobile ? "flex-end" : undefined,
+          overflow: "hidden",
+          height: cardHeight !== undefined ? cardHeight : undefined,
+          transition: "height 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
+       <div ref={contentRef} style={{ padding: "32px 28px" }}>
         {/* Close button */}
         <button
           onClick={closeLoginDialog}
@@ -399,7 +417,7 @@ function LoginDialogInner() {
             width: 32, height: 32, borderRadius: 32,
             border: `1px solid ${C.borderLight}`, background: "transparent",
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", fontSize: 18, color: C.textMute,
+            cursor: "pointer", fontSize: T.subtitle, color: C.textMute,
             transition: "all 0.12s", zIndex: 1,
           }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
@@ -410,14 +428,9 @@ function LoginDialogInner() {
 
         {/* Logo + subtitle */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <span style={{
-            fontSize: 28, fontWeight: 400, fontFamily: "var(--serif)",
-            color: C.text, letterSpacing: "-0.02em",
-          }}>
-            Built <span style={{ fontSize: 14, fontWeight: 400, fontFamily: "var(--sans)", color: C.textMute, letterSpacing: "0" }}>at</span> GrowthX
-          </span>
+          <BuiltLogo height={77} style={{ margin: "0 auto" }} />
           <p style={{
-            fontSize: 14, color: C.textSec, marginTop: 8,
+            fontSize: T.bodySm, color: C.textSec, marginTop: 16,
             fontFamily: "var(--sans)", fontWeight: 400,
           }}>
             {mode === "signin"
@@ -436,7 +449,7 @@ function LoginDialogInner() {
           <div style={{
             background: "#FEF2F2", border: "1px solid #FECACA",
             borderRadius: 10, padding: "10px 14px",
-            fontSize: 13, color: "#DC2626", marginBottom: 20,
+            fontSize: T.bodySm, color: "#DC2626", marginBottom: 20,
             fontFamily: "var(--sans)", fontWeight: 450,
           }}>
             {error}
@@ -448,7 +461,7 @@ function LoginDialogInner() {
           <>
             <div style={{ marginBottom: 16 }}>
               <label style={{
-                display: "block", fontSize: 13, fontWeight: 550,
+                display: "block", fontSize: T.bodySm, fontWeight: 550,
                 color: C.text, marginBottom: 8, fontFamily: "var(--sans)",
               }}>
                 Full name
@@ -466,7 +479,7 @@ function LoginDialogInner() {
 
             <div style={{ marginBottom: 20 }}>
               <label style={{
-                display: "block", fontSize: 13, fontWeight: 550,
+                display: "block", fontSize: T.bodySm, fontWeight: 550,
                 color: C.text, marginBottom: 8, fontFamily: "var(--sans)",
               }}>
                 Email
@@ -486,7 +499,7 @@ function LoginDialogInner() {
               style={{
                 width: "100%", padding: "13px 20px", borderRadius: 10,
                 border: "none", background: C.accent, color: "#fff",
-                fontSize: 14, fontWeight: 600,
+                fontSize: T.body, fontWeight: 600,
                 cursor: (!fullName.trim() || !email.trim()) ? "default" : "pointer",
                 fontFamily: "var(--sans)",
                 opacity: (!fullName.trim() || !email.trim()) ? 0.5 : 1,
@@ -506,7 +519,7 @@ function LoginDialogInner() {
                 onClick={() => { setStep("name"); setError(""); }}
                 style={{
                   background: "none", border: "none", padding: 0, marginBottom: 16,
-                  fontSize: 13, fontWeight: 500, color: C.textMute,
+                  fontSize: T.bodySm, fontWeight: 500, color: C.textMute,
                   cursor: "pointer", fontFamily: "var(--sans)",
                   display: "flex", alignItems: "center", gap: 4,
                 }}
@@ -515,7 +528,7 @@ function LoginDialogInner() {
               </button>
             )}
             <label style={{
-              display: "block", fontSize: 13, fontWeight: 550,
+              display: "block", fontSize: T.bodySm, fontWeight: 550,
               color: C.text, marginBottom: 8, fontFamily: "var(--sans)",
             }}>
               Phone number
@@ -529,13 +542,13 @@ function LoginDialogInner() {
                     display: "flex", alignItems: "center", gap: 6,
                     padding: "12px 10px 12px 14px", borderRadius: "10px 0 0 10px",
                     border: `1px solid ${C.border}`, borderRight: "none",
-                    background: C.bg, fontSize: 15, color: C.text,
+                    background: C.bg, fontSize: T.body, color: C.text,
                     fontFamily: "var(--sans)", cursor: "pointer",
                     height: "100%", whiteSpace: "nowrap",
                   }}
                 >
-                  <span style={{ fontSize: 18, lineHeight: 1 }}>{selectedCountry.flag}</span>
-                  <span style={{ fontSize: 14, fontWeight: 450 }}>{selectedCountry.code}</span>
+                  <span style={{ fontSize: T.subtitle, lineHeight: 1 }}>{selectedCountry.flag}</span>
+                  <span style={{ fontSize: T.body, fontWeight: 450 }}>{selectedCountry.code}</span>
                   <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ marginLeft: 2, flexShrink: 0, transition: "transform 0.15s", transform: ccOpen ? "rotate(180deg)" : "rotate(0)" }}>
                     <path d="M1 1L5 5L9 1" stroke={C.textMute} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -560,7 +573,7 @@ function LoginDialogInner() {
                         style={{
                           width: "100%", padding: "8px 10px", borderRadius: 8,
                           border: `1px solid ${C.borderLight}`, background: C.bg,
-                          fontSize: 13, color: C.text, fontFamily: "var(--sans)",
+                          fontSize: T.bodySm, color: C.text, fontFamily: "var(--sans)",
                           outline: "none",
                         }}
                       />
@@ -575,20 +588,20 @@ function LoginDialogInner() {
                             width: "100%", display: "flex", alignItems: "center", gap: 10,
                             padding: "9px 12px", border: "none",
                             background: c.code === countryCode ? C.bg : "transparent",
-                            cursor: "pointer", fontSize: 14, color: C.text,
+                            cursor: "pointer", fontSize: T.body, color: C.text,
                             fontFamily: "var(--sans)", textAlign: "left",
                             transition: "background 0.1s",
                           }}
                           onMouseEnter={e => { if (c.code !== countryCode) e.currentTarget.style.background = C.bg; }}
                           onMouseLeave={e => { if (c.code !== countryCode) e.currentTarget.style.background = "transparent"; }}
                         >
-                          <span style={{ fontSize: 18, lineHeight: 1 }}>{c.flag}</span>
+                          <span style={{ fontSize: T.subtitle, lineHeight: 1 }}>{c.flag}</span>
                           <span style={{ flex: 1, fontWeight: 400 }}>{c.name}</span>
-                          <span style={{ fontSize: 13, color: C.textMute, fontWeight: 450 }}>{c.code}</span>
+                          <span style={{ fontSize: T.bodySm, color: C.textMute, fontWeight: 450 }}>{c.code}</span>
                         </button>
                       ))}
                       {filteredCountries.length === 0 && (
-                        <div style={{ padding: "12px 16px", fontSize: 13, color: C.textMute, fontFamily: "var(--sans)" }}>
+                        <div style={{ padding: "12px 16px", fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)" }}>
                           No results
                         </div>
                       )}
@@ -624,7 +637,7 @@ function LoginDialogInner() {
               style={{
                 width: "100%", padding: "13px 20px", borderRadius: 10,
                 border: "none", background: C.accent, color: "#fff",
-                fontSize: 14, fontWeight: 600, cursor: sendDisabled ? "default" : "pointer",
+                fontSize: T.body, fontWeight: 600, cursor: sendDisabled ? "default" : "pointer",
                 fontFamily: "var(--sans)", opacity: sendDisabled ? 0.5 : 1,
                 transition: "opacity 0.15s",
               }}
@@ -639,13 +652,13 @@ function LoginDialogInner() {
           <>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <div style={{
-                fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
+                fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
                 fontWeight: 400, lineHeight: 1.5,
               }}>
                 Enter the 4-digit code sent to
               </div>
               <div style={{
-                fontSize: 15, color: C.text, fontWeight: 600,
+                fontSize: T.body, color: C.text, fontWeight: 600,
                 fontFamily: "var(--sans)", marginTop: 4,
               }}>
                 {countryCode} {phone}
@@ -653,7 +666,7 @@ function LoginDialogInner() {
                   onClick={() => { setStep("phone"); setOtp(["", "", "", ""]); setError(""); }}
                   style={{
                     background: "none", border: "none", color: C.accent,
-                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    fontSize: T.label, fontWeight: 600, cursor: "pointer",
                     fontFamily: "var(--sans)", marginLeft: 8,
                   }}
                 >
@@ -679,7 +692,7 @@ function LoginDialogInner() {
                   onPaste={i === 0 ? handleOtpPaste : undefined}
                   style={{
                     width: 52, height: 56, textAlign: "center",
-                    fontSize: 22, fontWeight: 600, fontFamily: "var(--sans)",
+                    fontSize: T.logo, fontWeight: 600, fontFamily: "var(--sans)",
                     borderRadius: 12, border: `1.5px solid ${digit ? C.accent : C.border}`,
                     background: C.bg, color: C.text, outline: "none",
                     transition: "border-color 0.15s",
@@ -694,7 +707,7 @@ function LoginDialogInner() {
               style={{
                 width: "100%", padding: "13px 20px", borderRadius: 10,
                 border: "none", background: C.accent, color: "#fff",
-                fontSize: 14, fontWeight: 600,
+                fontSize: T.body, fontWeight: 600,
                 cursor: (loading || otp.join("").length < 4) ? "default" : "pointer",
                 fontFamily: "var(--sans)",
                 opacity: (loading || otp.join("").length < 4) ? 0.5 : 1,
@@ -714,7 +727,7 @@ function LoginDialogInner() {
                 disabled={resendTimer > 0}
                 style={{
                   background: "none", border: "none",
-                  fontSize: 13, fontWeight: 500,
+                  fontSize: T.bodySm, fontWeight: 500,
                   color: resendTimer > 0 ? C.textMute : C.accent,
                   cursor: resendTimer > 0 ? "default" : "pointer",
                   fontFamily: "var(--sans)",
@@ -732,14 +745,14 @@ function LoginDialogInner() {
             textAlign: "center", marginTop: 24,
             paddingTop: 20, borderTop: `1px solid ${C.borderLight}`,
           }}>
-            <span style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)" }}>
+            <span style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)" }}>
               {mode === "signin" ? "New to GrowthX? " : "Already have an account? "}
             </span>
             <button
               onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
               style={{
                 background: "none", border: "none",
-                fontSize: 13, fontWeight: 600, color: C.accent,
+                fontSize: T.bodySm, fontWeight: 600, color: C.accent,
                 cursor: "pointer", fontFamily: "var(--sans)",
               }}
             >
@@ -747,6 +760,7 @@ function LoginDialogInner() {
             </button>
           </div>
         )}
+       </div>
       </div>
     </div>
   );

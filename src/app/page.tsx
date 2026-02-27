@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   C,
-  ROLES,
+  T,
   STACK_META,
   type Project,
   type BuilderProfile,
@@ -13,60 +13,29 @@ import {
   getCompanyLogoUrl,
   getStackLogoUrl,
 } from "@/types";
-import { bxApi, clearToken } from "@/lib/api";
+import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
-
+import { useResponsive } from "@/hooks/useMediaQuery";
 // ---- UI Components ----
-
-function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
-  const r = role ? ROLES[role] : undefined;
-  if (src && src.startsWith("http")) {
-    return (
-      <img
-        src={src}
-        alt={initials}
-        style={{
-          width: size, height: size, borderRadius: size,
-          border: `1px solid ${C.borderLight}`, flexShrink: 0,
-          objectFit: "cover",
-        }}
-      />
-    );
-  }
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: size,
-      background: r?.bg || C.accentSoft,
-      color: r?.color || C.textSec,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: Math.round(size * 0.36), fontWeight: 650,
-      fontFamily: "var(--sans)", letterSpacing: "0.01em",
-      border: `1px solid ${C.borderLight}`,
-      flexShrink: 0,
-    }}>
-      {initials}
-    </div>
-  );
-}
 
 function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string } }) {
   return (
     <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{
-        fontSize: 13, fontWeight: 600, color: C.text,
+        fontSize: T.bodySm, fontWeight: 600, color: C.text,
         fontFamily: "var(--sans)", marginBottom: 2, lineHeight: 1.2,
       }}>
         {b.name}
       </div>
       <div style={{
         display: "flex", alignItems: "center", gap: 4,
-        fontSize: 11.5, fontFamily: "var(--sans)",
+        fontSize: T.label, fontFamily: "var(--sans)",
       }}>
         <span style={{
           width: 12, height: 12, borderRadius: 3,
           background: b.companyColor || C.accent,
           display: "inline-flex", alignItems: "center", justifyContent: "center",
-          fontSize: 6, fontWeight: 800, color: "#fff",
+          fontSize: T.micro, fontWeight: 800, color: "#fff",
           fontFamily: "var(--sans)", flexShrink: 0,
           overflow: "hidden", position: "relative",
         }}>
@@ -160,8 +129,7 @@ function HomePage() {
   const [userLoading, setUserLoading] = useState(true);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const { isMobile, isTablet } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
   const [searchingCollabs, setSearchingCollabs] = useState(false);
@@ -195,7 +163,6 @@ function HomePage() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) setShowProfileMenu(false);
       if (collabDropdownRef.current && !collabDropdownRef.current.contains(e.target as Node)) setShowCollabDropdown(false);
     };
     document.addEventListener("mousedown", handler);
@@ -256,14 +223,6 @@ function HomePage() {
 
   const handleSignIn = () => {
     openLoginDialog(() => { loadUser(); loadProjects(); });
-  };
-
-  const handleSignOut = async () => {
-    await bxApi("/logout", { method: "POST" }).catch(() => {});
-    clearToken();
-    setUser(null);
-    setVotedIds([]);
-    setShowProfileMenu(false);
   };
 
   const handleVote = async (projectId: string | number) => {
@@ -359,137 +318,18 @@ function HomePage() {
     }
   };
 
-  const tabs = [
-    { id: "built", label: "Projects", href: "/projects" },
-    { id: "builders", label: "Builders", href: "/builders" },
-  ];
-
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      {/* Nav */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
-      }}>
-        <div style={{
-          maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 60,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
-            <span style={{
-              fontSize: 22, fontWeight: 400, fontFamily: "var(--serif)",
-              color: C.text, letterSpacing: "-0.02em", cursor: "pointer",
-            }}>
-              Built <span style={{ fontSize: 13, fontFamily: "var(--sans)", fontWeight: 400, color: C.textMute }}>at</span> GrowthX
-            </span>
-            <div style={{ display: "flex", gap: 0 }}>
-              {tabs.map((t, i) => (
-                <button key={t.id} onClick={() => router.push(t.href)} style={{
-                  padding: "18px 18px", border: "none", background: "none", cursor: "pointer",
-                  fontSize: 13.5, fontWeight: i === 0 ? 600 : 400,
-                  color: i === 0 ? C.text : C.textMute,
-                  fontFamily: "var(--sans)",
-                  borderBottom: i === 0 ? `2px solid ${C.text}` : "2px solid transparent",
-                  transition: "all 0.15s", letterSpacing: "0.005em",
-                }}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <button style={{
-              padding: "8px 18px", borderRadius: 10,
-              border: `1px solid ${C.border}`, background: C.surface,
-              fontSize: 12.5, fontWeight: 550, color: C.textSec,
-              cursor: "pointer", fontFamily: "var(--sans)",
-              transition: "all 0.12s",
-              display: "flex", alignItems: "center", gap: 6,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
-            onClick={() => {
-              if (!user) { handleSignIn(); return; }
-              if (!user.isMembershipActive) { setShowMembersOnly(true); return; }
-              setShowSubmit(true);
-              setSubmitStep(0);
-              setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
-              setSubmitError("");
-            }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-              Submit your project
-            </button>
-            {userLoading ? (
-              <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
-            ) : user ? (
-              <div ref={profileMenuRef} style={{ position: "relative" }}>
-                <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                  <span style={{ fontSize: 12, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
-                  <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
-                </button>
-                {showProfileMenu && (
-                  <div style={{
-                    position: "absolute", top: "calc(100% + 8px)", right: 0,
-                    background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100,
-                  }}>
-                    <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
-                      width: "100%", padding: "12px 16px", border: "none", background: "none",
-                      cursor: "pointer", fontSize: 13, fontWeight: 500, color: C.text,
-                      fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                      transition: "background 0.1s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
-                    onMouseLeave={e => e.currentTarget.style.background = "none"}
-                    >
-                      <span style={{ fontSize: 14 }}>{"\u{1F4E6}"}</span> My Projects
-                    </button>
-                    <div style={{ height: 1, background: C.borderLight }} />
-                    <button onClick={handleSignOut} style={{
-                      width: "100%", padding: "12px 16px", border: "none", background: "none",
-                      cursor: "pointer", fontSize: 13, fontWeight: 500, color: "#B91C1C",
-                      fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                      transition: "background 0.1s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
-                    onMouseLeave={e => e.currentTarget.style.background = "none"}
-                    >
-                      <span style={{ fontSize: 14 }}>{"\u{1F6AA}"}</span> Sign out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button onClick={handleSignIn} style={{
-                padding: "8px 18px", borderRadius: 10,
-                border: `1px solid ${C.border}`, background: C.surface,
-                fontSize: 12.5, fontWeight: 550, color: C.textSec,
-                cursor: "pointer", fontFamily: "var(--sans)",
-                transition: "all 0.12s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
-              >
-                Sign in
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
+      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "32px 32px 100px" }}>
         {/* Header */}
         <div className="fade-up" style={{ marginBottom: 36 }}>
-          <h1 style={{
-            fontSize: 44, fontWeight: 400, color: C.text,
+          <h1 className="responsive-h1 hero-title" style={{
+            fontSize: isMobile ? 28 : isTablet ? 36 : 44, fontWeight: 400,
             fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10,
           }}>
             What the community shipped
           </h1>
-          <p style={{ fontSize: 16, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
+          <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
             Products built by the GrowthX community. Ranked by the people who build.
           </p>
         </div>
@@ -497,40 +337,56 @@ function HomePage() {
         {loading && projects.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[...Array(6)].map((_, i) => (
-              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)} skeleton-card`} style={{
                 padding: "16px 0",
                 borderBottom: `1px solid ${C.borderLight}`,
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr auto",
-                alignItems: "center",
-                gap: 48,
               }}>
-                <div>
+                {/* Desktop/tablet: name+tagline */}
+                <div className="desktop-tablet-only-block">
                   <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
                   <div className="skeleton" style={{ height: 13, width: "90%" }} />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className="desktop-only-flex" style={{ alignItems: "center", gap: 8 }}>
                   <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
                   <div className="skeleton" style={{ height: 13, width: 80 }} />
                 </div>
-                <div className="skeleton" style={{ width: 60, height: 34, borderRadius: 10 }} />
+                {/* Mobile skeleton: name + vote top row */}
+                <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 13, width: "90%" }} />
+                  </div>
+                  <div className="skeleton" style={{ width: 48, height: 42, borderRadius: 10, flexShrink: 0 }} />
+                </div>
+                {/* Mobile skeleton: builder info horizontal */}
+                <div className="mobile-only" style={{ alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
+                    <div className="skeleton" style={{ height: 13, width: 80 }} />
+                  </div>
+                  <div className="skeleton" style={{ height: 13, width: 70 }} />
+                </div>
+                {/* Desktop/tablet skeleton: vote */}
+                <div className="desktop-tablet-only">
+                  <div className="skeleton" style={{ width: 60, height: 34, borderRadius: 10 }} />
+                </div>
               </div>
             ))}
           </div>
         ) : projects.length === 0 ? (
-          <div className="fade-up stagger-2" style={{
+          <div className="fade-up stagger-2 list-item-hover" style={{
             display: "flex", flexDirection: "column", alignItems: "center",
             justifyContent: "center", padding: "64px 24px", textAlign: "center",
           }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🚀</div>
             <div style={{
-              fontSize: 20, fontWeight: 500, color: C.text,
+              fontSize: T.title, fontWeight: 500, color: C.text,
               fontFamily: "var(--serif)", marginBottom: 8,
             }}>
               No projects yet
             </div>
             <div style={{
-              fontSize: 15, color: C.textSec, fontFamily: "var(--sans)",
+              fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
               fontWeight: 400, maxWidth: 360, lineHeight: 1.5,
             }}>
               Be the first to submit your project and show the GrowthX community what you&apos;ve built.
@@ -540,13 +396,13 @@ function HomePage() {
           <>
             {/* Host picks */}
             {projects.filter(p => p.featured).map(fp => (
-              <div key={fp.id} className="fade-up stagger-2" style={{
+              <div key={fp.id} className="fade-up stagger-2 list-item-hover" style={{
                 padding: "20px 24px", marginBottom: 24,
                 background: C.surface, border: `1px solid ${C.goldBorder}`,
                 borderRadius: 14, cursor: "pointer",
               }} onClick={() => router.push(`/projects/${fp.id}`)}>
                 <div style={{
-                  fontSize: 10, fontWeight: 720, color: C.gold,
+                  fontSize: T.badge, fontWeight: 720, color: C.gold,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   marginBottom: 12, fontFamily: "var(--sans)",
                 }}>
@@ -554,15 +410,15 @@ function HomePage() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 17, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
+                    <div style={{ fontSize: T.subtitle, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
                       {fp.name}
                     </div>
-                    <div style={{ fontSize: 14, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
+                    <div style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
                       {fp.tagline}
                     </div>
                   </div>
                   <div style={{
-                    fontSize: 24, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
+                    fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
                   }}>
                     {fp.weighted.toLocaleString()}
                   </div>
@@ -575,28 +431,24 @@ function HomePage() {
               {projects.map((p, i) => (
                 <div
                   key={p.id}
-                  className={`fade-up stagger-${Math.min(i + 3, 6)}`}
+                  className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover project-card`}
                   onClick={() => router.push(`/projects/${p.id}`)}
                   style={{
-                    padding: "16px 0", cursor: "pointer",
+                    paddingTop: 16, paddingBottom: 16, cursor: "pointer",
                     borderBottom: `1px solid ${C.borderLight}`,
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr auto",
-                    alignItems: "center",
-                    gap: 48,
                     position: "relative", zIndex: projects.length - i,
                   }}
                 >
-                  {/* Left: product name + tagline */}
-                  <div style={{ minWidth: 0 }}>
+                  {/* Desktop/tablet: product name + tagline (hidden on mobile via CSS) */}
+                  <div className="desktop-tablet-only-block" style={{ minWidth: 0 }}>
                     <div style={{
-                      fontSize: 15.5, fontWeight: 560, color: C.text,
+                      fontSize: T.bodyLg, fontWeight: 560, color: C.text,
                       fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
                     }}>
                       {p.name}
                     </div>
                     <div style={{
-                      fontSize: 13, color: C.textMute, fontFamily: "var(--sans)",
+                      fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
                       fontWeight: 400, lineHeight: 1.3,
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
@@ -604,46 +456,123 @@ function HomePage() {
                     </div>
                   </div>
 
-                  {/* Center: cycling builder */}
-                  {(() => {
-                    const allBuilders = [
-                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                    ];
-                    return <BuilderCycler builders={allBuilders} />;
-                  })()}
-
-                  {/* Right: votes */}
-                  <div
-                    onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                    style={{
-                      flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                      padding: "7px 14px", borderRadius: 10,
-                      minWidth: 72,
-                      border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                      background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
-                      fontSize: 15, fontWeight: 650,
-                      color: votedIds.includes(p.id) ? C.brand : C.text,
-                      fontFamily: "var(--sans)",
-                      cursor: "pointer",
-                      transition: "border 0.25s, background 0.25s, color 0.25s",
-                      position: "relative", overflow: "visible",
-                    }}>
-                    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                        <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                      </svg>
-                      <span
-                        className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                        style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
-                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
+                  {/* Mobile: name + vote top row */}
+                  <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontSize: T.bodyLg, fontWeight: 560, color: C.text,
+                        fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
+                      }}>
+                        {p.name}
+                      </div>
+                      <div className="tagline-text" style={{
+                        fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
+                        fontWeight: 400, lineHeight: 1.3,
+                      }}>
+                        {p.tagline}
+                      </div>
+                    </div>
+                    <div
+                      onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
+                      style={{
+                        flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
+                        padding: "8px 12px", borderRadius: 10,
+                        minWidth: 48,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        fontFamily: "var(--sans)",
+                        cursor: "pointer",
+                        transition: "border 0.25s, background 0.25s, color 0.25s",
+                        position: "relative", overflow: "visible",
+                      }}>
+                      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, flexShrink: 0 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
                         </svg>
+                        <span
+                          className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
+                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
+                          </svg>
+                        </span>
                       </span>
-                    </span>
-                    <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: 14 }}>{p.weighted.toLocaleString()}</span>
+                      <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.label }}>{p.weighted.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Mobile: builder info horizontal */}
+                  <div className="mobile-only" style={{ alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{
+                        width: 14, height: 14, borderRadius: 4,
+                        background: p.builder.companyColor || C.accent,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        fontSize: T.micro, fontWeight: 800, color: "#fff",
+                        fontFamily: "var(--sans)", flexShrink: 0,
+                        overflow: "hidden", position: "relative",
+                      }}>
+                        {(p.builder.company || "")[0]}
+                        {p.builder.company && <img src={getCompanyLogoUrl(p.builder.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                      </span>
+                      <span style={{ fontSize: T.bodySm, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>
+                        {p.builder.company}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: T.bodySm, fontWeight: 400, color: C.textMute, fontFamily: "var(--sans)" }}>
+                        {p.builder.name}
+                      </span>
+                      <div style={{ width: 5, height: 5, borderRadius: 5, background: C.text, flexShrink: 0 }} />
+                    </div>
+                  </div>
+
+                  {/* Desktop/tablet: cycling builder */}
+                  <div className="desktop-only">
+                    {(() => {
+                      const allBuilders = [
+                        { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                        ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                        ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                      ];
+                      return <BuilderCycler builders={allBuilders} />;
+                    })()}
+                  </div>
+
+{/* Desktop/tablet: votes */}
+                  <div className="desktop-tablet-only">
+                    <div
+                      onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
+                                              style={{
+                        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        padding: "7px 14px", borderRadius: 10,
+                        minWidth: 72,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                        fontSize: T.body, fontWeight: 650,
+                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        fontFamily: "var(--sans)",
+                        cursor: "pointer",
+                        transition: "border 0.25s, background 0.25s, color 0.25s",
+                        position: "relative", overflow: "visible",
+                      }}>
+                      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                        </svg>
+                        <span
+                          className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
+                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      </span>
+                      <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body }}>{p.weighted.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -666,13 +595,14 @@ function HomePage() {
               animation: "fadeIn 0.2s ease",
             }}
           />
-          <div style={{
+          <div className="responsive-modal" style={{
             position: "relative", width: "100%", maxWidth: 420,
-            background: C.surface, borderRadius: 20,
+            background: C.surface, borderRadius: isMobile ? 16 : 20,
             border: `1px solid ${C.border}`,
             boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
-            padding: "40px 32px", textAlign: "center",
+            padding: isMobile ? "32px 20px" : "40px 32px", textAlign: "center",
             animation: "fadeUp 0.25s ease-out",
+            ...(isMobile ? { margin: "0 16px" } : {}),
           }}>
             <button
               onClick={() => setShowMembersOnly(false)}
@@ -681,7 +611,7 @@ function HomePage() {
                 width: 32, height: 32, borderRadius: 32,
                 border: `1px solid ${C.borderLight}`, background: "transparent",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 18, color: C.textMute,
+                cursor: "pointer", fontSize: T.subtitle, color: C.textMute,
                 transition: "all 0.12s",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
@@ -693,18 +623,18 @@ function HomePage() {
               width: 56, height: 56, borderRadius: 56, margin: "0 auto 20px",
               background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 24,
+              fontSize: T.heading,
             }}>
               {"\u2726"}
             </div>
             <h3 style={{
-              fontSize: 20, fontWeight: 500, color: C.text,
+              fontSize: T.title, fontWeight: 500, color: C.text,
               fontFamily: "var(--serif)", marginBottom: 10, lineHeight: 1.3,
             }}>
               Reserved for GrowthX members
             </h3>
             <p style={{
-              fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
+              fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
               fontWeight: 400, lineHeight: 1.6, marginBottom: 28, maxWidth: 320, margin: "0 auto 28px",
             }}>
               Submitting projects is exclusively available to members with an active GrowthX membership.
@@ -716,7 +646,7 @@ function HomePage() {
               style={{
                 display: "inline-block", padding: "12px 28px", borderRadius: 10,
                 border: "none", background: C.accent, color: "#fff",
-                fontSize: 14, fontWeight: 600, fontFamily: "var(--sans)",
+                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
                 textDecoration: "none", transition: "opacity 0.15s",
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
@@ -745,21 +675,22 @@ function HomePage() {
           />
 
           {/* Panel */}
-          <div style={{
-            position: "relative", width: "100%", maxWidth: 540,
-            background: C.surface, borderRadius: 20,
-            border: `1px solid ${C.border}`,
-            boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
-            overflow: "hidden",
+          <div className={isMobile ? "responsive-modal-full" : "responsive-modal"} style={{
+            position: "relative", width: "100%", maxWidth: isMobile ? "100%" : 540,
+            background: C.surface, borderRadius: isMobile ? 0 : 20,
+            border: isMobile ? "none" : `1px solid ${C.border}`,
+            boxShadow: isMobile ? "none" : "0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
+            overflow: isMobile ? "auto" : "hidden",
             animation: "fadeUp 0.25s ease-out",
+            ...(isMobile ? { height: "100%", maxHeight: "100vh" } : {}),
           }}>
             <style>{`
-              .submit-input { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: 14.5px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; }
+              .submit-input { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: ${T.body}px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; }
               .submit-input:focus { border-color: ${C.accent}; }
               .submit-input::placeholder { color: ${C.textMute}; }
-              .submit-input-lg { font-size: 22px; font-weight: 500; font-family: var(--serif); border: none; padding: 0; background: transparent; }
+              .submit-input-lg { font-size: ${T.logo}px; font-weight: 500; font-family: var(--serif); border: none; padding: 0; background: transparent; }
               .submit-input-lg:focus { border: none; }
-              .submit-textarea { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: 14px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; resize: vertical; min-height: 100px; line-height: 1.5; }
+              .submit-textarea { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: ${T.body}px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; resize: vertical; min-height: 100px; line-height: 1.5; }
               .submit-textarea:focus { border-color: ${C.accent}; }
               .submit-textarea::placeholder { color: ${C.textMute}; }
             `}</style>
@@ -781,14 +712,14 @@ function HomePage() {
             }}>
               <div>
                 <div style={{
-                  fontSize: 11, fontWeight: 600, color: C.textMute,
+                  fontSize: T.caption, fontWeight: 600, color: C.textMute,
                   fontFamily: "var(--sans)", letterSpacing: "0.04em",
                   textTransform: "uppercase", marginBottom: 4,
                 }}>
                   {["The basics", "The story", "Tech and team"][submitStep]}
                 </div>
                 <div style={{
-                  fontSize: 13, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 400,
+                  fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 400,
                 }}>
                   Step {submitStep + 1} of 3
                 </div>
@@ -797,7 +728,7 @@ function HomePage() {
                 width: 32, height: 32, borderRadius: 32,
                 border: `1px solid ${C.borderLight}`, background: "transparent",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 16, color: C.textMute,
+                cursor: "pointer", fontSize: T.bodyLg, color: C.textMute,
                 transition: "all 0.12s",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
@@ -830,7 +761,7 @@ function HomePage() {
                       style={{ borderColor: submitData.tagline.length >= 100 ? "#DC2626" : undefined }}
                     />
                     <div style={{
-                      fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                      fontSize: T.caption, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
                       color: submitData.tagline.length >= 90 ? (submitData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
                       fontWeight: submitData.tagline.length >= 100 ? 600 : 400,
                     }}>
@@ -852,7 +783,7 @@ function HomePage() {
               {submitStep === 1 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   <div style={{
-                    fontSize: 14, color: C.textSec, fontFamily: "var(--sans)",
+                    fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
                     fontWeight: 400, lineHeight: 1.55, marginBottom: 20,
                   }}>
                     Write like you&apos;re telling a friend what you built and why. The best submissions answer three things:
@@ -869,12 +800,12 @@ function HomePage() {
                         marginBottom: pi < 2 ? 8 : 0,
                       }}>
                         <span style={{
-                          fontSize: 12, fontWeight: 650, color: C.textMute,
+                          fontSize: T.label, fontWeight: 650, color: C.textMute,
                           fontFamily: "var(--mono)", minWidth: 16,
                         }}>
                           {pi + 1}.
                         </span>
-                        <span style={{ fontSize: 13.5, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
+                        <span style={{ fontSize: T.body, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
                           <span style={{ fontWeight: 580, color: C.text }}>{prompt.q}</span>
                           <span style={{ color: C.textMute, fontWeight: 400 }}> — {prompt.hint}</span>
                         </span>
@@ -898,7 +829,7 @@ function HomePage() {
                     autoFocus
                   />
                   <div style={{
-                    fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                    fontSize: T.caption, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
                     color: submitData.description.length >= 480 ? (submitData.description.length >= 500 ? "#DC2626" : "#B45309") : C.textMute,
                     fontWeight: submitData.description.length >= 500 ? 600 : 400,
                   }}>
@@ -911,7 +842,7 @@ function HomePage() {
               {submitStep === 2 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                   <div>
-                    <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 10 }}>
+                    <div style={{ fontSize: T.label, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 10 }}>
                       Tech stack
                     </div>
 
@@ -926,14 +857,14 @@ function HomePage() {
                               display: "inline-flex", alignItems: "center", gap: 7,
                               padding: "5px 10px 5px 6px", borderRadius: 20,
                               background: C.surface, border: `1.5px solid ${C.accent}`,
-                              fontSize: 12.5, color: C.text, fontWeight: 500,
+                              fontSize: T.bodySm, color: C.text, fontWeight: 500,
                               fontFamily: "var(--sans)",
                             }}>
                               <span style={{
                                 width: 20, height: 20, borderRadius: 5,
                                 background: meta.bg, color: meta.color,
                                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 8.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                fontSize: T.micro, fontWeight: 750, fontFamily: "var(--sans)",
                                 flexShrink: 0, letterSpacing: "-0.02em",
                                 position: "relative", overflow: "hidden",
                               }}>
@@ -955,7 +886,7 @@ function HomePage() {
                               <span
                                 onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, stack: d.stack.filter((_, idx) => idx !== si) })); }}
                                 style={{
-                                  cursor: "pointer", fontSize: 13, color: C.textMute,
+                                  cursor: "pointer", fontSize: T.bodySm, color: C.textMute,
                                   lineHeight: 1, marginLeft: 2,
                                   transition: "color 0.1s",
                                 }}
@@ -980,7 +911,7 @@ function HomePage() {
                       if (available.length === 0) return null;
                       return (
                         <div style={{ marginBottom: 12 }}>
-                          <div style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
+                          <div style={{ fontSize: T.caption, color: C.textMute, fontFamily: "var(--sans)", marginBottom: 7 }}>
                             Popular — tap to add
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
@@ -996,7 +927,7 @@ function HomePage() {
                                     display: "inline-flex", alignItems: "center", gap: 6,
                                     padding: "4px 10px 4px 5px", borderRadius: 20,
                                     background: C.bg, border: `1px solid ${C.borderLight}`,
-                                    fontSize: 12, color: C.textSec, fontWeight: 450,
+                                    fontSize: T.label, color: C.textSec, fontWeight: 450,
                                     fontFamily: "var(--sans)", cursor: "pointer",
                                     transition: "all 0.15s",
                                   }}
@@ -1007,7 +938,7 @@ function HomePage() {
                                     width: 18, height: 18, borderRadius: 4,
                                     background: meta.bg, color: meta.color,
                                     display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                    fontSize: 7.5, fontWeight: 750, fontFamily: "var(--sans)",
+                                    fontSize: T.micro, fontWeight: 750, fontFamily: "var(--sans)",
                                     flexShrink: 0, letterSpacing: "-0.02em",
                                     position: "relative", overflow: "hidden",
                                   }}>
@@ -1072,7 +1003,7 @@ function HomePage() {
                           style={{
                             padding: "0 14px", borderRadius: 8,
                             border: "none", background: C.accent,
-                            fontSize: 12, fontWeight: 600, color: "#fff",
+                            fontSize: T.label, fontWeight: 600, color: "#fff",
                             cursor: "pointer", fontFamily: "var(--sans)",
                             whiteSpace: "nowrap", transition: "opacity 0.12s",
                           }}
@@ -1081,7 +1012,7 @@ function HomePage() {
                         >Add</button>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
+                    <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 5, fontFamily: "var(--sans)" }}>
                       Press enter or click Add
                     </div>
                   </div>
@@ -1089,7 +1020,7 @@ function HomePage() {
                   <div style={{ height: 1, background: C.borderLight }} />
 
                   <div ref={collabDropdownRef}>
-                    <div style={{ fontSize: 12, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 8 }}>
+                    <div style={{ fontSize: T.label, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 8 }}>
                       Team members (optional)
                     </div>
                     <div style={{ position: "relative", marginBottom: 10 }}>
@@ -1101,12 +1032,12 @@ function HomePage() {
                         onFocus={() => { if (collabResults.length > 0) setShowCollabDropdown(true); }}
                       />
                       {searchingCollabs && (
-                        <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.textMute }}>
+                        <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: T.caption, color: C.textMute }}>
                           Searching...
                         </span>
                       )}
                       {!searchingCollabs && submitData.teamInput.trim().length >= 2 && collabResults.length === 0 && (
-                        <div style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
+                        <div style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", marginTop: 6 }}>
                           No members found for &ldquo;{submitData.teamInput.trim()}&rdquo;
                         </div>
                       )}
@@ -1132,15 +1063,15 @@ function HomePage() {
                                   width: 28, height: 28, borderRadius: 28,
                                   background: C.accentSoft, color: C.textSec,
                                   display: "flex", alignItems: "center", justifyContent: "center",
-                                  fontSize: 10, fontWeight: 650, fontFamily: "var(--sans)",
+                                  fontSize: T.badge, fontWeight: 650, fontFamily: "var(--sans)",
                                   border: `1px solid ${C.borderLight}`, flexShrink: 0,
                                 }}>
                                   {u.avatar.length <= 3 ? u.avatar : u.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 13, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>{u.name}</div>
+                                  <div style={{ fontSize: T.bodySm, fontWeight: 550, color: C.text, fontFamily: "var(--sans)" }}>{u.name}</div>
                                   {(u.role || u.company) && (
-                                    <div style={{ fontSize: 11, color: C.textMute, fontFamily: "var(--sans)" }}>
+                                    <div style={{ fontSize: T.caption, color: C.textMute, fontFamily: "var(--sans)" }}>
                                       {u.role}{u.role && u.company ? " \u00B7 " : ""}{u.company}
                                     </div>
                                   )}
@@ -1158,14 +1089,14 @@ function HomePage() {
                             display: "inline-flex", alignItems: "center", gap: 6,
                             padding: "5px 10px 5px 8px", borderRadius: 8,
                             background: C.accentSoft, border: `1px solid ${C.borderLight}`,
-                            fontSize: 12.5, color: C.text, fontWeight: 480,
+                            fontSize: T.bodySm, color: C.text, fontWeight: 480,
                             fontFamily: "var(--sans)",
                           }}>
                             <span style={{
                               width: 18, height: 18, borderRadius: 18,
                               background: C.borderLight, color: C.textSec,
                               display: "inline-flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 7, fontWeight: 650, flexShrink: 0,
+                              fontSize: T.micro, fontWeight: 650, flexShrink: 0,
                             }}>
                               {c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                             </span>
@@ -1182,7 +1113,7 @@ function HomePage() {
                                 }));
                               }}
                               style={{
-                                fontSize: 9.5, fontWeight: 650, letterSpacing: "0.03em",
+                                fontSize: T.badge, fontWeight: 650, letterSpacing: "0.03em",
                                 padding: "2px 7px", borderRadius: 4, cursor: "pointer",
                                 fontFamily: "var(--sans)", userSelect: "none",
                                 background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
@@ -1195,7 +1126,7 @@ function HomePage() {
                             <span
                               onClick={ev => { ev.stopPropagation(); setSubmitData(d => ({ ...d, team: d.team.filter((_, idx) => idx !== ci) })); }}
                               style={{
-                                cursor: "pointer", fontSize: 14, color: C.textMute,
+                                cursor: "pointer", fontSize: T.body, color: C.textMute,
                                 lineHeight: 1, marginTop: -1,
                               }}
                             >{"\u00D7"}</span>
@@ -1203,7 +1134,7 @@ function HomePage() {
                         ))}
                       </div>
                     )}
-                    <div style={{ fontSize: 11, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
+                    <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 6, fontFamily: "var(--sans)" }}>
                       Search for GrowthX members — tap role to toggle Creator / Collaborator
                     </div>
                   </div>
@@ -1215,7 +1146,7 @@ function HomePage() {
                 <div style={{
                   marginTop: 16, padding: "10px 14px", borderRadius: 10,
                   background: "#FEF2F2", border: "1px solid #FECACA",
-                  fontSize: 13, color: "#B91C1C", fontFamily: "var(--sans)",
+                  fontSize: T.bodySm, color: "#B91C1C", fontFamily: "var(--sans)",
                   fontWeight: 450, lineHeight: 1.45,
                 }}>
                   {submitError}
@@ -1231,7 +1162,7 @@ function HomePage() {
                   <button onClick={() => { setSubmitError(""); setSubmitStep(s => s - 1); }} disabled={submitting} style={{
                     padding: "9px 20px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: "transparent",
-                    fontSize: 13, fontWeight: 500, color: C.textSec,
+                    fontSize: T.bodySm, fontWeight: 500, color: C.textSec,
                     cursor: submitting ? "default" : "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s", opacity: submitting ? 0.5 : 1,
                   }}
@@ -1262,7 +1193,7 @@ function HomePage() {
                     padding: "9px 24px", borderRadius: 10,
                     border: "none",
                     background: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.borderLight : C.accent,
-                    fontSize: 13, fontWeight: 600,
+                    fontSize: T.bodySm, fontWeight: 600,
                     color: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.textMute : "#fff",
                     cursor: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? "default" : "pointer",
                     fontFamily: "var(--sans)",
