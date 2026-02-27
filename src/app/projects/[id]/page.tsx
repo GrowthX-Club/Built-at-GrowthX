@@ -25,6 +25,7 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
+import ProjectIcon from "@/components/ProjectIcon";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -490,26 +491,29 @@ export default function ProjectDetailPage() {
         {/* Hero */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
-            <div style={{ flex: 1, paddingTop: 2 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
-                <h1 className="responsive-h1" style={{ fontSize: T.pageTitle, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
-                {p.featured && (
-                  <span style={{
-                    fontSize: T.badge, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
-                    background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
-                    letterSpacing: "0.06em", textTransform: "uppercase",
-                  }}>{"\u2726"} Featured</span>
-                )}
-              </div>
-              <p style={{ fontSize: T.subtitle, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 10px" }}>{p.tagline}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
-                <span>{p.date}</span>
-                {p.buildathon && (
-                  <>
-                    <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>
-                    <span>{p.buildathon}</span>
-                  </>
-                )}
+            <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 16 }}>
+              <ProjectIcon title={p.name} description={p.tagline} size={72} iconId={p.icon} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 2, flexWrap: "wrap" }}>
+                  <h1 className="responsive-h1" style={{ fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
+                  {p.featured && (
+                    <span style={{
+                      fontSize: T.badge, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
+                      background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
+                      letterSpacing: "0.06em", textTransform: "uppercase",
+                    }}>{"\u2726"} Featured</span>
+                  )}
+                </div>
+                <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 6px" }}>{p.tagline}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
+                  <span>{p.date}</span>
+                  {p.buildathon && (
+                    <>
+                      <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>
+                      <span>{p.buildathon}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             <div style={{ flexShrink: 0, display: "flex", gap: 8, ...(isMobile ? { width: "100%" } : {}) }}>
