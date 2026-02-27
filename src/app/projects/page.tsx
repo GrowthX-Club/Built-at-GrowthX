@@ -42,7 +42,7 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
   );
 }
 
-function BuilderItemP({ b }: { b: { name: string; company: string; companyColor: string } }) {
+function BuilderItemP({ b }: { b: { name: string; company: string; companyColor: string; companyLogo?: string } }) {
   return (
     <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{
@@ -58,7 +58,7 @@ function BuilderItemP({ b }: { b: { name: string; company: string; companyColor:
           overflow: "hidden", position: "relative",
         }}>
           {b.company[0]}
-          {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+          {b.company && <img src={getCompanyLogoUrl(b.company, b.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
         </span>
         <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
       </div>
@@ -426,9 +426,9 @@ export default function ProjectsPage() {
                   {/* Center: cycling builder */}
                   {(() => {
                     const allBuilders = [
-                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent, companyLogo: p.builder.companyLogo },
+                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
+                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
                     ];
                     return <BuilderCycler builders={allBuilders} />;
                   })()}

@@ -20,6 +20,7 @@ import {
   STACK_META,
 } from "@/types";
 import { bxApi } from "@/lib/api";
+import RichTextDisplay from "@/components/RichTextDisplay";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 
 function timeAgo(dateStr: string): string {
@@ -81,7 +82,7 @@ function Badge({ role, size = "sm" }: { role: string; size?: "sm" | "md" }) {
   );
 }
 
-function CompanyTag({ title, company, companyColor }: { title?: string; company?: string; companyColor?: string }) {
+function CompanyTag({ title, company, companyColor, companyLogo }: { title?: string; company?: string; companyColor?: string; companyLogo?: string }) {
   if (!company) return null;
   return (
     <span style={{
@@ -99,7 +100,7 @@ function CompanyTag({ title, company, companyColor }: { title?: string; company?
           overflow: "hidden", position: "relative",
         }}>
           {company[0]}
-          <img src={getCompanyLogoUrl(company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <img src={getCompanyLogoUrl(company, companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </span>
         <span style={{ fontWeight: 520, color: C.textSec }}>{company}</span>
       </span>
@@ -216,7 +217,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>{thread.author.name}</span>
-            <CompanyTag title={thread.author.title} company={thread.author.company} companyColor={thread.author.companyColor} />
+            <CompanyTag title={thread.author.title} company={thread.author.company} companyColor={thread.author.companyColor} companyLogo={thread.author.companyLogo} />
             <Badge role={thread.author.role} />
             <span style={{ fontSize: 12, color: C.textMute }}>{thread.time}</span>
           </div>
@@ -254,7 +255,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
-                            <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
+                            <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             <Badge role={reply.author.role} />
                             <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
@@ -270,7 +271,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                           <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
-                          <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} />
+                          <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
                           <Badge role={reply.author.role} />
                           <span style={{ fontSize: 11, color: C.textMute }}>{reply.time}</span>
                         </div>
@@ -600,7 +601,7 @@ export default function ProjectDetailPage() {
 
         {/* Product info */}
         <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: C.text, fontFamily: "var(--sans)", fontWeight: 400, margin: "0 0 28px", maxWidth: 620 }}>{p.description}</p>
+          <RichTextDisplay description={p.description} />
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
@@ -628,7 +629,7 @@ export default function ProjectDetailPage() {
                           overflow: "hidden", position: "relative",
                         }}>
                           {p.builder.company[0]}
-                          <img src={getCompanyLogoUrl(p.builder.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                          <img src={getCompanyLogoUrl(p.builder.company, p.builder.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
                         </span>
                         <span style={{ fontWeight: 520, color: C.textSec }}>{p.builder.company}</span>
                       </>
@@ -658,7 +659,7 @@ export default function ProjectDetailPage() {
                           overflow: "hidden", position: "relative",
                         }}>
                           {c.company[0]}
-                          <img src={getCompanyLogoUrl(c.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                          <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
                         </span>
                         <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
                       </div>
@@ -694,7 +695,7 @@ export default function ProjectDetailPage() {
                             overflow: "hidden", position: "relative",
                           }}>
                             {c.company[0]}
-                            <img src={getCompanyLogoUrl(c.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                            <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
                           </span>
                           <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
                         </div>
@@ -812,7 +813,7 @@ export default function ProjectDetailPage() {
                       <span style={{ fontSize: 14, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
                         {root.authorName || "Anonymous"}
                       </span>
-                      <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} />
+                      <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} companyLogo={root.authorCompanyLogo || (isRootOP ? p.builder.companyLogo : undefined)} />
                       {isRootOP && (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                       )}
@@ -873,7 +874,7 @@ export default function ProjectDetailPage() {
                                     <div style={{ flex: 1 }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                         <span style={{ fontSize: 13, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
-                                        <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} />
+                                        <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} companyLogo={reply.authorCompanyLogo || p.builder.companyLogo} />
                                         <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                                         <Badge role={reply.authorRole || "member"} />
                                         <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
@@ -889,7 +890,7 @@ export default function ProjectDetailPage() {
                                   <div style={{ flex: 1 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                       <span style={{ fontSize: 13, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
-                                      <CompanyTag title={reply.authorTitle} company={reply.authorCompany} companyColor={reply.authorCompanyColor} />
+                                      <CompanyTag title={reply.authorTitle} company={reply.authorCompany} companyColor={reply.authorCompanyColor} companyLogo={reply.authorCompanyLogo} />
                                       <Badge role={reply.authorRole || "member"} />
                                       <span style={{ fontSize: 11, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                     </div>

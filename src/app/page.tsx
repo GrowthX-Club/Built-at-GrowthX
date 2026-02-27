@@ -15,6 +15,8 @@ import {
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import RichTextEditor from "@/components/RichTextEditor";
+import { extractPlainText } from "@/lib/editor-utils";
 
 // ---- UI Components ----
 
@@ -49,7 +51,7 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
   );
 }
 
-function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string } }) {
+function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string; companyLogo?: string } }) {
   return (
     <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div style={{
@@ -71,7 +73,7 @@ function BuilderItem({ b }: { b: { name: string; company: string; companyColor: 
           overflow: "hidden", position: "relative",
         }}>
           {b.company[0]}
-          {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+          {b.company && <img src={getCompanyLogoUrl(b.company, b.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
         </span>
         <span style={{ fontWeight: 400, color: C.textMute }}>{b.company}</span>
       </div>
@@ -79,7 +81,7 @@ function BuilderItem({ b }: { b: { name: string; company: string; companyColor: 
   );
 }
 
-function BuilderCycler({ builders }: { builders: { name: string; company: string; companyColor: string }[] }) {
+function BuilderCycler({ builders }: { builders: { name: string; company: string; companyColor: string; companyLogo?: string }[] }) {
   const [active, setActive] = useState(0);
   const [sliding, setSliding] = useState(false);
   const single = builders.length === 1;
@@ -162,7 +164,7 @@ function HomePage() {
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
+  const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; companyLogo?: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
   const [searchingCollabs, setSearchingCollabs] = useState(false);
   const collabSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -230,6 +232,7 @@ function HomePage() {
             avatar: (u.initials ?? u.avatar ?? '?') as string,
             avatarUrl: (u.avatar_url ?? undefined) as string | undefined,
             company: (u.company ?? '') as string,
+            companyLogo: (u.company_logo ?? undefined) as string | undefined,
             role: (u.role ?? '') as string,
           })).filter((u: { _id: string }) => !user?._id || u._id !== user._id);
           setCollabResults(users);
@@ -327,7 +330,7 @@ function HomePage() {
         body: JSON.stringify({
           name: submitData.name.trim(),
           tagline: submitData.tagline.trim(),
-          description: submitData.description.trim(),
+          description: submitData.description,
           category: "AI",
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
@@ -607,9 +610,9 @@ function HomePage() {
                   {/* Center: cycling builder */}
                   {(() => {
                     const allBuilders = [
-                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent, companyLogo: p.builder.companyLogo },
+                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
+                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
                     ];
                     return <BuilderCycler builders={allBuilders} />;
                   })()}
@@ -882,28 +885,11 @@ function HomePage() {
                     ))}
                   </div>
 
-                  <textarea
-                    className="submit-textarea"
-                    placeholder={"e.g. We were losing 40% of inbound leads because our response time was 6+ hours. So I built an AI agent that qualifies and responds in under 90 seconds. 12 beta users, 3x conversion on day one."}
+                  <RichTextEditor
                     value={submitData.description}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val.length <= 500) setSubmitData(d => ({ ...d, description: val }));
-                    }}
-                    maxLength={500}
-                    style={{
-                      minHeight: 140,
-                      borderColor: submitData.description.length >= 500 ? "#DC2626" : undefined,
-                    }}
-                    autoFocus
+                    onChange={(json) => setSubmitData(d => ({ ...d, description: json }))}
+                    maxChars={1500}
                   />
-                  <div style={{
-                    fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
-                    color: submitData.description.length >= 480 ? (submitData.description.length >= 500 ? "#DC2626" : "#B45309") : C.textMute,
-                    fontWeight: submitData.description.length >= 500 ? 600 : 400,
-                  }}>
-                    {submitData.description.length}/500{submitData.description.length >= 500 && " — limit reached"}
-                  </div>
                 </div>
               )}
 
@@ -1249,8 +1235,9 @@ function HomePage() {
                       if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) { setSubmitError("Please enter a valid URL starting with http:// or https://"); return; }
                       setSubmitStep(1);
                     } else if (submitStep === 1) {
-                      if (!submitData.description.trim()) { setSubmitError("Description is required. Tell us what you built."); return; }
-                      if (submitData.description.length > 500) { setSubmitError("Description must be 500 characters or less."); return; }
+                      const descText = extractPlainText(submitData.description);
+                      if (!descText.trim()) { setSubmitError("Description is required. Tell us what you built."); return; }
+                      if (descText.length > 1500) { setSubmitError("Description must be 1500 characters or less."); return; }
                       setSubmitStep(2);
                     } else {
                       if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }

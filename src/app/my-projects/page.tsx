@@ -15,6 +15,8 @@ import {
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
+import RichTextEditor from "@/components/RichTextEditor";
+import { extractPlainText, getEditorState } from "@/lib/editor-utils";
 
 // ---- Inline Components ----
 
@@ -80,6 +82,7 @@ interface UserResult {
   avatar: string;
   avatarUrl?: string;
   company: string;
+  companyLogo?: string;
   role: string;
 }
 
@@ -156,6 +159,7 @@ export default function MyProjectsPage() {
             avatar: (u.initials ?? u.avatar ?? '?') as string,
             avatarUrl: (u.avatar_url ?? undefined) as string | undefined,
             company: (u.company ?? '') as string,
+            companyLogo: (u.company_logo ?? undefined) as string | undefined,
             role: (u.role ?? '') as string,
           }));
           setUserResults(user ? users.filter((u: UserResult) => u._id !== user._id) : users);
@@ -191,7 +195,7 @@ export default function MyProjectsPage() {
     setEditData({
       name: p.name,
       tagline: p.tagline,
-      description: p.description || "",
+      description: p.description ? getEditorState(p.description) : "",
       url: (raw.url as string) || "",
       stack: p.stack || [],
       stackInput: "",
@@ -233,7 +237,9 @@ export default function MyProjectsPage() {
     setEditError("");
     if (!editData.name.trim()) { setEditError("Project name is required."); return; }
     if (!editData.tagline.trim()) { setEditError("Tagline is required."); return; }
-    if (!editData.description.trim()) { setEditError("Description is required. Tell us what you built."); return; }
+    const descText = extractPlainText(editData.description);
+    if (!descText.trim()) { setEditError("Description is required. Tell us what you built."); return; }
+    if (descText.length > 1500) { setEditError("Description must be 1500 characters or less."); return; }
     if (editData.stack.length === 0) { setEditError("Add at least one tech stack item."); return; }
     setSaving(true);
     try {
@@ -450,18 +456,11 @@ export default function MyProjectsPage() {
                       }}>
                         Write like you&apos;re telling a friend what you built and why.
                       </div>
-                      <textarea
+                      <RichTextEditor
                         value={editData.description}
-                        onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
-                        placeholder="The problem, what you built, and what happened."
-                        style={{
-                          ...inputStyle, resize: "vertical" as const, minHeight: 120, lineHeight: 1.5,
-                          padding: "12px 16px",
-                        }}
+                        onChange={(json) => setEditData(d => ({ ...d, description: json }))}
+                        maxChars={1500}
                       />
-                      <div style={{ fontSize: 11, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                        {editData.description.length}/500
-                      </div>
                     </div>
 
                     <div style={{ height: 1, background: C.borderLight }} />
@@ -719,7 +718,7 @@ export default function MyProjectsPage() {
                                                 overflow: "hidden", position: "relative",
                                               }}>
                                                 {u.company[0]}
-                                                <img src={getCompanyLogoUrl(u.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                                <img src={getCompanyLogoUrl(u.company, u.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
                                               </span>
                                               {u.company}
                                             </span>
@@ -886,11 +885,14 @@ export default function MyProjectsPage() {
                         </button>
                       </div>
                     </div>
-                    {p.description && (
-                      <p style={{ fontSize: 13, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
-                        {p.description.length > 150 ? p.description.slice(0, 150) + "..." : p.description}
-                      </p>
-                    )}
+                    {p.description && (() => {
+                      const plain = extractPlainText(p.description);
+                      return plain ? (
+                        <p style={{ fontSize: 13, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
+                          {plain.length > 150 ? plain.slice(0, 150) + "..." : plain}
+                        </p>
+                      ) : null;
+                    })()}
                     {p.stack && p.stack.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 10 }}>
                         {p.stack.map((s, si) => (

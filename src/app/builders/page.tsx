@@ -64,7 +64,7 @@ function Badge({ role }: { role: string }) {
   );
 }
 
-function CompanyTag({ company, companyColor }: { company?: string; companyColor?: string }) {
+function CompanyTag({ company, companyColor, companyLogo }: { company?: string; companyColor?: string; companyLogo?: string }) {
   if (!company) return null;
   return (
     <span style={{
@@ -80,7 +80,7 @@ function CompanyTag({ company, companyColor }: { company?: string; companyColor?
         overflow: "hidden", position: "relative",
       }}>
         {company[0]}
-        <img src={getCompanyLogoUrl(company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+        <img src={getCompanyLogoUrl(company, companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
       </span>
       {company}
     </span>
@@ -338,7 +338,7 @@ export default function BuildersPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>{b.name}</span>
                   <Badge role={b.role} />
-                  <CompanyTag company={b.company} companyColor={b.companyColor} />
+                  <CompanyTag company={b.company} companyColor={b.companyColor} companyLogo={b.companyLogo} />
                 </div>
                 {b.bio && (
                   <p style={{ fontSize: 13, color: C.textSec, fontFamily: "var(--sans)", margin: "0 0 4px", fontWeight: 400 }}>{b.bio}</p>
@@ -385,7 +385,7 @@ export default function BuildersPage() {
                     <Badge role={selectedBuilder.role} />
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <CompanyTag company={selectedBuilder.company} companyColor={selectedBuilder.companyColor} />
+                    <CompanyTag company={selectedBuilder.company} companyColor={selectedBuilder.companyColor} companyLogo={selectedBuilder.companyLogo} />
                     {selectedBuilder.city && (
                       <span style={{ fontSize: 12, color: C.textMute, fontFamily: "var(--sans)" }}>{selectedBuilder.city}</span>
                     )}
