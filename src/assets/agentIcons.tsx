@@ -813,7 +813,7 @@ export default function AgentIcon({ category, size = 40, colorSeed = 0 }: AgentI
   const p = getPalette(cat.id, colorSeed);
   const seed = hashStr(cat.id + String(colorSeed)) % 1000;
   return (
-    <div style={{
+    <div className="project-icon" style={{
       width: size, height: size, borderRadius: size * 0.26,
       background: p.bg, flexShrink: 0,
       display: "flex", alignItems: "center", justifyContent: "center",
