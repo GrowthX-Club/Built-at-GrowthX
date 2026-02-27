@@ -483,6 +483,37 @@ body {
   animation: glow-flicker 800ms ease-in-out forwards;
 }
 
+@keyframes page-ambient-flicker {
+  0%   { opacity: 0; }
+  4%   { opacity: 0.04; }
+  6%   { opacity: 0; }
+  14%  { opacity: 0.06; }
+  16%  { opacity: 0; }
+  24%  { opacity: 0; }
+  30%  { opacity: 0.05; }
+  32%  { opacity: 0; }
+  40%  { opacity: 0.08; }
+  42%  { opacity: 0; }
+  52%  { opacity: 0; }
+  60%  { opacity: 0.06; }
+  62%  { opacity: 0; }
+  68%  { opacity: 0.10; }
+  72%  { opacity: 0.02; }
+  78%  { opacity: 0.12; }
+  82%  { opacity: 0.06; }
+  88%  { opacity: 0.08; }
+  100% { opacity: 0; }
+}
+
+.page-flicker-active {
+  position: fixed; top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 44; pointer-events: none;
+  background: radial-gradient(ellipse 120% 80% at 50% 0%,
+    rgba(255,248,232,0.9) 0%, rgba(255,240,200,0.5) 30%, transparent 100%);
+  animation: page-ambient-flicker 800ms linear forwards;
+}
+
 /* Fly particles — erratic zig-zag near the tubelight */
 @keyframes fly-buzz {
   0%   { transform: translate(0, 0); opacity: 0; }

@@ -12,9 +12,9 @@ function playTubelightSounds() {
     const ctx = new AudioContext();
     const t = ctx.currentTime;
 
-    // Starter tick — white noise burst through bandpass (~3kHz)
-    const tick = (time: number, gain: number) => {
-      const duration = 0.015;
+    // Starter tick — white noise burst through bandpass (~5.5kHz) + metallic ping
+    const tick = (time: number, tickGain: number) => {
+      const duration = 0.012;
       const sampleRate = ctx.sampleRate;
       const length = Math.floor(sampleRate * 0.02);
       const buffer = ctx.createBuffer(1, length, sampleRate);
@@ -28,19 +28,40 @@ function playTubelightSounds() {
 
       const bandpass = ctx.createBiquadFilter();
       bandpass.type = "bandpass";
-      bandpass.frequency.value = 3000;
-      bandpass.Q.value = 1;
+      bandpass.frequency.value = 5500;
+      bandpass.Q.value = 5;
+
+      const highShelf = ctx.createBiquadFilter();
+      highShelf.type = "highshelf";
+      highShelf.frequency.value = 6000;
+      highShelf.gain.value = 3;
 
       const gainNode = ctx.createGain();
-      gainNode.gain.setValueAtTime(gain, time);
+      gainNode.gain.setValueAtTime(tickGain, time);
       gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
       source.connect(bandpass);
-      bandpass.connect(gainNode);
+      bandpass.connect(highShelf);
+      highShelf.connect(gainNode);
       gainNode.connect(ctx.destination);
 
       source.start(time);
       source.stop(time + duration);
+
+      // Metallic ping — 4kHz sine, 25ms decay (bimetallic strip ring)
+      const ping = ctx.createOscillator();
+      ping.type = "sine";
+      ping.frequency.value = 4000;
+
+      const pingGain = ctx.createGain();
+      pingGain.gain.setValueAtTime(tickGain * 0.35, time);
+      pingGain.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
+
+      ping.connect(pingGain);
+      pingGain.connect(ctx.destination);
+
+      ping.start(time);
+      ping.stop(time + 0.027);
     }
 
     // Gas discharge buzz — sawtooth 120Hz, short duration
@@ -185,6 +206,11 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
     glow.className = "tubelight-glow";
     document.body.appendChild(glow);
 
+    // Page-level ambient flicker (whole room flashes in sync with nav sputter)
+    const ambientOverlay = document.createElement("div");
+    ambientOverlay.className = "page-flicker-active";
+    document.body.appendChild(ambientOverlay);
+
     // Spawn fly particles near the nav
     const flyContainer = document.createElement("div");
     flyContainer.className = "fly-container";
@@ -200,50 +226,83 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
       document.body.appendChild(flyContainer);
     }, 100);
 
-    // At 800ms: tubelight "catches", toggle theme, sweep dark overlay down
+    // At 800ms: tubelight "catches", toggle theme, arc sweep reveals page
     setTimeout(() => {
       document.documentElement.setAttribute("data-theme", "light");
       if (nav) nav.classList.remove("nav-flicker-active");
       glow.remove();
+      ambientOverlay.remove();
 
       const navH = window.innerWidth <= 640 ? 60 : 65;
 
-      // Dark overlay starting just below nav, with warm glow at top edge
+      // Full-viewport dark overlay — the mask handles the arc reveal
       const overlay = document.createElement("div");
       overlay.style.cssText = `
         position: fixed;
-        top: ${navH}px;
+        top: 0;
         left: 0;
         width: 100vw;
-        height: 140vh;
+        height: 100vh;
         z-index: 45;
         pointer-events: none;
-        will-change: transform;
-        background: linear-gradient(
-          to bottom,
-          rgba(26, 25, 24, 0) 0%,
-          #4A3D20 10%,
-          #1A1918 28%,
-          #1A1918 100%
-        );
-        transform: translateY(0);
+        background: #1A1918;
       `;
       document.body.appendChild(overlay);
 
-      // Force reflow
-      void overlay.offsetHeight;
+      // Warm glow edge that trails the arc boundary
+      const glowEdge = document.createElement("div");
+      glowEdge.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 46;
+        pointer-events: none;
+        background: radial-gradient(ellipse 120% 80% at 50% ${navH}px,
+          transparent 0%, rgba(255,220,140,0.15) 48%, rgba(255,200,100,0.08) 52%, transparent 56%);
+        opacity: 0;
+      `;
+      document.body.appendChild(glowEdge);
 
-      // Animate downward — light "floods" from nav
-      overlay.style.transition = "transform 900ms cubic-bezier(0.4, 0, 0.2, 1)";
-      overlay.style.transform = "translateY(140vh)";
+      // Arc sweep via expanding radial mask — easeOutQuart
+      const duration = 650;
+      const startTime = performance.now();
+      const easeOutQuart = (x: number) => 1 - Math.pow(1 - x, 4);
 
-      // Cleanup overlay
-      setTimeout(() => {
-        overlay.remove();
-        document.body.style.overflow = "";
-        window.scrollTo(0, scrollY);
-        setIsAnimating(false);
-      }, 920);
+      const animate = (now: number) => {
+        const elapsed = now - startTime;
+        const raw = Math.min(elapsed / duration, 1);
+        const t = easeOutQuart(raw);
+
+        const hPct = t * 160;
+        const vPct = t * 200;
+        const maskGrad = `radial-gradient(ellipse ${hPct}% ${vPct}% at 50% ${navH}px, transparent 98%, #000 100%)`;
+        overlay.style.maskImage = maskGrad;
+        overlay.style.webkitMaskImage = maskGrad;
+
+        // Glow edge: fade in during first half, fade out during second half
+        if (raw < 0.5) {
+          glowEdge.style.opacity = String(raw * 2);
+        } else {
+          glowEdge.style.opacity = String((1 - raw) * 2);
+        }
+        // Scale glow edge mask with the sweep
+        const glowMask = `radial-gradient(ellipse ${hPct * 1.05}% ${vPct * 1.05}% at 50% ${navH}px, transparent 90%, #000 100%)`;
+        glowEdge.style.maskImage = glowMask;
+        glowEdge.style.webkitMaskImage = glowMask;
+
+        if (raw < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          overlay.remove();
+          glowEdge.remove();
+          document.body.style.overflow = "";
+          window.scrollTo(0, scrollY);
+          setIsAnimating(false);
+        }
+      };
+      requestAnimationFrame(animate);
     }, 800);
 
     // Remove fly particles (they fade out on their own via CSS animation)
