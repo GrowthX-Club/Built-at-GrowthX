@@ -344,9 +344,9 @@ function HomePage() {
                   display: "flex", flexDirection: "column" as const, gap: 8,
                 } : {
                   display: "grid",
-                  gridTemplateColumns: isTablet ? "1fr auto auto" : "1fr auto auto auto",
+                  gridTemplateColumns: isTablet ? "2fr 1fr 80px" : "2fr 1fr auto 80px",
                   alignItems: "center",
-                  gap: isTablet ? 16 : 32,
+                  gap: isTablet ? 16 : 24,
                 }),
               }}>
                 <div>
@@ -443,9 +443,9 @@ function HomePage() {
                       display: "flex", flexDirection: "column" as const, gap: 8,
                     } : {
                       display: "grid",
-                      gridTemplateColumns: isTablet ? "1fr auto auto" : "1fr auto auto auto",
+                      gridTemplateColumns: isTablet ? "2fr 1fr 80px" : "2fr 1fr auto 80px",
                       alignItems: "center",
-                      gap: isTablet ? 16 : 32,
+                      gap: isTablet ? 16 : 24,
                     }),
                     position: "relative", zIndex: projects.length - i,
                   }}
