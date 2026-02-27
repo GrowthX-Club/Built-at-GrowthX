@@ -87,22 +87,65 @@ function playTubelightSounds() {
       osc.stop(time + duration + 0.01);
     }
 
-    // Catch hum — sine 120Hz, sustain then fade
-    const hum = (time: number) => {
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = 120;
+    // Final catch clink — high-pitched metallic snap when tubelight locks on
+    const clink = (time: number) => {
+      // Sharp noise transient through high bandpass
+      const sampleRate = ctx.sampleRate;
+      const length = Math.floor(sampleRate * 0.015);
+      const buffer = ctx.createBuffer(1, length, sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
 
-      const gainNode = ctx.createGain();
-      gainNode.gain.setValueAtTime(0.12, time);
-      gainNode.gain.setValueAtTime(0.12, time + 0.3);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+      const noiseSource = ctx.createBufferSource();
+      noiseSource.buffer = buffer;
 
-      osc.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 6500;
+      bp.Q.value = 8;
 
-      osc.start(time);
-      osc.stop(time + 0.52);
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.35, time);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.01);
+
+      noiseSource.connect(bp);
+      bp.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      noiseSource.start(time);
+      noiseSource.stop(time + 0.015);
+
+      // Primary metallic ring — 5kHz
+      const ring1 = ctx.createOscillator();
+      ring1.type = "sine";
+      ring1.frequency.value = 5000;
+
+      const ring1Gain = ctx.createGain();
+      ring1Gain.gain.setValueAtTime(0.30, time);
+      ring1Gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+
+      ring1.connect(ring1Gain);
+      ring1Gain.connect(ctx.destination);
+
+      ring1.start(time);
+      ring1.stop(time + 0.065);
+
+      // Harmonic overtone — 7.5kHz for shimmer
+      const ring2 = ctx.createOscillator();
+      ring2.type = "sine";
+      ring2.frequency.value = 7500;
+
+      const ring2Gain = ctx.createGain();
+      ring2Gain.gain.setValueAtTime(0.12, time);
+      ring2Gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+
+      ring2.connect(ring2Gain);
+      ring2Gain.connect(ctx.destination);
+
+      ring2.start(time);
+      ring2.stop(time + 0.045);
     }
 
     // Schedule all sounds — sample-accurate via AudioContext time
@@ -112,7 +155,7 @@ function playTubelightSounds() {
     tick(t + 0.320, 0.22);  buzz(t + 0.320, 0.016, 0.15);
     tick(t + 0.480, 0.25);  buzz(t + 0.480, 0.016, 0.18);
     tick(t + 0.544, 0.30);  buzz(t + 0.544, 0.032, 0.22);
-    tick(t + 0.624, 0.25);  hum(t + 0.624);
+    tick(t + 0.624, 0.25);  clink(t + 0.624);
 
     // Close context after all sounds finish
     setTimeout(() => ctx.close(), 1500);
@@ -122,10 +165,82 @@ function playTubelightSounds() {
 }
 
 /**
+ * Synthesized switch-off sound — a short, dull click for light-to-dark.
+ */
+function playSwitchOffSound() {
+  try {
+    const ctx = new AudioContext();
+    const t = ctx.currentTime;
+
+    // Crisp noise snap — broadband click
+    const sampleRate = ctx.sampleRate;
+    const length = Math.floor(sampleRate * 0.02);
+    const buffer = ctx.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 3500;
+    bp.Q.value = 1.5;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(0.8, t);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.018);
+
+    source.connect(bp);
+    bp.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    source.start(t);
+    source.stop(t + 0.02);
+
+    // Mechanical thump — switch body resonance
+    const thump = ctx.createOscillator();
+    thump.type = "sine";
+    thump.frequency.value = 400;
+
+    const thumpGain = ctx.createGain();
+    thumpGain.gain.setValueAtTime(0.5, t);
+    thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+
+    thump.connect(thumpGain);
+    thumpGain.connect(ctx.destination);
+
+    thump.start(t);
+    thump.stop(t + 0.045);
+
+    // Higher click overtone — adds presence
+    const click = ctx.createOscillator();
+    click.type = "sine";
+    click.frequency.value = 2500;
+
+    const clickGain = ctx.createGain();
+    clickGain.gain.setValueAtTime(0.35, t);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+
+    click.connect(clickGain);
+    clickGain.connect(ctx.destination);
+
+    click.start(t);
+    click.stop(t + 0.018);
+
+    setTimeout(() => ctx.close(), 500);
+  } catch {
+    // AudioContext may be blocked — fail silently
+  }
+}
+
+/**
  * CanvasFlip — wraps page content and performs a "light source" animation
  * when the theme toggle is triggered. The nav bar acts as a tubelight fixture.
  *
- * Light -> Dark (~950ms): Light retreats upward into the nav bar
+ * Light -> Dark (~950ms): Light retreats into the nav bar via contracting arc
  * Dark -> Light (~1700ms): Tubelight flickers on, then light sweeps down the page
  */
 export default function CanvasFlip({ children }: { children: React.ReactNode }) {
@@ -138,54 +253,92 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
     // Lock scroll
     document.body.style.overflow = "hidden";
 
+    // Switch-off click sound
+    playSwitchOffSound();
+
     // Toggle theme immediately — dark content renders under the overlay
     document.documentElement.setAttribute("data-theme", "dark");
 
-    // Full-page overlay in old light color with warm gradient bottom edge
+    const navH = window.innerWidth <= 640 ? 60 : 65;
+
+    // Light overlay — masks dark content, revealed via contracting arc
     const overlay = document.createElement("div");
     overlay.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
-      height: 140vh;
+      height: 100vh;
       z-index: 45;
       pointer-events: none;
-      will-change: transform;
-      background: linear-gradient(
-        to bottom,
-        #F8F7F4 0%,
-        #F8F7F4 55%,
-        #F0ECD8 68%,
-        #E8D8A0 78%,
-        rgba(248, 247, 244, 0) 100%
-      );
-      transform: translateY(0);
+      background: #F8F7F4;
     `;
     document.body.appendChild(overlay);
 
-    // Force reflow
-    void overlay.offsetHeight;
+    // Warm glow edge trailing the arc boundary
+    const glowEdge = document.createElement("div");
+    glowEdge.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 46;
+      pointer-events: none;
+      background: radial-gradient(ellipse 120% 80% at 50% ${navH}px,
+        transparent 0%, rgba(232,216,160,0.2) 48%, rgba(240,236,216,0.1) 52%, transparent 56%);
+      opacity: 0;
+    `;
+    document.body.appendChild(glowEdge);
 
-    // Animate upward — light "drains" toward the nav
-    overlay.style.transition = "transform 900ms cubic-bezier(0.4, 0, 0.2, 1)";
-    overlay.style.transform = "translateY(-140vh)";
+    // Arc contracts from fully open to closed at nav — light "drains" upward
+    const duration = 550;
+    const startTime = performance.now();
+    const easeInOutCubic = (x: number) =>
+      x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 
-    // Nav absorb glow when sweep reaches the nav area
-    setTimeout(() => {
-      const glow = document.createElement("div");
-      glow.className = "nav-absorb-glow";
-      document.body.appendChild(glow);
-      setTimeout(() => glow.remove(), 500);
-    }, 750);
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const raw = Math.min(elapsed / duration, 1);
+      const t = easeInOutCubic(raw);
 
-    // Cleanup
-    setTimeout(() => {
-      overlay.remove();
-      document.body.style.overflow = "";
-      window.scrollTo(0, scrollY);
-      setIsAnimating(false);
-    }, 950);
+      // Start fully open (160%/200%), shrink to 0%
+      const hPct = (1 - t) * 160;
+      const vPct = (1 - t) * 200;
+      // Tighten the soft edge as the ellipse gets smaller so it doesn't linger
+      const softStart = 60 + t * 30; // 60% → 90% as ellipse shrinks
+      const maskGrad = `radial-gradient(ellipse ${hPct}% ${vPct}% at 50% ${navH}px, #000 0%, #000 ${softStart}%, rgba(0,0,0,0.4) ${softStart + (100 - softStart) * 0.5}%, transparent 100%)`;
+      overlay.style.maskImage = maskGrad;
+      overlay.style.webkitMaskImage = maskGrad;
+
+      // Glow edge: fade in first third, fade out last two-thirds
+      if (raw < 0.3) {
+        glowEdge.style.opacity = String(raw / 0.3);
+      } else {
+        glowEdge.style.opacity = String((1 - raw) / 0.7);
+      }
+      const glowMask = `radial-gradient(ellipse ${hPct * 1.08}% ${vPct * 1.08}% at 50% ${navH}px, transparent 55%, #000 100%)`;
+      glowEdge.style.maskImage = glowMask;
+      glowEdge.style.webkitMaskImage = glowMask;
+
+      if (raw < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        overlay.remove();
+        glowEdge.remove();
+
+        // Nav absorb glow at the end
+        const absorbGlow = document.createElement("div");
+        absorbGlow.className = "nav-absorb-glow";
+        document.body.appendChild(absorbGlow);
+        setTimeout(() => absorbGlow.remove(), 500);
+
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+        setIsAnimating(false);
+      }
+    };
+    requestAnimationFrame(animate);
   }, [setIsAnimating]);
 
   const runDarkToLight = useCallback(() => {
@@ -277,7 +430,7 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
 
         const hPct = t * 160;
         const vPct = t * 200;
-        const maskGrad = `radial-gradient(ellipse ${hPct}% ${vPct}% at 50% ${navH}px, transparent 98%, #000 100%)`;
+        const maskGrad = `radial-gradient(ellipse ${hPct}% ${vPct}% at 50% ${navH}px, transparent 60%, rgba(0,0,0,0.2) 75%, rgba(0,0,0,0.6) 88%, #000 100%)`;
         overlay.style.maskImage = maskGrad;
         overlay.style.webkitMaskImage = maskGrad;
 
@@ -288,7 +441,7 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
           glowEdge.style.opacity = String((1 - raw) * 2);
         }
         // Scale glow edge mask with the sweep
-        const glowMask = `radial-gradient(ellipse ${hPct * 1.05}% ${vPct * 1.05}% at 50% ${navH}px, transparent 90%, #000 100%)`;
+        const glowMask = `radial-gradient(ellipse ${hPct * 1.08}% ${vPct * 1.08}% at 50% ${navH}px, transparent 55%, #000 100%)`;
         glowEdge.style.maskImage = glowMask;
         glowEdge.style.webkitMaskImage = glowMask;
 

@@ -485,23 +485,23 @@ body {
 
 @keyframes page-ambient-flicker {
   0%   { opacity: 0; }
-  4%   { opacity: 0.04; }
+  4%   { opacity: 0.12; }
   6%   { opacity: 0; }
-  14%  { opacity: 0.06; }
+  14%  { opacity: 0.18; }
   16%  { opacity: 0; }
   24%  { opacity: 0; }
-  30%  { opacity: 0.05; }
+  30%  { opacity: 0.15; }
   32%  { opacity: 0; }
-  40%  { opacity: 0.08; }
+  40%  { opacity: 0.22; }
   42%  { opacity: 0; }
   52%  { opacity: 0; }
-  60%  { opacity: 0.06; }
+  60%  { opacity: 0.18; }
   62%  { opacity: 0; }
-  68%  { opacity: 0.10; }
-  72%  { opacity: 0.02; }
-  78%  { opacity: 0.12; }
-  82%  { opacity: 0.06; }
-  88%  { opacity: 0.08; }
+  68%  { opacity: 0.28; }
+  72%  { opacity: 0.08; }
+  78%  { opacity: 0.35; }
+  82%  { opacity: 0.15; }
+  88%  { opacity: 0.22; }
   100% { opacity: 0; }
 }
 
