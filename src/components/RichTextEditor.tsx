@@ -70,6 +70,7 @@ export default function RichTextEditor({ value, onChange, maxChars = CHAR_LIMIT 
           ".editor-inner": {
             padding: "12px 16px",
             background: "transparent",
+            position: "relative",
           },
           ".editor-input": {
             minHeight: "140px",
@@ -79,6 +80,10 @@ export default function RichTextEditor({ value, onChange, maxChars = CHAR_LIMIT 
             color: C.textMute,
             fontFamily: "var(--sans)",
             fontSize: "14px",
+            position: "absolute",
+            top: "12px",
+            left: "16px",
+            pointerEvents: "none",
           },
           ".editor-toolbar": {
             backgroundColor: C.surface,

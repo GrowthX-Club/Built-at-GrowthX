@@ -34,6 +34,7 @@ export function LoginDialogProvider({ children }: { children: React.ReactNode })
     setIsOpen(false);
     onSuccessRef.current?.();
     onSuccessRef.current = undefined;
+    window.dispatchEvent(new Event("bx:login-success"));
   }, []);
 
   return (
