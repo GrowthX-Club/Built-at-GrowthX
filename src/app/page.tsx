@@ -516,7 +516,13 @@ function HomePage() {
                   </div>
 
                   {/* Mobile: builder info horizontal */}
-                  <div className="mobile-only" style={{ alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  <div className="mobile-only" style={{
+                    alignItems: "center", justifyContent: "space-between", width: "100%",
+                    background: `linear-gradient(135deg, ${C.borderLight}88, ${C.borderLight}44)`,
+                    border: `1px solid ${C.borderLight}`,
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                  }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{
                         width: 14, height: 14, borderRadius: 4,

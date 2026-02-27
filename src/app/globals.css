@@ -107,6 +107,13 @@ body {
   background: #FFFFFF;
   transform: translateY(-1px);
 }
+@media (max-width: 640px) {
+  .list-item-hover:hover {
+    box-shadow: none;
+    background: none;
+    transform: none;
+  }
+}
 
 /* Hero title — gradient fill with 3D depth */
 .hero-title {
@@ -228,6 +235,8 @@ body {
     flex-direction: column;
     align-items: stretch !important;
     gap: 8px;
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
   }
   .project-card .mobile-only { display: flex; }
   .project-card .desktop-only { display: none; }
