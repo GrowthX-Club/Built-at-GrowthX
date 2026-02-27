@@ -201,3 +201,79 @@ body {
     margin: 0 !important;
   }
 }
+
+/* Project card responsive layout */
+.project-card {
+  display: grid;
+  grid-template-columns: 2fr 1fr 80px;
+  align-items: center;
+  gap: 24px;
+}
+.project-card .mobile-only { display: none; }
+.project-card .desktop-only { display: contents; }
+.project-card .desktop-tablet-only { display: contents; }
+.project-card .desktop-tablet-only-block { display: block; }
+
+/* Tablet */
+@media (min-width: 641px) and (max-width: 960px) {
+  .project-card {
+    gap: 16px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .project-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px;
+  }
+  .project-card .mobile-only { display: flex; }
+  .project-card .desktop-only { display: none; }
+  .project-card .desktop-tablet-only { display: none; }
+  .project-card .desktop-tablet-only-block { display: none; }
+  .project-card .tagline-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal !important;
+    text-overflow: unset !important;
+  }
+}
+
+/* Skeleton card responsive */
+.skeleton-card {
+  display: grid;
+  grid-template-columns: 2fr 1fr 80px;
+  align-items: center;
+  gap: 24px;
+}
+.skeleton-card .mobile-only { display: none; }
+.skeleton-card .desktop-only { display: block; }
+.skeleton-card .desktop-only-flex { display: flex; }
+.skeleton-card .desktop-tablet-only { display: contents; }
+.skeleton-card .desktop-tablet-only-block { display: block; }
+
+@media (min-width: 641px) and (max-width: 960px) {
+  .skeleton-card {
+    grid-template-columns: 2fr 1fr 80px;
+    gap: 16px;
+  }
+  .skeleton-card .desktop-only { display: none; }
+}
+
+@media (max-width: 640px) {
+  .skeleton-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px;
+  }
+  .skeleton-card .mobile-only { display: flex; }
+  .skeleton-card .desktop-only { display: none; }
+  .skeleton-card .desktop-only-flex { display: none; }
+  .skeleton-card .desktop-tablet-only { display: none; }
+  .skeleton-card .desktop-tablet-only-block { display: none; }
+}

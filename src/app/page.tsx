@@ -337,42 +337,39 @@ function HomePage() {
         {loading && projects.length === 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[...Array(6)].map((_, i) => (
-              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)}`} style={{
+              <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)} skeleton-card`} style={{
                 padding: "16px 0",
                 borderBottom: `1px solid ${C.borderLight}`,
-                ...(isMobile ? {
-                  display: "flex", flexDirection: "column" as const, gap: 8,
-                } : {
-                  display: "grid",
-                  gridTemplateColumns: isTablet ? "2fr 1fr 80px" : "2fr 1fr auto 80px",
-                  alignItems: "center",
-                  gap: isTablet ? 16 : 24,
-                }),
               }}>
-                <div>
+                {/* Desktop/tablet: name+tagline */}
+                <div className="desktop-tablet-only-block">
                   <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
                   <div className="skeleton" style={{ height: 13, width: "90%" }} />
                 </div>
-                {!isMobile && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className="desktop-only-flex" style={{ alignItems: "center", gap: 8 }}>
+                  <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
+                  <div className="skeleton" style={{ height: 13, width: 80 }} />
+                </div>
+                {/* Mobile skeleton: name + vote top row */}
+                <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 13, width: "90%" }} />
+                  </div>
+                  <div className="skeleton" style={{ width: 48, height: 42, borderRadius: 10, flexShrink: 0 }} />
+                </div>
+                {/* Mobile skeleton: builder info horizontal */}
+                <div className="mobile-only" style={{ alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
                     <div className="skeleton" style={{ height: 13, width: 80 }} />
                   </div>
-                )}
-                {!isMobile && !isTablet && (
-                  <div className="skeleton" style={{ width: 16, height: 16, borderRadius: 4 }} />
-                )}
-                {isMobile ? (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
-                      <div className="skeleton" style={{ height: 13, width: 80 }} />
-                    </div>
-                    <div className="skeleton" style={{ width: 60, height: 34, borderRadius: 10 }} />
-                  </div>
-                ) : (
+                  <div className="skeleton" style={{ height: 13, width: 70 }} />
+                </div>
+                {/* Desktop/tablet skeleton: vote */}
+                <div className="desktop-tablet-only">
                   <div className="skeleton" style={{ width: 60, height: 34, borderRadius: 10 }} />
-                )}
+                </div>
               </div>
             ))}
           </div>
@@ -434,146 +431,149 @@ function HomePage() {
               {projects.map((p, i) => (
                 <div
                   key={p.id}
-                  className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover`}
+                  className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover project-card`}
                   onClick={() => router.push(`/projects/${p.id}`)}
                   style={{
                     paddingTop: 16, paddingBottom: 16, cursor: "pointer",
                     borderBottom: `1px solid ${C.borderLight}`,
-                    ...(isMobile ? {
-                      display: "flex", flexDirection: "column" as const, gap: 8,
-                    } : {
-                      display: "grid",
-                      gridTemplateColumns: isTablet ? "2fr 1fr 80px" : "2fr 1fr auto 80px",
-                      alignItems: "center",
-                      gap: isTablet ? 16 : 24,
-                    }),
                     position: "relative", zIndex: projects.length - i,
                   }}
                 >
-                  {/* Left: product name + tagline */}
-                  <div style={{ minWidth: 0 }}>
+                  {/* Desktop/tablet: product name + tagline (hidden on mobile via CSS) */}
+                  <div className="desktop-tablet-only-block" style={{ minWidth: 0 }}>
                     <div style={{
                       fontSize: T.bodyLg, fontWeight: 560, color: C.text,
                       fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
                     }}>
                       {p.name}
                     </div>
-                    <div className={isMobile ? "line-clamp-2" : undefined} style={{
+                    <div style={{
                       fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
                       fontWeight: 400, lineHeight: 1.3,
-                      ...(isMobile ? {} : { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
                       {p.tagline}
                     </div>
                   </div>
 
-                  {isMobile ? (
-                    /* Mobile: builder + vote on same row */
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      {(() => {
-                        const allBuilders = [
-                          { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                          ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                          ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                        ];
-                        return <BuilderCycler builders={allBuilders} />;
-                      })()}
-                      <div
-                        onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                                                style={{
-                          flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
-                          padding: "8px 12px", borderRadius: 10,
-                          minWidth: 48,
-                          border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                          background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
-                          color: votedIds.includes(p.id) ? C.brand : C.text,
-                          fontFamily: "var(--sans)",
-                          cursor: "pointer",
-                          transition: "border 0.25s, background 0.25s, color 0.25s",
-                          position: "relative", overflow: "visible",
-                        }}>
-                        <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, flexShrink: 0 }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                          </svg>
-                          <span
-                            className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                            style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
-                              <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
-                            </svg>
-                          </span>
-                        </span>
-                        <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.label }}>{p.weighted.toLocaleString()}</span>
+                  {/* Mobile: name + vote top row */}
+                  <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontSize: T.bodyLg, fontWeight: 560, color: C.text,
+                        fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
+                      }}>
+                        {p.name}
+                      </div>
+                      <div className="tagline-text" style={{
+                        fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
+                        fontWeight: 400, lineHeight: 1.3,
+                      }}>
+                        {p.tagline}
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      {/* Center: cycling builder */}
-                      {(() => {
-                        const allBuilders = [
-                          { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                          ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                          ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                        ];
-                        return <BuilderCycler builders={allBuilders} />;
-                      })()}
-
-                      {/* Kebab menu */}
-                      {!isTablet && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); }}
-                          style={{
-                            background: "none", border: "none", cursor: "pointer",
-                            padding: 4, display: "flex", alignItems: "center", justifyContent: "center",
-                            color: C.textMute, borderRadius: 4,
-                            transition: "color 0.15s",
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.color = C.text}
-                          onMouseLeave={e => e.currentTarget.style.color = C.textMute}
+                    <div
+                      onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
+                      style={{
+                        flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
+                        padding: "8px 12px", borderRadius: 10,
+                        minWidth: 48,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        fontFamily: "var(--sans)",
+                        cursor: "pointer",
+                        transition: "border 0.25s, background 0.25s, color 0.25s",
+                        position: "relative", overflow: "visible",
+                      }}>
+                      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, flexShrink: 0 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                        </svg>
+                        <span
+                          className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
+                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
                         >
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <circle cx="8" cy="3" r="1.5" />
-                            <circle cx="8" cy="8" r="1.5" />
-                            <circle cx="8" cy="13" r="1.5" />
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
                           </svg>
-                        </button>
-                      )}
-
-                      {/* Right: votes */}
-                      <div
-                        onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                                                style={{
-                          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                          padding: "7px 14px", borderRadius: 10,
-                          minWidth: 72,
-                          border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                          background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
-                          fontSize: T.body, fontWeight: 650,
-                          color: votedIds.includes(p.id) ? C.brand : C.text,
-                          fontFamily: "var(--sans)",
-                          cursor: "pointer",
-                          transition: "border 0.25s, background 0.25s, color 0.25s",
-                          position: "relative", overflow: "visible",
-                        }}>
-                        <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                          </svg>
-                          <span
-                            className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                            style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
-                              <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
-                            </svg>
-                          </span>
                         </span>
-                        <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body }}>{p.weighted.toLocaleString()}</span>
-                      </div>
-                    </>
-                  )}
+                      </span>
+                      <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.label }}>{p.weighted.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Mobile: builder info horizontal */}
+                  <div className="mobile-only" style={{ alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{
+                        width: 14, height: 14, borderRadius: 4,
+                        background: p.builder.companyColor || C.accent,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        fontSize: T.micro, fontWeight: 800, color: "#fff",
+                        fontFamily: "var(--sans)", flexShrink: 0,
+                        overflow: "hidden", position: "relative",
+                      }}>
+                        {(p.builder.company || "")[0]}
+                        {p.builder.company && <img src={getCompanyLogoUrl(p.builder.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                      </span>
+                      <span style={{ fontSize: T.bodySm, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>
+                        {p.builder.company}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: T.bodySm, fontWeight: 400, color: C.textMute, fontFamily: "var(--sans)" }}>
+                        {p.builder.name}
+                      </span>
+                      <div style={{ width: 5, height: 5, borderRadius: 5, background: C.text, flexShrink: 0 }} />
+                    </div>
+                  </div>
+
+                  {/* Desktop/tablet: cycling builder */}
+                  <div className="desktop-only">
+                    {(() => {
+                      const allBuilders = [
+                        { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
+                        ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                        ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                      ];
+                      return <BuilderCycler builders={allBuilders} />;
+                    })()}
+                  </div>
+
+{/* Desktop/tablet: votes */}
+                  <div className="desktop-tablet-only">
+                    <div
+                      onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
+                                              style={{
+                        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        padding: "7px 14px", borderRadius: 10,
+                        minWidth: 72,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                        fontSize: T.body, fontWeight: 650,
+                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        fontFamily: "var(--sans)",
+                        cursor: "pointer",
+                        transition: "border 0.25s, background 0.25s, color 0.25s",
+                        position: "relative", overflow: "visible",
+                      }}>
+                      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                        </svg>
+                        <span
+                          className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
+                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
+                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      </span>
+                      <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body }}>{p.weighted.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
