@@ -66,11 +66,19 @@ export default function AppNav() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [portalMounted, setPortalMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const [underlineStyle, setUnderlineStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
 
   useEffect(() => { setPortalMounted(true); }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const reloadUser = useCallback(() => {
     bxApi("/me")
@@ -135,8 +143,11 @@ export default function AppNav() {
     <>
       <nav className="responsive-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: "var(--c-navGlass)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
+        background: scrolled ? "var(--c-navGlass)" : "var(--c-bg)",
+        backdropFilter: scrolled ? "blur(32px)" : "none",
+        WebkitBackdropFilter: scrolled ? "blur(32px)" : "none",
         borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0",
+        transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
       }}>
         <div style={{
           ...(isMobile

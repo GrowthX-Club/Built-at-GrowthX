@@ -18,6 +18,7 @@ export const C = {
   textMute: "var(--c-textMute)",
   accent: "var(--c-accent)",
   accentSoft: "var(--c-accentSoft)",
+  accentFg: "var(--c-accentFg)",
   gold: "var(--c-gold)",
   goldSoft: "var(--c-goldSoft)",
   goldBorder: "var(--c-goldBorder)",

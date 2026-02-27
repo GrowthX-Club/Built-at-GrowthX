@@ -1,47 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   C,
   T,
-  ROLES,
   type BuilderProfile,
   type BxApiKey,
   normalizeUser,
 } from "@/types";
-import { bxApi, clearToken } from "@/lib/api";
+import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
-import { useResponsive } from "@/hooks/useMediaQuery";
-import BuiltLogo from "@/components/BuiltLogo";
+import { useNavOverride } from "@/context/NavContext";
 
 // ---- Inline Components ----
-
-function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
-  const r = role ? ROLES[role] : undefined;
-  if (src && src.startsWith("http")) {
-    return (
-      <img src={src} alt={initials} style={{
-        width: size, height: size, borderRadius: size,
-        border: `1px solid ${C.borderLight}`, flexShrink: 0, objectFit: "cover",
-      }} />
-    );
-  }
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: size,
-      background: r?.bg || C.accentSoft,
-      color: r?.color || C.textSec,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: Math.round(size * 0.36), fontWeight: 650,
-      fontFamily: "var(--sans)", letterSpacing: "0.01em",
-      border: `1px solid ${C.borderLight}`,
-      flexShrink: 0,
-    }}>
-      {initials}
-    </div>
-  );
-}
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -68,8 +40,7 @@ function formatDate(dateStr: string): string {
 export default function SettingsPage() {
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
-  const { isMobile } = useResponsive();
-  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const { setNavOverride, clearNavOverride } = useNavOverride();
 
   // Auth + User
   const [user, setUser] = useState<BuilderProfile | null>(null);
@@ -94,11 +65,8 @@ export default function SettingsPage() {
   const [revokeTarget, setRevokeTarget] = useState<BxApiKey | null>(null);
   const [revoking, setRevoking] = useState(false);
 
-  // Navbar
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-
   // OpenClaw guide
-  const [guideExpanded, setGuideExpanded] = useState(false);
+  const [guideExpanded, setGuideExpanded] = useState(true);
 
   // ---- Data loading ----
 
@@ -133,24 +101,13 @@ export default function SettingsPage() {
       .finally(() => setUserLoading(false));
   }, [loadKeys, openLoginDialog]);
 
-  // Click-outside for profile menu
+  // Nav override
   useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
+    setNavOverride({ title: "Settings", backHref: "/" });
+    return () => clearNavOverride();
+  }, [setNavOverride, clearNavOverride]);
 
   // ---- Handlers ----
-
-  const handleSignOut = () => {
-    clearToken();
-    bxApi("/logout", { method: "POST" }).catch(() => {});
-    router.push("/");
-  };
 
   const handleCreateKey = async () => {
     const name = newKeyName.trim();
@@ -217,70 +174,6 @@ export default function SettingsPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      {/* Nav */}
-      <nav className="responsive-nav" style={{
-        position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 32px",
-      }}>
-        <div style={{
-          maxWidth: 960, margin: "0 auto",
-          display: "flex", alignItems: "center", justifyContent: "space-between", height: 65,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 0 : 20 }}>
-            <BuiltLogo height={40} onClick={() => router.push("/")} />
-            {!isMobile && (
-              <>
-                <span style={{ color: C.textMute, fontSize: T.bodySm }}>/</span>
-                <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>Settings</span>
-              </>
-            )}
-          </div>
-          {userLoading ? (
-            <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
-          ) : user ? (
-            <div ref={profileMenuRef} style={{ position: "relative" }}>
-              <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
-                <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
-              </button>
-              {showProfileMenu && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 8px)", right: 0,
-                  background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100,
-                }}>
-                  <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
-                    width: "100%", padding: "12px 16px", border: "none", background: "none",
-                    cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
-                    fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                    transition: "background 0.1s",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
-                  onMouseLeave={e => e.currentTarget.style.background = "none"}
-                  >
-                    <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
-                  </button>
-                  <div style={{ height: 1, background: C.borderLight }} />
-                  <button onClick={handleSignOut} style={{
-                    width: "100%", padding: "12px 16px", border: "none", background: "none",
-                    cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
-                    fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                    transition: "background 0.1s",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
-                  onMouseLeave={e => e.currentTarget.style.background = "none"}
-                  >
-                    <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : null}
-        </div>
-      </nav>
-
       <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
         {/* Page header */}
         <div className="fade-up" style={{ marginBottom: 36 }}>
@@ -328,7 +221,7 @@ export default function SettingsPage() {
               style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 padding: "10px 20px", borderRadius: 10,
-                background: C.accent, color: "#fff",
+                background: C.accent, color: C.accentFg,
                 fontSize: T.bodySm, fontWeight: 600, fontFamily: "var(--sans)",
                 textDecoration: "none", transition: "opacity 0.12s",
               }}
@@ -350,7 +243,7 @@ export default function SettingsPage() {
                 onClick={() => { setShowCreateModal(true); setCreateError(""); setNewKeyName(""); }}
                 style={{
                   padding: "8px 16px", borderRadius: 10,
-                  background: C.accent, color: "#fff", border: "none",
+                  background: C.accent, color: C.accentFg, border: "none",
                   fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
                   fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 6,
                   transition: "opacity 0.12s",
@@ -473,19 +366,21 @@ export default function SettingsPage() {
               {guideExpanded && (
                 <div style={{ padding: "0 20px 20px", borderTop: `1px solid ${C.borderLight}` }}>
                   <ol style={{ margin: "16px 0 0", paddingLeft: 20, fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.8 }}>
-                    <li>Install the <span style={{ fontFamily: "var(--mono)", fontSize: T.bodySm, background: C.bg, padding: "2px 6px", borderRadius: 4 }}>growthx-bx-submit</span> skill on OpenClaw</li>
                     <li>
-                      Set these environment variables in your OpenClaw config:
-                      <div style={{
-                        marginTop: 8, padding: "12px 14px", background: C.bg,
-                        borderRadius: 8, fontFamily: "var(--mono)", fontSize: T.bodySm,
-                        lineHeight: 1.8, color: C.text, border: `1px solid ${C.borderLight}`,
-                      }}>
-                        <div>GROWTHX_API_KEY = <span style={{ color: C.textMute }}>&lt;your key&gt;</span></div>
-                        <div>GROWTHX_API_URL = <span style={{ color: C.blue }}>https://api.growthx.club</span></div>
-                      </div>
+                      Ask your OpenClaw to setup the skill to add to Built at GrowthX via{" "}
+                      <a
+                        href="https://github.com/GrowthX-Club/Built-at-growthx-Skill"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: C.blue, textDecoration: "none", fontWeight: 500 }}
+                        onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+                        onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}
+                      >
+                        github.com/GrowthX-Club/Built-at-growthx-Skill
+                      </a>
                     </li>
-                    <li>Ask OpenClaw: <span style={{ fontStyle: "italic", color: C.text }}>&quot;Push my project to Built at GrowthX&quot;</span></li>
+                    <li>Once the skill is setup, it will ask you for an API key &mdash; paste it in your OpenClaw</li>
+                    <li>It will take care of the rest</li>
                   </ol>
                 </div>
               )}

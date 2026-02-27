@@ -548,7 +548,7 @@ export default function ProjectDetailPage() {
               {p.url && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
                   padding: "10px 24px", borderRadius: 10,
-                  border: "none", background: C.accent, color: "#fff",
+                  border: "none", background: C.accent, color: C.accentFg,
                   fontSize: T.body, fontWeight: 600, cursor: "pointer",
                   fontFamily: "var(--sans)", transition: "opacity 0.15s",
                   textDecoration: "none", display: "inline-flex", alignItems: "center",
@@ -761,7 +761,7 @@ export default function ProjectDetailPage() {
                     disabled={postingComment}
                     style={{
                       padding: "7px 18px", borderRadius: 8,
-                      border: "none", background: C.accent, color: "#fff",
+                      border: "none", background: C.accent, color: C.accentFg,
                       fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
                       fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                     }}
@@ -899,7 +899,7 @@ export default function ProjectDetailPage() {
                                   disabled={postingComment}
                                   style={{
                                     padding: "7px 14px", borderRadius: 8,
-                                    border: "none", background: C.accent, color: "#fff",
+                                    border: "none", background: C.accent, color: C.accentFg,
                                     fontSize: T.label, fontWeight: 600, cursor: "pointer",
                                     fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                                     whiteSpace: "nowrap",

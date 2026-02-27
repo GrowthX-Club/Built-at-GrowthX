@@ -41,8 +41,8 @@ export default function RootLayout({
         <ThemeProvider>
           <LoginDialogProvider>
             <NavProvider>
+              <AppNav />
               <CanvasFlip>
-                <AppNav />
                 {children}
                 <LoginDialog />
               </CanvasFlip>

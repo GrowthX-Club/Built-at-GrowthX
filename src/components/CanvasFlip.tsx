@@ -25,8 +25,9 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
 
     const scrollY = window.scrollY;
 
-    // Lock body scroll
+    // Lock body scroll + set contrasting stage background
     document.body.style.overflow = "hidden";
+    document.body.style.background = targetTheme === "dark" ? "#D8D5CE" : "#2E2C2A";
 
     // Helper to wait for a transitionend on "transform"
     const waitTransform = (timeout: number): Promise<void> =>
@@ -82,6 +83,7 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
       el.style.borderRadius = "";
       el.style.overflow = "";
       document.body.style.overflow = "";
+      document.body.style.background = "";
       window.scrollTo(0, scrollY);
       setIsAnimating(false);
     });
@@ -96,10 +98,10 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
   }, [theme, isAnimating, runAnimation]);
 
   return (
-    <div style={{ perspective: 1200, transformStyle: "flat" }}>
+    <div style={{ perspective: 1200, transformStyle: "flat", background: "var(--c-bg)" }}>
       <div
         ref={wrapperRef}
-        style={{ transformOrigin: "center center", willChange: "transform" }}
+        style={{ transformOrigin: "center center", willChange: "transform", background: "var(--c-bg)", minHeight: "100vh" }}
       >
         {children}
       </div>

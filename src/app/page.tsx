@@ -663,7 +663,7 @@ function HomePage() {
               rel="noopener noreferrer"
               style={{
                 display: "inline-block", padding: "12px 28px", borderRadius: 10,
-                border: "none", background: C.accent, color: "#fff",
+                border: "none", background: C.accent, color: C.accentFg,
                 fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
                 textDecoration: "none", transition: "opacity 0.15s",
               }}

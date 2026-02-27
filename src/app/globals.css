@@ -28,6 +28,7 @@
   --c-brand: #0080FF;
   --c-brandSoft: #EBF4FF;
   --c-brandBorder: #99CCFF;
+  --c-accentFg: #FFFFFF;
   --c-navGlass: rgba(248,247,244,0.45);
   --c-shimmerFrom: #EDEAE4;
   --c-shimmerVia: #F5F3EE;
@@ -56,11 +57,16 @@
   --c-brand: #3399FF;
   --c-brandSoft: #1A2A40;
   --c-brandBorder: #2255AA;
-  --c-navGlass: rgba(26,25,24,0.45);
+  --c-accentFg: #1A1918;
+  --c-navGlass: rgba(26,25,24,0.78);
   --c-shimmerFrom: #2E2C2A;
   --c-shimmerVia: #3A3835;
   --c-scrollThumb: #3A3835;
   --c-scrollHover: #6B665B;
+}
+
+html {
+  background: var(--c-bg);
 }
 
 * {
@@ -264,7 +270,7 @@ body {
 }
 
 /* Nav spacer — matches nav height per breakpoint */
-.nav-spacer { height: 65px; }
+.nav-spacer { height: 65px; background: var(--c-bg); }
 
 /* ---- Responsive utilities ---- */
 

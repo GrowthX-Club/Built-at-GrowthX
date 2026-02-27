@@ -389,7 +389,7 @@ export default function BuildingPage() {
               {p.help && (
                 <div style={{
                   padding: "10px 16px", borderRadius: 10,
-                  background: C.blueSoft, border: "1px solid #BFDBFE", marginBottom: 16,
+                  background: C.blueSoft, border: `1px solid ${C.blue}33`, marginBottom: 16,
                 }}>
                   <span style={{ fontSize: T.bodySm, color: C.blue, fontFamily: "var(--sans)", fontWeight: 500 }}>
                     {"\uD83E\uDD1D"} {p.help}
@@ -422,7 +422,7 @@ export default function BuildingPage() {
                       padding: "8px 20px", borderRadius: 10,
                       border: "none", background: C.accent,
                       cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
-                      color: "#fff", fontFamily: "var(--sans)",
+                      color: C.accentFg, fontFamily: "var(--sans)",
                       transition: "opacity 0.12s",
                     }}
                     onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
