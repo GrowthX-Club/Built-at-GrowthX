@@ -1,6 +1,6 @@
 "use client";
 
-import { C, ROLES, type BuilderProfile } from "@/types";
+import { C, T, ROLES, type BuilderProfile } from "@/types";
 import Avatar from "./Avatar";
 
 interface SignInPickerProps {
@@ -58,7 +58,7 @@ export default function SignInPicker({
             <h2
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 18,
+                fontSize: T.subtitle,
                 fontWeight: 600,
                 margin: 0,
                 color: C.text,
@@ -66,7 +66,7 @@ export default function SignInPicker({
             >
               Sign in to continue
             </h2>
-            <p style={{ fontSize: 13, color: C.textSec, margin: "4px 0 0" }}>
+            <p style={{ fontSize: T.bodySm, color: C.textSec, margin: "4px 0 0" }}>
               Choose a profile to vote and comment
             </p>
           </div>
@@ -75,7 +75,7 @@ export default function SignInPicker({
             style={{
               background: "none",
               border: "none",
-              fontSize: 20,
+              fontSize: T.title,
               color: C.textMute,
               cursor: "pointer",
               padding: 4,
@@ -112,14 +112,14 @@ export default function SignInPicker({
               >
                 <Avatar initials={b.avatar} size={32} role={b.role} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>
+                  <div style={{ fontSize: T.bodySm, fontWeight: 500, color: C.text }}>
                     {b.name}
                   </div>
-                  <div style={{ fontSize: 11, color: C.textMute }}>{b.city}</div>
+                  <div style={{ fontSize: T.caption, color: C.textMute }}>{b.city}</div>
                 </div>
                 <span
                   style={{
-                    fontSize: 10,
+                    fontSize: T.badge,
                     color: roleInfo.color,
                     background: roleInfo.bg,
                     padding: "1px 6px",
@@ -143,7 +143,7 @@ export default function SignInPicker({
                 padding: "10px 16px",
                 background: "none",
                 border: "none",
-                fontSize: 13,
+                fontSize: T.bodySm,
                 color: C.textMute,
                 cursor: "pointer",
                 textAlign: "center",

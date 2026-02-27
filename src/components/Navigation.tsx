@@ -1,6 +1,6 @@
 "use client";
 
-import { C } from "@/types";
+import { C, T } from "@/types";
 
 const TABS = [
   { key: "built", label: "Built", count: 6 },
@@ -34,7 +34,7 @@ export default function Navigation({
           onClick={() => onChange(tab.key)}
           style={{
             padding: "12px 20px",
-            fontSize: 13,
+            fontSize: T.bodySm,
             fontWeight: active === tab.key ? 600 : 400,
             color: active === tab.key ? C.text : C.textMute,
             background: "none",
@@ -54,7 +54,7 @@ export default function Navigation({
           {tab.label}
           <span
             style={{
-              fontSize: 11,
+              fontSize: T.caption,
               fontFamily: "var(--mono)",
               color: active === tab.key ? C.textSec : C.textMute,
               background: active === tab.key ? C.accentSoft : C.surfaceWarm,

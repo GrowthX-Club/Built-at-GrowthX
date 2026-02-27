@@ -1,3 +1,11 @@
+// ---- Typography scale ----
+export const T = {
+  micro: 8, badge: 11, caption: 12, label: 13,
+  bodySm: 14, body: 16, bodyLg: 18, subtitle: 20,
+  title: 22, logo: 24, heading: 28, headingLg: 32,
+  pageTitle: 40, display: 44,
+} as const;
+
 // ---- Color system (warm palette) ----
 export const C = {
   bg: "#F8F7F4",

@@ -1,6 +1,6 @@
 "use client";
 
-import { C, STACK_META } from "@/types";
+import { C, T, STACK_META } from "@/types";
 import type { Project } from "@/types";
 import Link from "next/link";
 import UpvoteButton from "./UpvoteButton";
@@ -12,7 +12,7 @@ function CompanyTag({ name, color }: { name: string; color: string }) {
         display: "inline-flex",
         alignItems: "center",
         gap: 4,
-        fontSize: 10,
+        fontSize: T.badge,
         color: color,
         background: `${color}10`,
         padding: "1px 6px",
@@ -71,10 +71,10 @@ export function HostPickCard({
           gap: 6,
         }}
       >
-        <span style={{ fontSize: 12, color: C.gold }}>&#x2726;</span>
+        <span style={{ fontSize: T.label, color: C.gold }}>&#x2726;</span>
         <span
           style={{
-            fontSize: 10,
+            fontSize: T.badge,
             fontFamily: "var(--mono)",
             fontWeight: 700,
             color: C.gold,
@@ -118,7 +118,7 @@ export function HostPickCard({
               alignItems: "center",
               justifyContent: "center",
               color: "#fff",
-              fontSize: 22,
+              fontSize: T.logo,
               fontWeight: 700,
               fontFamily: "var(--serif)",
               flexShrink: 0,
@@ -134,7 +134,7 @@ export function HostPickCard({
               <h3
                 style={{
                   fontFamily: "var(--serif)",
-                  fontSize: 20,
+                  fontSize: T.title,
                   fontWeight: 600,
                   margin: 0,
                   color: C.text,
@@ -149,7 +149,7 @@ export function HostPickCard({
             </div>
             <p
               style={{
-                fontSize: 14,
+                fontSize: T.body,
                 color: C.textSec,
                 margin: "0 0 8px",
                 lineHeight: 1.5,
@@ -158,7 +158,7 @@ export function HostPickCard({
               {project.tagline}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 12, color: C.textMute }}>
+              <span style={{ fontSize: T.label, color: C.textMute }}>
                 by {project.builder.name}
                 {project.collabs.length > 0 && ` + ${project.collabs.length}`}
               </span>
@@ -173,7 +173,7 @@ export function HostPickCard({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 3,
-                        fontSize: 10,
+                        fontSize: T.badge,
                         padding: "1px 5px",
                         borderRadius: 3,
                         background: meta ? `${meta.bg}12` : C.surfaceWarm,
@@ -193,7 +193,7 @@ export function HostPickCard({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 7,
+                            fontSize: T.micro,
                             fontWeight: 700,
                           }}
                         >
@@ -274,7 +274,7 @@ export default function ProjectRow({
             alignItems: "center",
             justifyContent: "center",
             color: "#fff",
-            fontSize: 16,
+            fontSize: T.bodyLg,
             fontWeight: 700,
             fontFamily: "var(--serif)",
             flexShrink: 0,
@@ -289,7 +289,7 @@ export default function ProjectRow({
             <span
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 15,
+                fontSize: T.bodyLg,
                 fontWeight: 600,
                 color: C.text,
                 letterSpacing: "-0.01em",
@@ -303,7 +303,7 @@ export default function ProjectRow({
           </div>
           <p
             style={{
-              fontSize: 13,
+              fontSize: T.bodySm,
               color: C.textSec,
               margin: 0,
               lineHeight: 1.4,
@@ -320,7 +320,7 @@ export default function ProjectRow({
         <div
           style={{
             flexShrink: 0,
-            fontSize: 12,
+            fontSize: T.label,
             color: C.textMute,
             textAlign: "right",
             minWidth: 80,
