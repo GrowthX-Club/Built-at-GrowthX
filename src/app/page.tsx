@@ -126,7 +126,6 @@ function HomePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
-  const [userLoading, setUserLoading] = useState(true);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
   const { isMobile, isTablet } = useResponsive();
@@ -152,8 +151,7 @@ function HomePage() {
   const loadUser = useCallback(() => {
     bxApi("/me")
       .then((r) => r.json())
-      .then((d) => setUser(normalizeUser(d.user)))
-      .finally(() => setUserLoading(false));
+      .then((d) => setUser(normalizeUser(d.user)));
   }, []);
 
   useEffect(() => {

@@ -86,14 +86,18 @@ export default function AppNav() {
   }, []);
 
   const updateUnderline = useCallback(() => {
-    const activeTab = NAV_TABS.find(t => isTabActive(t.href));
+    const checkActive = (href: string) => {
+      if (href === "/projects") return pathname === "/" || pathname === "/projects";
+      return pathname === href;
+    };
+    const activeTab = NAV_TABS.find(t => checkActive(t.href));
     if (activeTab) {
       const el = tabsRef.current[activeTab.href];
       if (el) {
         setUnderlineStyle({ left: el.offsetLeft, width: el.offsetWidth });
       }
     }
-  }, [pathname, override]);
+  }, [pathname]);
 
   useLayoutEffect(() => {
     updateUnderline();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   C,
   T,
@@ -298,7 +298,6 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
 
 export default function ProjectDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
   const { setNavOverride, clearNavOverride } = useNavOverride();
   const { isMobile } = useResponsive();
