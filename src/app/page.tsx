@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   C,
@@ -677,7 +678,7 @@ function HomePage() {
       )}
 
       {/* ---- SUBMIT FLOW ---- */}
-      {showSubmit && (
+      {showSubmit && createPortal(
         <div style={{
           position: "fixed", inset: 0, zIndex: 200,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -1207,7 +1208,7 @@ function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
 
       {/* Sign-in handled via redirect to GrowthX login */}
