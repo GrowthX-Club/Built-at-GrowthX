@@ -16,6 +16,8 @@ import {
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
+import { extractPlainText, descriptionCharCount } from "@/lib/editor-utils";
+import RichTextEditor from "@/components/RichTextEditor";
 
 // ---- Inline Components ----
 
@@ -203,7 +205,7 @@ export default function MyProjectsPage() {
     setEditError("");
     if (!editData.name.trim()) { setEditError("Project name is required."); return; }
     if (!editData.tagline.trim()) { setEditError("Tagline is required."); return; }
-    if (!editData.description.trim()) { setEditError("Description is required. Tell us what you built."); return; }
+    if (descriptionCharCount(editData.description) === 0) { setEditError("Description is required. Tell us what you built."); return; }
     if (editData.stack.length === 0) { setEditError("Add at least one tech stack item."); return; }
     setSaving(true);
     try {
@@ -365,18 +367,11 @@ export default function MyProjectsPage() {
                       }}>
                         Write like you&apos;re telling a friend what you built and why.
                       </div>
-                      <textarea
+                      <RichTextEditor
                         value={editData.description}
-                        onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
-                        placeholder="The problem, what you built, and what happened."
-                        style={{
-                          ...inputStyle, resize: "vertical" as const, minHeight: 120, lineHeight: 1.5,
-                          padding: "12px 16px",
-                        }}
+                        onChange={(json) => setEditData(d => ({ ...d, description: json }))}
+                        maxChars={1500}
                       />
-                      <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)" }}>
-                        {editData.description.length}/500
-                      </div>
                     </div>
 
                     <div style={{ height: 1, background: C.borderLight }} />
@@ -801,11 +796,14 @@ export default function MyProjectsPage() {
                         </button>
                       </div>
                     </div>
-                    {p.description && (
-                      <p style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
-                        {p.description.length > 150 ? p.description.slice(0, 150) + "..." : p.description}
-                      </p>
-                    )}
+                    {p.description && (() => {
+                      const plain = extractPlainText(p.description);
+                      return plain ? (
+                        <p style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
+                          {plain.length > 150 ? plain.slice(0, 150) + "..." : plain}
+                        </p>
+                      ) : null;
+                    })()}
                     {p.stack && p.stack.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 10 }}>
                         {p.stack.map((s, si) => (

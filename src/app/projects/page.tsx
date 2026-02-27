@@ -17,7 +17,7 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
 
-function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; companyColor: string }; horizontal?: boolean }) {
+function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; companyColor: string; companyLogo?: string }; horizontal?: boolean }) {
   if (horizontal) {
     return (
       <div style={{ height: 36, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -34,7 +34,7 @@ function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; c
             overflow: "hidden", position: "relative",
           }}>
             {b.company[0]}
-            {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+            {b.company && <img src={getCompanyLogoUrl(b.company, b.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
           </span>
           <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
         </div>
@@ -62,7 +62,7 @@ function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; c
           overflow: "hidden", position: "relative",
         }}>
           {b.company[0]}
-          {b.company && <img src={getCompanyLogoUrl(b.company)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+          {b.company && <img src={getCompanyLogoUrl(b.company, b.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
         </span>
         <span style={{ fontWeight: 600, color: C.text }}>{b.company}</span>
       </div>
@@ -76,7 +76,7 @@ function BuilderItemP({ b, horizontal }: { b: { name: string; company: string; c
   );
 }
 
-function BuilderCycler({ builders, horizontal }: { builders: { name: string; company: string; companyColor: string }[]; horizontal?: boolean }) {
+function BuilderCycler({ builders, horizontal }: { builders: { name: string; company: string; companyColor: string; companyLogo?: string }[]; horizontal?: boolean }) {
   const [active, setActive] = useState(0);
   const [sliding, setSliding] = useState(false);
   const single = builders.length === 1;
@@ -343,9 +343,9 @@ export default function ProjectsPage() {
                   {/* Center: cycling builder */}
                   {(() => {
                     const allBuilders = [
-                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent },
-                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
-                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent })),
+                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent, companyLogo: p.builder.companyLogo },
+                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
+                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
                     ];
                     return <BuilderCycler builders={allBuilders} horizontal={isMobile} />;
                   })()}

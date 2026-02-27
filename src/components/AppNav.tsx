@@ -70,12 +70,20 @@ export default function AppNav() {
 
   useEffect(() => { setPortalMounted(true); }, []);
 
-  useEffect(() => {
+  const reloadUser = useCallback(() => {
     bxApi("/me")
       .then((r) => r.json())
       .then((d) => setUser(normalizeUser(d.user)))
       .finally(() => setUserLoading(false));
   }, []);
+
+  useEffect(() => { reloadUser(); }, [reloadUser]);
+
+  useEffect(() => {
+    const handler = () => reloadUser();
+    window.addEventListener("bx:login-success", handler);
+    return () => window.removeEventListener("bx:login-success", handler);
+  }, [reloadUser]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
