@@ -70,6 +70,7 @@ export interface Builder {
   title?: string;
   company?: string;
   companyColor?: string;
+  companyLogo?: string;
 }
 
 export interface Collab {
@@ -80,6 +81,7 @@ export interface Collab {
   title?: string;
   company?: string;
   companyColor?: string;
+  companyLogo?: string;
   role?: 'creator' | 'collaborator';
 }
 
@@ -135,6 +137,7 @@ export interface BuilderProfile {
   bio: string;
   company?: string;
   companyColor?: string;
+  companyLogo?: string;
   currentFunction?: string;
   linkedin?: string;
   twitter?: string;
@@ -164,6 +167,7 @@ export interface ThreadReply {
     title?: string;
     company?: string;
     companyColor?: string;
+    companyLogo?: string;
   };
   content: string;
   time: string;
@@ -180,6 +184,7 @@ export interface ThreadData {
     title?: string;
     company?: string;
     companyColor?: string;
+    companyLogo?: string;
   };
   content: string;
   time: string;
@@ -197,6 +202,7 @@ export interface Comment {
   authorTitle: string;
   authorCompany: string;
   authorCompanyColor: string;
+  authorCompanyLogo?: string;
   content: string;
   parentId: string | null;
   createdAt: string;
@@ -207,8 +213,9 @@ export interface Comment {
 
 const LOGO_DEV_TOKEN = 'pk_RqfvqsxqSGSajjqEOE8sTQ';
 
-/** Generate a logo.dev URL from a company name (best-effort domain guess) */
-export function getCompanyLogoUrl(company: string): string {
+/** Get company logo URL — uses DB logo if available, falls back to logo.dev domain guess */
+export function getCompanyLogoUrl(company: string, dbLogoUrl?: string): string {
+  if (dbLogoUrl && !dbLogoUrl.includes('cdn.brandfetch.io')) return dbLogoUrl;
   if (!company) return '';
   // Strip common suffixes and normalize to a plausible domain
   const cleaned = company
@@ -230,7 +237,7 @@ function generateCompanyColor(name: string): string {
 // Extract flat user fields from a gx-backend populated user object
 function formatPopulatedUser(u: Record<string, unknown>): {
   name: string; initials: string; avatarUrl: string | undefined;
-  company: string; companyColor: string; role: string; city: string;
+  company: string; companyColor: string; companyLogo: string; role: string; city: string;
 } {
   const nameObj = u?.name as Record<string, string> | undefined;
   const first = nameObj?.first || '';
@@ -249,7 +256,8 @@ function formatPopulatedUser(u: Record<string, unknown>): {
   const prefLoc = Array.isArray(talent?.preferred_location) ? talent.preferred_location[0] as Record<string, string> | undefined : undefined;
   const city = defaultAddr?.city || prefLoc?.city || '';
   const companyColor = company ? generateCompanyColor(company) : '';
-  return { name, initials, avatarUrl, company, companyColor, role, city };
+  const companyLogo = (u?.company_logo as string) || '';
+  return { name, initials, avatarUrl, company, companyColor, companyLogo, role, city };
 }
 
 function normalizeReactions(raw: unknown[]): Reaction[] {
@@ -279,6 +287,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
       name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
       city: u.city, title: u.role || undefined,
       company: u.company || undefined, companyColor: u.companyColor || undefined,
+      companyLogo: u.companyLogo || undefined,
     };
   } else if (p.builder && typeof p.builder === 'object') {
     // Already in flat builder shape (e.g. from local state)
@@ -298,7 +307,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
           _id: (c._id ?? '') as string,
           name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
           title: u.role || undefined, company: u.company || undefined,
-          companyColor: u.companyColor || undefined, role,
+          companyColor: u.companyColor || undefined, companyLogo: u.companyLogo || undefined, role,
         };
       }
       return { ...(c as unknown as Collab), role };
@@ -350,6 +359,7 @@ export function normalizeUser(u: Record<string, unknown> | null): BuilderProfile
     bio: (u.bio ?? '') as string,
     company: (u.company ?? undefined) as string | undefined,
     companyColor: ((u.companyColor ?? u.company_color ?? (u.company ? generateCompanyColor(u.company as string) : undefined)) as string | undefined),
+    companyLogo: ((u.companyLogo ?? u.company_logo ?? undefined) as string | undefined),
     currentFunction: (u.current_function ?? u.currentFunction ?? undefined) as string | undefined,
     linkedin: (u.linkedin ?? undefined) as string | undefined,
     twitter: (u.twitter ?? undefined) as string | undefined,
@@ -394,6 +404,7 @@ export function normalizeThread(t: Record<string, unknown>): ThreadData {
     title: (rawAuthor?.title ?? undefined) as string | undefined,
     company: (rawAuthor?.company ?? undefined) as string | undefined,
     companyColor: ((rawAuthor?.companyColor ?? rawAuthor?.company_color ?? undefined) as string | undefined),
+    companyLogo: ((rawAuthor?.companyLogo ?? rawAuthor?.company_logo ?? undefined) as string | undefined),
   };
 
   const rawReactions = Array.isArray(t.reactions) ? t.reactions : [];
@@ -416,6 +427,7 @@ export function normalizeThread(t: Record<string, unknown>): ThreadData {
           title: (ra?.title ?? undefined) as string | undefined,
           company: (ra?.company ?? undefined) as string | undefined,
           companyColor: ((ra?.companyColor ?? ra?.company_color ?? undefined) as string | undefined),
+          companyLogo: ((ra?.companyLogo ?? ra?.company_logo ?? undefined) as string | undefined),
         },
         content: (r.content ?? '') as string,
         time: (r.time ?? '') as string,
@@ -439,6 +451,7 @@ export function normalizeMember(m: Record<string, unknown>): BuilderProfile {
     bio: (m.bio ?? '') as string,
     company: (m.company ?? undefined) as string | undefined,
     companyColor: ((m.companyColor ?? m.company_color ?? (m.company ? generateCompanyColor(m.company as string) : undefined)) as string | undefined),
+    companyLogo: ((m.companyLogo ?? m.company_logo ?? undefined) as string | undefined),
   };
 }
 
@@ -453,6 +466,7 @@ export function normalizeComment(c: Record<string, unknown>): Comment {
   let authorTitle = (c.authorTitle ?? c.author_title ?? "") as string;
   let authorCompany = (c.authorCompany ?? c.author_company ?? "") as string;
   let authorCompanyColor = (c.authorCompanyColor ?? c.author_company_color ?? "") as string;
+  let authorCompanyLogo = (c.authorCompanyLogo ?? c.author_company_logo ?? undefined) as string | undefined;
   let authorAvatarUrl = (c.authorAvatarUrl ?? c.author_avatar_url ?? undefined) as string | undefined;
 
   if (authorRaw && typeof authorRaw === 'object' && authorRaw.name && typeof authorRaw.name === 'object') {
@@ -465,6 +479,7 @@ export function normalizeComment(c: Record<string, unknown>): Comment {
     authorTitle = u.role;
     authorCompany = u.company;
     authorCompanyColor = u.companyColor;
+    authorCompanyLogo = u.companyLogo || undefined;
   }
 
   return {
@@ -477,6 +492,7 @@ export function normalizeComment(c: Record<string, unknown>): Comment {
     authorTitle,
     authorCompany,
     authorCompanyColor,
+    authorCompanyLogo,
     content: (c.content ?? "") as string,
     parentId: (c.parentId ?? c.parent_id ?? null) as string | null,
     createdAt: (c.createdAt ?? c.created_at ?? c.updatedAt ?? c.updated_at ?? "") as string,
