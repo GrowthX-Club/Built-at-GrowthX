@@ -9,6 +9,7 @@ export default function BuiltLogo({ height = 40, onClick, style }: {
   const width = Math.round(height * (358 / 259));
   return (
     <img
+      className="built-logo"
       src="/built-logo.svg"
       alt="Built at GrowthX"
       width={width}

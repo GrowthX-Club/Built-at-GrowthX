@@ -121,7 +121,7 @@ export default function BuildingPage() {
       {/* Nav */}
       <nav className="responsive-nav" style={{
         position: "sticky", top: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.9)", backdropFilter: "blur(16px)",
+        background: "var(--c-navGlass)", backdropFilter: "blur(16px)",
         borderBottom: `1px solid ${C.border}`, padding: "0 32px",
       }}>
         <div style={{

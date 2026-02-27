@@ -14,6 +14,7 @@ import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
+import { useTheme } from "@/context/ThemeContext";
 import BuiltLogo from "@/components/BuiltLogo";
 
 function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
@@ -58,6 +59,7 @@ export default function AppNav() {
   const { openLoginDialog } = useLoginDialog();
   const { override } = useNavOverride();
   const { isMobile, isTablet } = useResponsive();
+  const { theme, triggerFlip, isAnimating } = useTheme();
 
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [userLoading, setUserLoading] = useState(true);
@@ -133,7 +135,7 @@ export default function AppNav() {
     <>
       <nav className="responsive-nav" style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: "rgba(248,247,244,0.45)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
+        background: "var(--c-navGlass)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
         borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0",
       }}>
         <div style={{
@@ -203,6 +205,37 @@ export default function AppNav() {
               </div>
               {/* Right items — pinned 96px from right */}
               <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14, zIndex: 1 }}>
+                {/* Theme toggle — desktop only */}
+                <button
+                  onClick={triggerFlip}
+                  disabled={isAnimating}
+                  aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+                  style={{
+                    width: 32, height: 32, borderRadius: 32,
+                    border: `1px solid ${C.border}`, background: C.surface,
+                    cursor: isAnimating ? "not-allowed" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "border-color 0.15s, opacity 0.15s",
+                    opacity: isAnimating ? 0.5 : 1,
+                    flexShrink: 0, padding: 0,
+                  }}
+                  onMouseEnter={e => { if (!isAnimating) e.currentTarget.style.borderColor = C.accent; }}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+                >
+                  {theme === "light" ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="5"/>
+                      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                  )}
+                </button>
                 <button className="submit-btn" style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,

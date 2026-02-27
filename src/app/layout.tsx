@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LoginDialogProvider } from "@/context/LoginDialogContext";
 import { NavProvider } from "@/context/NavContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import LoginDialog from "@/components/LoginDialog";
 import AppNav from "@/components/AppNav";
+import CanvasFlip from "@/components/CanvasFlip";
 
 export const metadata: Metadata = {
   title: "Built at GrowthX",
@@ -17,8 +19,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("bx-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}})()`,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -31,13 +38,17 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans bg-bg text-text antialiased">
-        <LoginDialogProvider>
-          <NavProvider>
-            <AppNav />
-            {children}
-            <LoginDialog />
-          </NavProvider>
-        </LoginDialogProvider>
+        <ThemeProvider>
+          <LoginDialogProvider>
+            <NavProvider>
+              <CanvasFlip>
+                <AppNav />
+                {children}
+                <LoginDialog />
+              </CanvasFlip>
+            </NavProvider>
+          </LoginDialogProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
