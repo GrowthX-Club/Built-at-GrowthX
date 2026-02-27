@@ -18,6 +18,7 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextEditor from "@/components/RichTextEditor";
 import { descriptionCharCount } from "@/lib/editor-utils";
+import ProjectIcon from "@/components/ProjectIcon";
 // ---- UI Components ----
 
 function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string; companyLogo?: string } }) {
@@ -444,26 +445,31 @@ function HomePage() {
                     position: "relative", zIndex: projects.length - i,
                   }}
                 >
-                  {/* Desktop/tablet: product name + tagline (hidden on mobile via CSS) */}
-                  <div className="desktop-tablet-only-block" style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontSize: T.bodyLg, fontWeight: 560, color: C.text,
-                      fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
-                    }}>
-                      {p.name}
-                    </div>
-                    <div style={{
-                      fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
-                      fontWeight: 400, lineHeight: 1.3,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {p.tagline}
+                  {/* Desktop/tablet: icon + product name + tagline (hidden on mobile via CSS) */}
+                  <div className="desktop-tablet-only-block" style={{ minWidth: 0, alignItems: "center", gap: 12 }}>
+                    <ProjectIcon title={p.name} description={p.tagline} index={i} size={36} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: T.bodyLg, fontWeight: 560, color: C.text,
+                        fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
+                      }}>
+                        {p.name}
+                      </div>
+                      <div style={{
+                        fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
+                        fontWeight: 400, lineHeight: 1.3,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {p.tagline}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Mobile: name + vote top row */}
+                  {/* Mobile: icon + name + vote top row */}
                   <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+                      <ProjectIcon title={p.name} description={p.tagline} index={i} size={32} />
+                      <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontSize: T.bodyLg, fontWeight: 560, color: C.text,
                         fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
@@ -475,6 +481,7 @@ function HomePage() {
                         fontWeight: 400, lineHeight: 1.3,
                       }}>
                         {p.tagline}
+                      </div>
                       </div>
                     </div>
                     <div

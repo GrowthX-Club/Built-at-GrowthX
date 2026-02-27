@@ -212,7 +212,7 @@ body {
 .project-card .mobile-only { display: none; }
 .project-card .desktop-only { display: contents; }
 .project-card .desktop-tablet-only { display: contents; }
-.project-card .desktop-tablet-only-block { display: block; }
+.project-card .desktop-tablet-only-block { display: flex; }
 
 /* Tablet */
 @media (min-width: 641px) and (max-width: 960px) {
