@@ -165,72 +165,60 @@ function playTubelightSounds() {
 }
 
 /**
- * Synthesized switch-off sound — a short, dull click for light-to-dark.
+ * Synthesized toggle switch sound — realistic two-part mechanical click.
+ * Mimics: toggle arm hitting stop → spring mechanism snapping over → housing resonance.
  */
 function playSwitchOffSound() {
   try {
     const ctx = new AudioContext();
     const t = ctx.currentTime;
+    const sr = ctx.sampleRate;
 
-    // Crisp noise snap — broadband click
-    const sampleRate = ctx.sampleRate;
-    const length = Math.floor(sampleRate * 0.02);
-    const buffer = ctx.createBuffer(1, length, sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
+    // Helper: short noise burst through a filter
+    const noiseBurst = (time: number, dur: number, freq: number, q: number, gain: number) => {
+      const len = Math.floor(sr * dur);
+      const buf = ctx.createBuffer(1, len, sr);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
 
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = freq; bp.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(gain, time);
+      g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+      src.start(time); src.stop(time + dur);
+    };
 
-    const bp = ctx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.value = 3500;
-    bp.Q.value = 1.5;
+    // 1. Toggle arm hits stop — sharp mid-high click
+    noiseBurst(t, 0.004, 2800, 3, 0.7);
 
-    const gainNode = ctx.createGain();
-    gainNode.gain.setValueAtTime(0.8, t);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.018);
+    // 2. Spring snap — slightly delayed, louder, sharper
+    noiseBurst(t + 0.007, 0.005, 3800, 4, 0.9);
 
-    source.connect(bp);
-    bp.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    // 3. Housing thud — low-frequency impact of the plastic body
+    const thud = ctx.createOscillator();
+    thud.type = "sine";
+    thud.frequency.value = 180;
+    const thudGain = ctx.createGain();
+    thudGain.gain.setValueAtTime(0.4, t);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+    thud.connect(thudGain); thudGain.connect(ctx.destination);
+    thud.start(t); thud.stop(t + 0.03);
 
-    source.start(t);
-    source.stop(t + 0.02);
+    // 4. Plastic resonance — brief mid ring from the housing
+    const res = ctx.createOscillator();
+    res.type = "sine";
+    res.frequency.value = 1100;
+    const resGain = ctx.createGain();
+    resGain.gain.setValueAtTime(0.2, t + 0.005);
+    resGain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+    res.connect(resGain); resGain.connect(ctx.destination);
+    res.start(t + 0.005); res.stop(t + 0.025);
 
-    // Mechanical thump — switch body resonance
-    const thump = ctx.createOscillator();
-    thump.type = "sine";
-    thump.frequency.value = 400;
-
-    const thumpGain = ctx.createGain();
-    thumpGain.gain.setValueAtTime(0.5, t);
-    thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-
-    thump.connect(thumpGain);
-    thumpGain.connect(ctx.destination);
-
-    thump.start(t);
-    thump.stop(t + 0.045);
-
-    // Higher click overtone — adds presence
-    const click = ctx.createOscillator();
-    click.type = "sine";
-    click.frequency.value = 2500;
-
-    const clickGain = ctx.createGain();
-    clickGain.gain.setValueAtTime(0.35, t);
-    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
-
-    click.connect(clickGain);
-    clickGain.connect(ctx.destination);
-
-    click.start(t);
-    click.stop(t + 0.018);
-
-    setTimeout(() => ctx.close(), 500);
+    setTimeout(() => ctx.close(), 300);
   } catch {
     // AudioContext may be blocked — fail silently
   }
