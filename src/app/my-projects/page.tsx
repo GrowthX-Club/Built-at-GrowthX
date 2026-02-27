@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   C,
   T,
-  ROLES,
   STACK_META,
   type Project,
   type BuilderProfile,
@@ -17,35 +16,8 @@ import {
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
-import { useResponsive } from "@/hooks/useMediaQuery";
 
 // ---- Inline Components ----
-
-function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
-  const r = role ? ROLES[role] : undefined;
-  if (src && src.startsWith("http")) {
-    return (
-      <img src={src} alt={initials} style={{
-        width: size, height: size, borderRadius: size,
-        border: `1px solid ${C.borderLight}`, flexShrink: 0, objectFit: "cover",
-      }} />
-    );
-  }
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: size,
-      background: r?.bg || C.accentSoft,
-      color: r?.color || C.textSec,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: Math.round(size * 0.36), fontWeight: 650,
-      fontFamily: "var(--sans)", letterSpacing: "0.01em",
-      border: `1px solid ${C.borderLight}`,
-      flexShrink: 0,
-    }}>
-      {initials}
-    </div>
-  );
-}
 
 function generateColor(name: string): string {
   let hash = 0;
@@ -101,7 +73,6 @@ export default function MyProjectsPage() {
   const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
   const { setNavOverride, clearNavOverride } = useNavOverride();
-  const { isMobile } = useResponsive();
   const [projects, setProjects] = useState<Project[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [loading, setLoading] = useState(true);
