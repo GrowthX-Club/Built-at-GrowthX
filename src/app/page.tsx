@@ -447,7 +447,7 @@ function HomePage() {
                 >
                   {/* Desktop/tablet: icon + product name + tagline (hidden on mobile via CSS) */}
                   <div className="desktop-tablet-only-block" style={{ minWidth: 0, alignItems: "center", gap: 12 }}>
-                    <ProjectIcon title={p.name} description={p.tagline} index={i} size={36} />
+                    <ProjectIcon title={p.name} description={p.tagline} index={i} size={36} iconId={p.icon} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{
                         fontSize: T.bodyLg, fontWeight: 560, color: C.text,
@@ -468,7 +468,7 @@ function HomePage() {
                   {/* Mobile: icon + name + vote top row */}
                   <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
-                      <ProjectIcon title={p.name} description={p.tagline} index={i} size={32} />
+                      <ProjectIcon title={p.name} description={p.tagline} index={i} size={32} iconId={p.icon} />
                       <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontSize: T.bodyLg, fontWeight: 560, color: C.text,

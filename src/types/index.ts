@@ -103,6 +103,7 @@ export interface Project {
   weighted: number;
   raw: number;
   category: string;
+  icon?: string;
   stack: string[];
   buildathon: string | null;
   heroColor: string;
@@ -333,6 +334,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     weighted: (p.weighted ?? p.weighted_votes ?? 0) as number,
     raw: (p.raw ?? p.raw_votes ?? 0) as number,
     category: (p.category ?? '') as string,
+    icon: (p.icon as string) || undefined,
     stack: (p.stack ?? []) as string[],
     buildathon: (p.buildathon ?? null) as string | null,
     heroColor: ((p.heroColor ?? p.hero_color ?? '#2255CC') as string),

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { C, T } from "@/types";
 import { bxApi } from "@/lib/api";
+import AgentIcon, { assignRandomIcon, matchCategory, AGENT_CATEGORIES } from "@/assets/agentIcons";
+import type { AgentCategory } from "@/assets/agentIcons";
 
 interface SubmitModalProps {
   onClose: () => void;
@@ -19,6 +21,21 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
   const [stack, setStack] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [icon, setIcon] = useState<AgentCategory>(() => assignRandomIcon());
+  const [iconSeed, setIconSeed] = useState(0);
+
+  // Re-match icon when name/tagline change (keyword-based), but only if there's a good match
+  const smartIcon = useMemo(() => {
+    const text = `${name} ${tagline}`.trim();
+    if (text.length < 3) return null;
+    const matched = matchCategory(text);
+    // Only auto-switch if we got keyword hits (not just hash fallback)
+    const lower = text.toLowerCase();
+    const hasHit = matched.keywords.some(kw => lower.includes(kw));
+    return hasHit ? matched : null;
+  }, [name, tagline]);
+
+  const activeIcon = smartIcon || icon;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +52,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
           tagline: tagline.trim(),
           description: description.trim(),
           category,
+          icon: activeIcon.id,
           stack: stack
             .split(",")
             .map((s) => s.trim())
@@ -153,6 +171,35 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
               {error}
             </div>
           )}
+
+          {/* Icon preview + randomize */}
+          <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+            <AgentIcon category={activeIcon} size={48} colorSeed={iconSeed} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: T.bodySm, fontWeight: 500, color: C.text, marginBottom: 2 }}>
+                {activeIcon.label}
+              </div>
+              <div style={{ fontSize: T.caption, color: C.textMute }}>
+                {smartIcon ? "Auto-matched from name" : "Randomly assigned"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIcon(assignRandomIcon());
+                setIconSeed(s => s + 1);
+              }}
+              style={{
+                padding: "6px 12px", borderRadius: 8,
+                border: `1px solid ${C.border}`, background: C.surface,
+                fontSize: T.caption, fontWeight: 550, color: C.textSec,
+                cursor: "pointer", fontFamily: "var(--sans)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              &#x21bb; Randomize
+            </button>
+          </div>
 
           <div style={{ marginBottom: 16 }}>
             <label
