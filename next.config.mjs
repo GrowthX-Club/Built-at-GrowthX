@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['@growthx-club/gx-editor', '@growthx-club/icons'],
   images: {
     remotePatterns: [
       {
