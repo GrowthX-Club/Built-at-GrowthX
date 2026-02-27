@@ -256,12 +256,7 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
     // Switch-off click sound
     playSwitchOffSound();
 
-    // Toggle theme immediately — dark content renders under the overlay
-    document.documentElement.setAttribute("data-theme", "dark");
-
-    const navH = window.innerWidth <= 640 ? 60 : 65;
-
-    // Light overlay — masks dark content, revealed via contracting arc
+    // 1. Light overlay covers page (no flash)
     const overlay = document.createElement("div");
     overlay.style.cssText = `
       position: fixed;
@@ -275,57 +270,29 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
     `;
     document.body.appendChild(overlay);
 
-    // Warm glow edge trailing the arc boundary
-    const glowEdge = document.createElement("div");
-    glowEdge.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 46;
-      pointer-events: none;
-      background: radial-gradient(ellipse 120% 80% at 50% ${navH}px,
-        transparent 0%, rgba(232,216,160,0.2) 48%, rgba(240,236,216,0.1) 52%, transparent 56%);
-      opacity: 0;
-    `;
-    document.body.appendChild(glowEdge);
+    // 2. Switch theme underneath — dark content renders hidden
+    document.documentElement.setAttribute("data-theme", "dark");
 
-    // Arc contracts from fully open to closed at nav — light "drains" upward
-    const duration = 550;
+    // 3. Expanding transparent ellipse from bottom — reveals dark content upward, nav last
+    const duration = 400;
     const startTime = performance.now();
-    const easeInOutCubic = (x: number) =>
-      x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    const easeOutQuart = (x: number) => 1 - Math.pow(1 - x, 4);
 
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const raw = Math.min(elapsed / duration, 1);
-      const t = easeInOutCubic(raw);
+      const t = easeOutQuart(raw);
 
-      // Start fully open (160%/200%), shrink to 0%
-      const hPct = (1 - t) * 160;
-      const vPct = (1 - t) * 200;
-      // Tighten the soft edge as the ellipse gets smaller so it doesn't linger
-      const softStart = 60 + t * 30; // 60% → 90% as ellipse shrinks
-      const maskGrad = `radial-gradient(ellipse ${hPct}% ${vPct}% at 50% ${navH}px, #000 0%, #000 ${softStart}%, rgba(0,0,0,0.4) ${softStart + (100 - softStart) * 0.5}%, transparent 100%)`;
+      const hPct = t * 180;
+      const vPct = t * 160;
+      const maskGrad = `radial-gradient(ellipse ${hPct}% ${vPct}% at 50% 100%, transparent 60%, rgba(0,0,0,0.2) 75%, rgba(0,0,0,0.6) 88%, #000 100%)`;
       overlay.style.maskImage = maskGrad;
       overlay.style.webkitMaskImage = maskGrad;
-
-      // Glow edge: fade in first third, fade out last two-thirds
-      if (raw < 0.3) {
-        glowEdge.style.opacity = String(raw / 0.3);
-      } else {
-        glowEdge.style.opacity = String((1 - raw) / 0.7);
-      }
-      const glowMask = `radial-gradient(ellipse ${hPct * 1.08}% ${vPct * 1.08}% at 50% ${navH}px, transparent 55%, #000 100%)`;
-      glowEdge.style.maskImage = glowMask;
-      glowEdge.style.webkitMaskImage = glowMask;
 
       if (raw < 1) {
         requestAnimationFrame(animate);
       } else {
         overlay.remove();
-        glowEdge.remove();
 
         // Nav absorb glow at the end
         const absorbGlow = document.createElement("div");
