@@ -4,6 +4,103 @@ import { useRef, useCallback, useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
 /**
+ * Synthesized tubelight sound effects for the dark-to-light flicker animation.
+ * Uses Web Audio API — no audio files needed.
+ */
+function playTubelightSounds() {
+  try {
+    const ctx = new AudioContext();
+    const t = ctx.currentTime;
+
+    // Starter tick — white noise burst through bandpass (~3kHz)
+    const tick = (time: number, gain: number) => {
+      const duration = 0.015;
+      const sampleRate = ctx.sampleRate;
+      const length = Math.floor(sampleRate * 0.02);
+      const buffer = ctx.createBuffer(1, length, sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.value = 3000;
+      bandpass.Q.value = 1;
+
+      const gainNode = ctx.createGain();
+      gainNode.gain.setValueAtTime(gain, time);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      source.connect(bandpass);
+      bandpass.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      source.start(time);
+      source.stop(time + duration);
+    }
+
+    // Gas discharge buzz — sawtooth 120Hz, short duration
+    const buzz = (time: number, duration: number, gain: number) => {
+      const osc = ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = 120;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.value = 120;
+      bandpass.Q.value = 5;
+
+      const gainNode = ctx.createGain();
+      gainNode.gain.setValueAtTime(gain, time);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      osc.connect(bandpass);
+      bandpass.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      osc.start(time);
+      osc.stop(time + duration + 0.01);
+    }
+
+    // Catch hum — sine 120Hz, sustain then fade
+    const hum = (time: number) => {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = 120;
+
+      const gainNode = ctx.createGain();
+      gainNode.gain.setValueAtTime(0.12, time);
+      gainNode.gain.setValueAtTime(0.12, time + 0.3);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      osc.start(time);
+      osc.stop(time + 0.52);
+    }
+
+    // Schedule all sounds — sample-accurate via AudioContext time
+    tick(t + 0.032, 0.15);  buzz(t + 0.032, 0.016, 0.08);
+    tick(t + 0.112, 0.18);  buzz(t + 0.112, 0.016, 0.10);
+    tick(t + 0.240, 0.20);  buzz(t + 0.240, 0.016, 0.12);
+    tick(t + 0.320, 0.22);  buzz(t + 0.320, 0.016, 0.15);
+    tick(t + 0.480, 0.25);  buzz(t + 0.480, 0.016, 0.18);
+    tick(t + 0.544, 0.30);  buzz(t + 0.544, 0.032, 0.22);
+    tick(t + 0.624, 0.25);  hum(t + 0.624);
+
+    // Close context after all sounds finish
+    setTimeout(() => ctx.close(), 1500);
+  } catch {
+    // AudioContext may be blocked by browser autoplay policy — fail silently
+  }
+}
+
+/**
  * CanvasFlip — wraps page content and performs a "light source" animation
  * when the theme toggle is triggered. The nav bar acts as a tubelight fixture.
  *
@@ -79,6 +176,9 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
     // Make the actual nav bar flicker like a tubelight
     const nav = document.querySelector("nav");
     if (nav) nav.classList.add("nav-flicker-active");
+
+    // Synced tubelight sound effects
+    playTubelightSounds();
 
     // Subtle glow spill below the nav
     const glow = document.createElement("div");
