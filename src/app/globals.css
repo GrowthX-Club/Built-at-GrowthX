@@ -107,6 +107,62 @@ body {
   background: #FFFFFF;
   transform: translateY(-1px);
 }
+/* Submit button — bold animated hover */
+.submit-btn {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: var(--my, 50%);
+  left: var(--mx, 50%);
+  width: 0;
+  height: 0;
+  background: #181710;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), height 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+  z-index: -1;
+}
+.submit-btn:hover::before {
+  width: 400px;
+  height: 400px;
+}
+.submit-btn:hover {
+  border-color: #181710 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 20px rgba(24,23,16,0.22);
+}
+.submit-btn:hover svg {
+  animation: submitPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.submit-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 6px rgba(24,23,16,0.15);
+}
+@keyframes submitPop {
+  0% { transform: rotate(0deg) scale(1); }
+  40% { transform: rotate(180deg) scale(1.3); }
+  100% { transform: rotate(180deg) scale(1); }
+}
+@media (max-width: 640px) {
+  .submit-btn:hover {
+    border-color: inherit !important;
+    color: inherit !important;
+    box-shadow: none;
+    transform: none;
+  }
+  .submit-btn:hover::before {
+    width: 0;
+    height: 0;
+  }
+  .submit-btn:hover svg {
+    animation: none;
+  }
+}
+
 @media (max-width: 640px) {
   .list-item-hover:hover {
     box-shadow: none;
