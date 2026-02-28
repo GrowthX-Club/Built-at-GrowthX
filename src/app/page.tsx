@@ -133,6 +133,8 @@ function HomePage() {
   const [userLoaded, setUserLoaded] = useState(false);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(12);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { isMobile, isTablet } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
@@ -148,6 +150,7 @@ function HomePage() {
           .filter((p: Project) => p.enabled !== false);
         list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
+        setVisibleCount(12);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
       })
       .finally(() => setLoading(false));
@@ -172,6 +175,21 @@ function HomePage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + 12);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [visibleCount, projects.length]);
 
   useEffect(() => {
     if (searchParams.get("submit") !== "1" || !userLoaded) return;
@@ -357,6 +375,10 @@ function HomePage() {
     }
   };
 
+  const regularProjects = projects.filter(p => !p.featured);
+  const visibleProjects = regularProjects.slice(0, visibleCount);
+  const hasMore = visibleCount < regularProjects.length;
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
       <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "32px 32px 100px" }}>
@@ -467,7 +489,7 @@ function HomePage() {
 
             {/* Project list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-              {projects.map((p, i) => (
+              {visibleProjects.map((p, i) => (
                 <div
                   key={p.id}
                   className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover project-card`}
@@ -475,7 +497,7 @@ function HomePage() {
                   style={{
                     paddingTop: 16, paddingBottom: 16, cursor: "pointer",
                     borderBottom: `1px solid ${C.borderLight}`,
-                    position: "relative", zIndex: projects.length - i,
+                    position: "relative", zIndex: visibleProjects.length - i,
                   }}
                 >
                   {/* Desktop/tablet: icon + product name + tagline (hidden on mobile via CSS) */}
@@ -611,6 +633,9 @@ function HomePage() {
                   </div>
                 </div>
               ))}
+              {hasMore && (
+                <div ref={sentinelRef} style={{ height: 1, width: "100%" }} />
+              )}
             </div>
           </>
         )}
