@@ -13,6 +13,7 @@ import {
   getCompanyLogoUrl,
 } from "@/types";
 import { bxApi } from "@/lib/api";
+import ProjectIcon from "@/components/ProjectIcon";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 
 // ---- Inline Components ----
@@ -283,6 +284,7 @@ export default function ProjectsPage() {
                   {/* Top: product name + tagline + upvote (mobile: row with square button) */}
                   {isMobile ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
                       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                         <div style={{
                           fontSize: T.bodyLg, fontWeight: 560, color: C.text,
@@ -323,19 +325,22 @@ export default function ProjectsPage() {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{
-                        fontSize: T.bodyLg, fontWeight: 560, color: C.text,
-                        fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
-                      }}>
-                        {p.name}
-                      </div>
-                      <div style={{
-                        fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
-                        fontWeight: 400, lineHeight: 1.3,
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }}>
-                        {p.tagline}
+                    <div style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 12 }}>
+                      <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontSize: T.bodyLg, fontWeight: 560, color: C.text,
+                          fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
+                        }}>
+                          {p.name}
+                        </div>
+                        <div style={{
+                          fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
+                          fontWeight: 400, lineHeight: 1.3,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>
+                          {p.tagline}
+                        </div>
                       </div>
                     </div>
                   )}
