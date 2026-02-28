@@ -114,7 +114,6 @@ function HomePage() {
   const searchParams = useSearchParams();
   const { openLoginDialog } = useLoginDialog();
   const [showSubmit, setShowSubmit] = useState(false);
-  const [showMembersOnly, setShowMembersOnly] = useState(false);
   const [submitStep, setSubmitStep] = useState(0);
   const [submitData, setSubmitData] = useState({
     name: "", tagline: "", description: "",
@@ -176,10 +175,6 @@ function HomePage() {
     router.replace("/", { scroll: false });
     if (!user) {
       openLoginDialog(() => { loadUser(); });
-      return;
-    }
-    if (!user.isMembershipActive) {
-      setShowMembersOnly(true);
       return;
     }
     setShowSubmit(true);
@@ -585,83 +580,6 @@ function HomePage() {
           </>
         )}
       </main>
-
-      {/* ---- MEMBERS ONLY ---- */}
-      {showMembersOnly && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 200,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div
-            onClick={() => setShowMembersOnly(false)}
-            style={{
-              position: "absolute", inset: 0,
-              background: "rgba(24,23,16,0.4)", backdropFilter: "blur(6px)",
-              animation: "fadeIn 0.2s ease",
-            }}
-          />
-          <div className="responsive-modal" style={{
-            position: "relative", width: "100%", maxWidth: 420,
-            background: C.surface, borderRadius: isMobile ? 16 : 20,
-            border: `1px solid ${C.border}`,
-            boxShadow: "0 24px 80px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
-            padding: isMobile ? "32px 20px" : "40px 32px", textAlign: "center",
-            animation: "fadeUp 0.25s ease-out",
-            ...(isMobile ? { margin: "0 16px" } : {}),
-          }}>
-            <button
-              onClick={() => setShowMembersOnly(false)}
-              style={{
-                position: "absolute", top: 16, right: 16,
-                width: 32, height: 32, borderRadius: 32,
-                border: `1px solid ${C.borderLight}`, background: "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: T.subtitle, color: C.textMute,
-                transition: "all 0.12s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.color = C.textMute; }}
-            >
-              {"\u00D7"}
-            </button>
-            <div style={{
-              width: 56, height: 56, borderRadius: 56, margin: "0 auto 20px",
-              background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: T.heading,
-            }}>
-              {"\u2726"}
-            </div>
-            <h3 style={{
-              fontSize: T.title, fontWeight: 500, color: C.text,
-              fontFamily: "var(--serif)", marginBottom: 10, lineHeight: 1.3,
-            }}>
-              Reserved for GrowthX members
-            </h3>
-            <p style={{
-              fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
-              fontWeight: 400, lineHeight: 1.6, marginBottom: 28, maxWidth: 320, margin: "0 auto 28px",
-            }}>
-              Submitting projects is exclusively available to members with an active GrowthX membership.
-            </p>
-            <a
-              href="https://growthx.club"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-block", padding: "12px 28px", borderRadius: 10,
-                border: "none", background: C.accent, color: "#fff",
-                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
-                textDecoration: "none", transition: "opacity 0.15s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              Learn about GrowthX
-            </a>
-          </div>
-        </div>
-      )}
 
       {/* ---- SUBMIT FLOW ---- */}
       {showSubmit && (

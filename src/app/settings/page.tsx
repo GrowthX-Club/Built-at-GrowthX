@@ -84,8 +84,7 @@ export default function SettingsPage() {
         if (d.user) {
           const u = normalizeUser(d.user);
           setUser(u);
-          if (u && u.isMembershipActive) loadKeys();
-          else setKeysLoading(false);
+          loadKeys();
         } else {
           setKeysLoading(false);
           openLoginDialog(() => { window.location.reload(); });
@@ -184,42 +183,6 @@ export default function SettingsPage() {
             <div className="skeleton" style={{ height: 17, width: "40%", marginBottom: 12 }} />
             <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 8 }} />
             <div className="skeleton" style={{ height: 14, width: "55%" }} />
-          </div>
-        ) : user && !user.isMembershipActive ? (
-          /* Membership gate */
-          <div className="fade-up stagger-1" style={{
-            padding: "48px 32px", textAlign: "center",
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
-          }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 56, margin: "0 auto 20px",
-              background: C.goldSoft, display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: T.heading,
-            }}>
-              {"\u{1F512}"}
-            </div>
-            <h3 style={{ fontSize: T.subtitle, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 8 }}>
-              Active membership required
-            </h3>
-            <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.5 }}>
-              API key management is available to members with an active GrowthX membership.
-            </p>
-            <a
-              href="https://growthx.club"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "10px 20px", borderRadius: 10,
-                background: C.accent, color: "#fff",
-                fontSize: T.bodySm, fontWeight: 600, fontFamily: "var(--sans)",
-                textDecoration: "none", transition: "opacity 0.12s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              Learn about GrowthX
-            </a>
           </div>
         ) : user ? (
           /* API Keys section */
