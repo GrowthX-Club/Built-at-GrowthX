@@ -178,6 +178,10 @@ export default function AppNav() {
                           <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
+                        <button onClick={() => { setShowProfileMenu(false); router.push("/settings"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: T.body }}>{"\u2699\uFE0F"}</span> Settings
+                        </button>
+                        <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
@@ -239,6 +243,18 @@ export default function AppNav() {
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
                           <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
+                        </button>
+                        <div style={{ height: 1, background: C.borderLight }} />
+                        <button onClick={() => { setShowProfileMenu(false); router.push("/settings"); }} style={{
+                          width: "100%", padding: "12px 16px", border: "none", background: "none",
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
+                          fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
+                          transition: "background 0.1s",
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                        >
+                          <span style={{ fontSize: T.body }}>{"\u2699\uFE0F"}</span> Settings
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
