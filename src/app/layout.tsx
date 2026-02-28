@@ -23,7 +23,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("bx-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem("bx-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}requestAnimationFrame(function(){requestAnimationFrame(function(){document.documentElement.classList.add("ready")})})})()`,
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

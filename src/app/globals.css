@@ -69,6 +69,11 @@ html {
   background: var(--c-bg);
 }
 
+/* Suppress transition flash on initial dark-mode load */
+html:not(.ready) * {
+  transition: none !important;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
