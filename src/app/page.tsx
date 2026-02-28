@@ -491,9 +491,9 @@ function HomePage() {
                         flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                         padding: "8px 12px", borderRadius: 10,
                         minWidth: 48,
-                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
-                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.accent : C.surface,
+                        color: votedIds.includes(p.id) ? C.accentFg : C.text,
                         fontFamily: "var(--sans)",
                         cursor: "pointer",
                         transition: "border 0.25s, background 0.25s, color 0.25s",
@@ -505,7 +505,7 @@ function HomePage() {
                         </svg>
                         <span
                           className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                          style={{ color: C.accentFg, display: "flex", alignItems: "center", justifyContent: "center" }}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
                             <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
@@ -568,10 +568,10 @@ function HomePage() {
                         flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         padding: "7px 14px", borderRadius: 10,
                         minWidth: 72,
-                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.accent : C.surface,
                         fontSize: T.body, fontWeight: 650,
-                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        color: votedIds.includes(p.id) ? C.accentFg : C.text,
                         fontFamily: "var(--sans)",
                         cursor: "pointer",
                         transition: "border 0.25s, background 0.25s, color 0.25s",
@@ -583,7 +583,7 @@ function HomePage() {
                         </svg>
                         <span
                           className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
+                          style={{ color: C.accentFg, display: "flex", alignItems: "center", justifyContent: "center" }}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
                             <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
