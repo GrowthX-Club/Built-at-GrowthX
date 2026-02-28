@@ -134,22 +134,27 @@ body {
   animation: fadeIn 0.3s ease-out both;
 }
 
-/* Ghost chevron — duplicate floats up with non-linear speed and fades */
-@keyframes ghostUp {
-  0%   { transform: translateY(0) scale(1); opacity: 0.85; }
-  100% { transform: translateY(-36px) scale(0.3); opacity: 0; }
+/* Upvote pop — squish then spring overshoot */
+@keyframes vote-pop {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(0.82); }
+  55%  { transform: scale(1.12); }
+  75%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
 }
 
-.vote-ghost {
+.vote-pop-active {
+  animation: vote-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Upvote burst particle dot */
+.vote-burst-dot {
   position: absolute;
-  top: 0;
-  left: 0;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--c-text);
   pointer-events: none;
-  opacity: 0;
-}
-
-.vote-ghost.active {
-  animation: ghostUp 0.6s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.45s ease-out;
 }
 
 

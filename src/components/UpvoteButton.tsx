@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { C, T } from "@/types";
 
 function fmt(n: number) {
@@ -28,7 +28,8 @@ export default function UpvoteButton({
   const [voted, setVoted] = useState(initialVoted);
   const [weighted, setWeighted] = useState(initialWeighted);
   const [loading, setLoading] = useState(false);
-  const [ghostActive, setGhostActive] = useState(false);
+  const [popActive, setPopActive] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const isLarge = size === "large";
 
@@ -46,8 +47,39 @@ export default function UpvoteButton({
       const result = await onVote(projectId);
       if (result) {
         if (result.voted && !voted) {
-          setGhostActive(true);
-          setTimeout(() => setGhostActive(false), 600);
+          setPopActive(true);
+          setTimeout(() => setPopActive(false), 500);
+          // Spawn burst particles portaled to body
+          if (btnRef.current) {
+            const rect = btnRef.current.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const container = document.createElement("div");
+            container.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:9999;`;
+            const dots: HTMLElement[] = [];
+            [0, 55, 110, 170, 230, 300].forEach(deg => {
+              const rad = (deg * Math.PI) / 180;
+              const dist = 44 + Math.random() * 20;
+              const dot = document.createElement("div");
+              dot.className = "vote-burst-dot";
+              dot.style.left = `${cx}px`;
+              dot.style.top = `${cy}px`;
+              dot.style.transform = "translate(-50%, -50%) scale(1)";
+              dot.style.opacity = "1";
+              dot.dataset.tx = `${Math.cos(rad) * dist}`;
+              dot.dataset.ty = `${Math.sin(rad) * dist}`;
+              container.appendChild(dot);
+              dots.push(dot);
+            });
+            document.body.appendChild(container);
+            requestAnimationFrame(() => {
+              dots.forEach(dot => {
+                dot.style.transform = `translate(calc(-50% + ${dot.dataset.tx}px), calc(-50% + ${dot.dataset.ty}px)) scale(0)`;
+                dot.style.opacity = "0";
+              });
+            });
+            setTimeout(() => container.remove(), 550);
+          }
         }
         setVoted(result.voted);
         setWeighted(result.weighted);
@@ -61,7 +93,9 @@ export default function UpvoteButton({
 
   return (
     <button
+      ref={btnRef}
       onClick={handleClick}
+      className={popActive ? "vote-pop-active" : ""}
       style={{
         display: "flex",
         flexDirection: isLarge ? "column" : "row",
@@ -80,19 +114,9 @@ export default function UpvoteButton({
         overflow: "visible",
       }}
     >
-      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: iconSize, height: iconSize, flexShrink: 0 }}>
-        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-        </svg>
-        <span
-          className={`vote-ghost${ghostActive ? " active" : ""}`}
-          style={{ color: C.accentFg, display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
-          <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
-            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
-          </svg>
-        </span>
-      </span>
+      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+        <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+      </svg>
       <span
         style={{
           fontSize: isLarge ? T.subtitle : T.bodySm,
