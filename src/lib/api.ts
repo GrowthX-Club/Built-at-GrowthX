@@ -1,4 +1,7 @@
+import { mockBxApi, mockGxApi } from './mock-api';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
 
 const TOKEN_KEY = 'bx_token';
 
@@ -25,10 +28,18 @@ function authHeaders(init?: RequestInit): RequestInit {
   return { ...init, headers };
 }
 
-export function bxApi(path: string, init?: RequestInit) {
+export function bxApi(path: string, init?: RequestInit): Promise<Response> {
+  if (MOCK_MODE) {
+    const res = mockBxApi(path, init);
+    if (res) return Promise.resolve(res);
+  }
   return fetch(`${API_BASE}/bx${path}`, authHeaders(init));
 }
 
-export function gxApi(path: string, init?: RequestInit) {
+export function gxApi(path: string, init?: RequestInit): Promise<Response> {
+  if (MOCK_MODE) {
+    const res = mockGxApi(path, init);
+    if (res) return Promise.resolve(res);
+  }
   return fetch(`${API_BASE}${path}`, authHeaders(init));
 }
