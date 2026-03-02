@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   C,
   T,
@@ -11,7 +10,6 @@ import {
 } from "@/types";
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
-import { useNavOverride } from "@/context/NavContext";
 
 // ---- Inline Components ----
 
@@ -38,9 +36,7 @@ function formatDate(dateStr: string): string {
 // ---- Main Page ----
 
 export default function SettingsPage() {
-  const router = useRouter();
   const { openLoginDialog } = useLoginDialog();
-  const { setNavOverride, clearNavOverride } = useNavOverride();
 
   // Auth + User
   const [user, setUser] = useState<BuilderProfile | null>(null);
@@ -65,6 +61,8 @@ export default function SettingsPage() {
   const [revokeTarget, setRevokeTarget] = useState<BxApiKey | null>(null);
   const [revoking, setRevoking] = useState(false);
 
+  // OpenClaw guide
+  const [guideExpanded, setGuideExpanded] = useState(false);
 
   // ---- Data loading ----
 
@@ -86,8 +84,7 @@ export default function SettingsPage() {
         if (d.user) {
           const u = normalizeUser(d.user);
           setUser(u);
-          if (u && u.isMembershipActive) loadKeys();
-          else setKeysLoading(false);
+          loadKeys();
         } else {
           setKeysLoading(false);
           openLoginDialog(() => { window.location.reload(); });
@@ -98,12 +95,6 @@ export default function SettingsPage() {
       })
       .finally(() => setUserLoading(false));
   }, [loadKeys, openLoginDialog]);
-
-  // Nav override
-  useEffect(() => {
-    setNavOverride({ title: "Settings", backHref: "/" });
-    return () => clearNavOverride();
-  }, [setNavOverride, clearNavOverride]);
 
   // ---- Handlers ----
 
@@ -192,42 +183,6 @@ export default function SettingsPage() {
             <div className="skeleton" style={{ height: 17, width: "40%", marginBottom: 12 }} />
             <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 8 }} />
             <div className="skeleton" style={{ height: 14, width: "55%" }} />
-          </div>
-        ) : user && !user.isMembershipActive ? (
-          /* Membership gate */
-          <div className="fade-up stagger-1" style={{
-            padding: "48px 32px", textAlign: "center",
-            background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
-          }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 56, margin: "0 auto 20px",
-              background: C.goldSoft, display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: T.heading,
-            }}>
-              {"\u{1F512}"}
-            </div>
-            <h3 style={{ fontSize: T.subtitle, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 8 }}>
-              Active membership required
-            </h3>
-            <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.5 }}>
-              API key management is available to members with an active GrowthX membership.
-            </p>
-            <a
-              href="https://growthx.club"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "10px 20px", borderRadius: 10,
-                background: C.accent, color: C.accentFg,
-                fontSize: T.bodySm, fontWeight: 600, fontFamily: "var(--sans)",
-                textDecoration: "none", transition: "opacity 0.12s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-            >
-              Learn about GrowthX
-            </a>
           </div>
         ) : user ? (
           /* API Keys section */
