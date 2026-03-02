@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   C,
@@ -18,6 +19,7 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextEditor from "@/components/RichTextEditor";
 import { descriptionCharCount } from "@/lib/editor-utils";
+import ProjectIcon from "@/components/ProjectIcon";
 // ---- UI Components ----
 
 function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string; companyLogo?: string } }) {
@@ -131,6 +133,8 @@ function HomePage() {
   const [userLoaded, setUserLoaded] = useState(false);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(12);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { isMobile, isTablet } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
@@ -146,6 +150,7 @@ function HomePage() {
           .filter((p: Project) => p.enabled !== false);
         list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
+        setVisibleCount(12);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
       })
       .finally(() => setLoading(false));
@@ -170,6 +175,21 @@ function HomePage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + 12);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [visibleCount, projects.length]);
 
   useEffect(() => {
     if (searchParams.get("submit") !== "1" || !userLoaded) return;
@@ -245,7 +265,39 @@ function HomePage() {
     if (result.voted) {
       setVotedIds((ids) => [...ids, projectId]);
       setVoteAnimId(projectId);
-      setTimeout(() => setVoteAnimId(null), 800);
+      setTimeout(() => setVoteAnimId(null), 500);
+      // Spawn burst particles portaled to body
+      const btn = document.querySelector(`[data-vote-id="${projectId}"]`) as HTMLElement;
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const container = document.createElement("div");
+        container.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:9999;`;
+        const dots: HTMLElement[] = [];
+        [0, 55, 110, 170, 230, 300].forEach(deg => {
+          const rad = (deg * Math.PI) / 180;
+          const dist = 44 + Math.random() * 20;
+          const dot = document.createElement("div");
+          dot.className = "vote-burst-dot";
+          dot.style.left = `${cx}px`;
+          dot.style.top = `${cy}px`;
+          dot.style.transform = "translate(-50%, -50%) scale(1)";
+          dot.style.opacity = "1";
+          dot.dataset.tx = `${Math.cos(rad) * dist}`;
+          dot.dataset.ty = `${Math.sin(rad) * dist}`;
+          container.appendChild(dot);
+          dots.push(dot);
+        });
+        document.body.appendChild(container);
+        requestAnimationFrame(() => {
+          dots.forEach(dot => {
+            dot.style.transform = `translate(calc(-50% + ${dot.dataset.tx}px), calc(-50% + ${dot.dataset.ty}px)) scale(0)`;
+            dot.style.opacity = "0";
+          });
+        });
+        setTimeout(() => container.remove(), 550);
+      }
     } else {
       setVotedIds((ids) => ids.filter((id) => id !== projectId));
     }
@@ -322,6 +374,10 @@ function HomePage() {
       setSubmitting(false);
     }
   };
+
+  const regularProjects = projects.filter(p => !p.featured);
+  const visibleProjects = regularProjects.slice(0, visibleCount);
+  const hasMore = visibleCount < regularProjects.length;
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
@@ -433,7 +489,7 @@ function HomePage() {
 
             {/* Project list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-              {projects.map((p, i) => (
+              {visibleProjects.map((p, i) => (
                 <div
                   key={p.id}
                   className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover project-card`}
@@ -441,29 +497,34 @@ function HomePage() {
                   style={{
                     paddingTop: 16, paddingBottom: 16, cursor: "pointer",
                     borderBottom: `1px solid ${C.borderLight}`,
-                    position: "relative", zIndex: projects.length - i,
+                    position: "relative", zIndex: visibleProjects.length - i,
                   }}
                 >
-                  {/* Desktop/tablet: product name + tagline (hidden on mobile via CSS) */}
-                  <div className="desktop-tablet-only-block" style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontSize: T.bodyLg, fontWeight: 560, color: C.text,
-                      fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
-                    }}>
-                      {p.name}
-                    </div>
-                    <div style={{
-                      fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
-                      fontWeight: 400, lineHeight: 1.3,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {p.tagline}
+                  {/* Desktop/tablet: icon + product name + tagline (hidden on mobile via CSS) */}
+                  <div className="desktop-tablet-only-block" style={{ minWidth: 0, alignItems: "center", gap: 12 }}>
+                    <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: T.bodyLg, fontWeight: 560, color: C.text,
+                        fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
+                      }}>
+                        {p.name}
+                      </div>
+                      <div style={{
+                        fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
+                        fontWeight: 400, lineHeight: 1.3,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {p.tagline}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Mobile: name + vote top row */}
+                  {/* Mobile: icon + name + vote top row */}
                   <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+                      <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
+                      <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontSize: T.bodyLg, fontWeight: 560, color: C.text,
                         fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
@@ -476,40 +537,39 @@ function HomePage() {
                       }}>
                         {p.tagline}
                       </div>
+                      </div>
                     </div>
                     <div
+                      data-vote-id={p.id}
                       onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
+                      className={voteAnimId === p.id ? "vote-pop-active" : ""}
                       style={{
                         flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                         padding: "8px 12px", borderRadius: 10,
                         minWidth: 48,
-                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
-                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.accent : C.surface,
+                        color: votedIds.includes(p.id) ? C.accentFg : C.text,
                         fontFamily: "var(--sans)",
                         cursor: "pointer",
                         transition: "border 0.25s, background 0.25s, color 0.25s",
                         position: "relative", overflow: "visible",
                       }}>
-                      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, flexShrink: 0 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                        </svg>
-                        <span
-                          className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
-                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                      </span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                        <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                      </svg>
                       <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.label }}>{p.weighted.toLocaleString()}</span>
                     </div>
                   </div>
 
                   {/* Mobile: builder info horizontal */}
-                  <div className="mobile-only" style={{ alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                  <div className="mobile-only" style={{
+                    alignItems: "center", justifyContent: "space-between", width: "100%",
+                    background: `linear-gradient(135deg, ${C.borderLight}88, ${C.borderLight}44)`,
+                    border: `1px solid ${C.borderLight}`,
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                  }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{
                         width: 14, height: 14, borderRadius: 4,
@@ -549,38 +609,33 @@ function HomePage() {
 {/* Desktop/tablet: votes */}
                   <div className="desktop-tablet-only">
                     <div
+                      data-vote-id={p.id}
                       onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                                              style={{
+                      className={voteAnimId === p.id ? "vote-pop-active" : ""}
+                      style={{
                         flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         padding: "7px 14px", borderRadius: 10,
                         minWidth: 72,
-                        border: votedIds.includes(p.id) ? `1.5px solid ${C.brand}` : `1px solid ${C.border}`,
-                        background: votedIds.includes(p.id) ? C.brandSoft : C.surface,
+                        border: votedIds.includes(p.id) ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
+                        background: votedIds.includes(p.id) ? C.accent : C.surface,
                         fontSize: T.body, fontWeight: 650,
-                        color: votedIds.includes(p.id) ? C.brand : C.text,
+                        color: votedIds.includes(p.id) ? C.accentFg : C.text,
                         fontFamily: "var(--sans)",
                         cursor: "pointer",
                         transition: "border 0.25s, background 0.25s, color 0.25s",
                         position: "relative", overflow: "visible",
                       }}>
-                      <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, flexShrink: 0 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                          <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                        </svg>
-                        <span
-                          className={`vote-ghost${voteAnimId === p.id ? " active" : ""}`}
-                          style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
-                            <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                        <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                      </svg>
                       <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body }}>{p.weighted.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               ))}
+              {hasMore && (
+                <div ref={sentinelRef} style={{ height: 1, width: "100%" }} />
+              )}
             </div>
           </>
         )}
@@ -650,7 +705,7 @@ function HomePage() {
               rel="noopener noreferrer"
               style={{
                 display: "inline-block", padding: "12px 28px", borderRadius: 10,
-                border: "none", background: C.accent, color: "#fff",
+                border: "none", background: C.accent, color: C.accentFg,
                 fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
                 textDecoration: "none", transition: "opacity 0.15s",
               }}
@@ -664,7 +719,7 @@ function HomePage() {
       )}
 
       {/* ---- SUBMIT FLOW ---- */}
-      {showSubmit && (
+      {showSubmit && createPortal(
         <div style={{
           position: "fixed", inset: 0, zIndex: 200,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -1194,7 +1249,7 @@ function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>, document.body
       )}
 
       {/* Sign-in handled via redirect to GrowthX login */}

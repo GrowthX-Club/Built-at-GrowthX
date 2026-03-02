@@ -6,6 +6,72 @@
   --serif: "Newsreader", Georgia, serif;
   --sans: "DM Sans", system-ui, sans-serif;
   --mono: "DM Mono", "JetBrains Mono", monospace;
+
+  /* Color system — light */
+  --c-bg: #F8F7F4;
+  --c-surface: #FFFFFF;
+  --c-surfaceWarm: #FAF9F6;
+  --c-border: #E8E5DE;
+  --c-borderLight: #F0EDE6;
+  --c-text: #181710;
+  --c-textSec: #6B665B;
+  --c-textMute: #A09A8C;
+  --c-accent: #181710;
+  --c-accentSoft: #EDEADE;
+  --c-gold: #B8962E;
+  --c-goldSoft: #FDF8EC;
+  --c-goldBorder: #E8D9A0;
+  --c-green: #2D7A3F;
+  --c-greenSoft: #EDF7F0;
+  --c-blue: #2255CC;
+  --c-blueSoft: #EEF3FF;
+  --c-brand: #0080FF;
+  --c-brandSoft: #EBF4FF;
+  --c-brandBorder: #99CCFF;
+  --c-accentFg: #FFFFFF;
+  --c-navGlass: rgba(248,247,244,0.45);
+  --c-shimmerFrom: #EDEAE4;
+  --c-shimmerVia: #F5F3EE;
+  --c-scrollThumb: #E8E5DE;
+  --c-scrollHover: #A09A8C;
+}
+
+[data-theme="dark"] {
+  --c-bg: #1A1918;
+  --c-surface: #252422;
+  --c-surfaceWarm: #1F1E1C;
+  --c-border: #3A3835;
+  --c-borderLight: #2E2C2A;
+  --c-text: #E8E5DE;
+  --c-textSec: #A09A8C;
+  --c-textMute: #6B665B;
+  --c-accent: #E8E5DE;
+  --c-accentSoft: #2E2C2A;
+  --c-gold: #D4AE3A;
+  --c-goldSoft: #2A2518;
+  --c-goldBorder: #5C4E20;
+  --c-green: #4CAF6A;
+  --c-greenSoft: #1A2E1F;
+  --c-blue: #5588EE;
+  --c-blueSoft: #1A2240;
+  --c-brand: #3399FF;
+  --c-brandSoft: #1A2A40;
+  --c-brandBorder: #2255AA;
+  --c-accentFg: #1A1918;
+  --c-navGlass: rgba(26,25,24,0.78);
+  --c-shimmerFrom: #2E2C2A;
+  --c-shimmerVia: #3A3835;
+  --c-scrollThumb: #3A3835;
+  --c-scrollHover: #6B665B;
+}
+
+html {
+  background: var(--c-bg);
+}
+
+/* Suppress transition flash on initial dark-mode load */
+html:not(.ready) * {
+  transition: none !important;
 }
 
 * {
@@ -24,8 +90,8 @@ a {
 
 body {
   font-family: var(--sans);
-  background: #F8F7F4;
-  color: #181710;
+  background: var(--c-bg);
+  color: var(--c-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -73,22 +139,27 @@ body {
   animation: fadeIn 0.3s ease-out both;
 }
 
-/* Ghost chevron — duplicate floats up with non-linear speed and fades */
-@keyframes ghostUp {
-  0%   { transform: translateY(0) scale(1); opacity: 0.85; }
-  100% { transform: translateY(-36px) scale(0.3); opacity: 0; }
+/* Upvote pop — squish then spring overshoot */
+@keyframes vote-pop {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(0.82); }
+  55%  { transform: scale(1.12); }
+  75%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
 }
 
-.vote-ghost {
+.vote-pop-active {
+  animation: vote-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Upvote burst particle dot */
+.vote-burst-dot {
   position: absolute;
-  top: 0;
-  left: 0;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--c-text);
   pointer-events: none;
-  opacity: 0;
-}
-
-.vote-ghost.active {
-  animation: ghostUp 0.6s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.45s ease-out;
 }
 
 
@@ -104,8 +175,71 @@ body {
 }
 .list-item-hover:hover {
   box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
-  background: #FFFFFF;
+  background: var(--c-surface);
   transform: translateY(-1px);
+}
+/* Submit button — bold animated hover */
+.submit-btn {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: var(--my, 50%);
+  left: var(--mx, 50%);
+  width: 0;
+  height: 0;
+  background: var(--c-accent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), height 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+  z-index: -1;
+}
+.submit-btn:hover::before {
+  width: 400px;
+  height: 400px;
+}
+.submit-btn:hover {
+  border-color: var(--c-accent) !important;
+  color: var(--c-bg) !important;
+  box-shadow: 0 4px 20px rgba(24,23,16,0.22);
+}
+.submit-btn:hover svg {
+  animation: submitPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.submit-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 6px rgba(24,23,16,0.15);
+}
+@keyframes submitPop {
+  0% { transform: rotate(0deg) scale(1); }
+  40% { transform: rotate(180deg) scale(1.3); }
+  100% { transform: rotate(180deg) scale(1); }
+}
+@media (max-width: 640px) {
+  .submit-btn:hover {
+    border-color: inherit !important;
+    color: inherit !important;
+    box-shadow: none;
+    transform: none;
+  }
+  .submit-btn:hover::before {
+    width: 0;
+    height: 0;
+  }
+  .submit-btn:hover svg {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .list-item-hover:hover {
+    box-shadow: none;
+    background: none;
+    transform: none;
+  }
 }
 
 /* Hero title — gradient fill with 3D depth */
@@ -124,7 +258,7 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #EDEAE4 25%, #F5F3EE 50%, #EDEAE4 75%);
+  background: linear-gradient(90deg, var(--c-shimmerFrom) 25%, var(--c-shimmerVia) 50%, var(--c-shimmerFrom) 75%);
   background-size: 800px 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 6px;
@@ -138,15 +272,15 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #E8E5DE;
+  background: var(--c-scrollThumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A09A8C;
+  background: var(--c-scrollHover);
 }
 
 /* Nav spacer — matches nav height per breakpoint */
-.nav-spacer { height: 65px; }
+.nav-spacer { height: 65px; background: var(--c-bg); }
 
 /* ---- Responsive utilities ---- */
 
@@ -212,7 +346,7 @@ body {
 .project-card .mobile-only { display: none; }
 .project-card .desktop-only { display: contents; }
 .project-card .desktop-tablet-only { display: contents; }
-.project-card .desktop-tablet-only-block { display: block; }
+.project-card .desktop-tablet-only-block { display: flex; }
 
 /* Tablet */
 @media (min-width: 641px) and (max-width: 960px) {
@@ -228,6 +362,8 @@ body {
     flex-direction: column;
     align-items: stretch !important;
     gap: 8px;
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
   }
   .project-card .mobile-only { display: flex; }
   .project-card .desktop-only { display: none; }
@@ -276,4 +412,196 @@ body {
   .skeleton-card .desktop-only-flex { display: none; }
   .skeleton-card .desktop-tablet-only { display: none; }
   .skeleton-card .desktop-tablet-only-block { display: none; }
+}
+
+/* ---- Theme transition: light source animation ---- */
+
+/* Tubelight flicker — edges glow first, light fills inward, then catches.
+   Uses gradient backgrounds that snap between states (linear timing).
+   No position/opacity changes — only the background. */
+@keyframes tubelight-flicker {
+  /* Dead */
+  0%   { background: #1A1918; }
+  /* 1st sputter — just the edges glow */
+  4%   { background: linear-gradient(to right, #FFF8E8 0%, #1A1918 18%, #1A1918 82%, #FFF8E8 100%); }
+  6%   { background: #1A1918; }
+  /* 2nd sputter — edges again, slightly wider */
+  14%  { background: linear-gradient(to right, #FFF6E0 0%, #1A1918 22%, #1A1918 78%, #FFF6E0 100%); }
+  16%  { background: #1A1918; }
+  /* Dark gap */
+  24%  { background: #1A1918; }
+  /* 3rd — edges brighter, warmth creeping inward */
+  30%  { background: linear-gradient(to right, #E8DCC0 0%, #3A3020 28%, #3A3020 72%, #E8DCC0 100%); }
+  32%  { background: #1A1918; }
+  /* 4th — light fills from edges, center still dark */
+  40%  { background: linear-gradient(to right, #FFF8E8 0%, #FFF8E8 22%, #1E1D1B 38%, #1E1D1B 62%, #FFF8E8 78%, #FFF8E8 100%); }
+  42%  { background: #1E1D1B; }
+  /* Dark gap */
+  52%  { background: #1A1918; }
+  /* Almost — most of bar lit, just the center gap remaining */
+  60%  { background: linear-gradient(to right, #D0C8A8 0%, #D0C8A8 28%, #2A2520 42%, #2A2520 58%, #D0C8A8 72%, #D0C8A8 100%); }
+  62%  { background: #1A1918; }
+  /* Strong flash — nearly full, center just slightly dimmer */
+  68%  { background: linear-gradient(to right, #FFF8E8 0%, #FFF8E8 35%, #E8DCC0 50%, #FFF8E8 65%, #FFF8E8 100%); }
+  72%  { background: #2A2520; }
+  /* Catches — fully lit */
+  78%  { background: #F8F7F4; }
+  82%  { background: #E8E0D0; }
+  88%  { background: #F8F7F4; }
+  100% { background: #F8F7F4; }
+}
+
+/* Applied to the <nav> — whole bar flickers via background only */
+.nav-flicker-active {
+  animation: tubelight-flicker 800ms linear forwards !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Warm glow spill underneath the nav during flicker */
+@keyframes glow-flicker {
+  0%   { opacity: 0; }
+  4%   { opacity: 0.6; }
+  8%   { opacity: 0.05; }
+  14%  { opacity: 0.7; }
+  18%  { opacity: 0; }
+  24%  { opacity: 0; }
+  30%  { opacity: 0.5; }
+  34%  { opacity: 0.08; }
+  40%  { opacity: 0.6; }
+  44%  { opacity: 0; }
+  52%  { opacity: 0; }
+  60%  { opacity: 0.35; }
+  68%  { opacity: 0.6; }
+  72%  { opacity: 0.15; }
+  78%  { opacity: 0.7; }
+  85%  { opacity: 0.5; }
+  92%  { opacity: 0.7; }
+  100% { opacity: 0.7; }
+}
+
+.tubelight-glow {
+  position: fixed;
+  top: 50px;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  z-index: 49;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 100% at 50% 0%, rgba(255,240,200,0.5) 0%, transparent 80%);
+  animation: glow-flicker 800ms ease-in-out forwards;
+}
+
+@keyframes page-ambient-flicker {
+  0%   { opacity: 0; }
+  4%   { opacity: 0.12; }
+  6%   { opacity: 0; }
+  14%  { opacity: 0.18; }
+  16%  { opacity: 0; }
+  24%  { opacity: 0; }
+  30%  { opacity: 0.15; }
+  32%  { opacity: 0; }
+  40%  { opacity: 0.22; }
+  42%  { opacity: 0; }
+  52%  { opacity: 0; }
+  60%  { opacity: 0.18; }
+  62%  { opacity: 0; }
+  68%  { opacity: 0.28; }
+  72%  { opacity: 0.08; }
+  78%  { opacity: 0.35; }
+  82%  { opacity: 0.15; }
+  88%  { opacity: 0.22; }
+  100% { opacity: 0; }
+}
+
+.page-flicker-active {
+  position: fixed; top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 44; pointer-events: none;
+  background: radial-gradient(ellipse 120% 80% at 50% 0%,
+    rgba(255,248,232,0.9) 0%, rgba(255,240,200,0.5) 30%, transparent 100%);
+  animation: page-ambient-flicker 800ms linear forwards;
+}
+
+/* Fly particles — erratic zig-zag near the tubelight */
+@keyframes fly-buzz {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  8%   { opacity: 0.8; }
+  15%  { transform: translate(8px, -14px); }
+  25%  { transform: translate(-6px, 5px); }
+  35%  { transform: translate(12px, -8px); opacity: 0.9; }
+  45%  { transform: translate(-10px, -12px); }
+  55%  { transform: translate(5px, 10px); opacity: 0.7; }
+  65%  { transform: translate(-8px, -6px); }
+  75%  { transform: translate(6px, 12px); opacity: 0.4; }
+  85%  { transform: translate(-4px, -10px); opacity: 0.15; }
+  100% { transform: translate(0, 0); opacity: 0; }
+}
+
+.fly-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  z-index: 51;
+  pointer-events: none;
+}
+
+.fly-particle {
+  position: absolute;
+  top: 48px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #FFE4A0;
+  box-shadow: 0 0 6px 2px rgba(255,228,160,0.6);
+  animation: fly-buzz 2s ease-in-out forwards;
+}
+
+/* Nav absorb glow — light being "absorbed" into the fixture */
+@keyframes nav-absorb-fade {
+  0%   { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+.nav-absorb-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 65px;
+  z-index: 46;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 120% at 50% 100%, rgba(255,240,200,0.4) 0%, transparent 70%);
+  animation: nav-absorb-fade 400ms ease-out forwards;
+}
+
+/* Mobile adjustments for theme transition */
+@media (max-width: 640px) {
+  .tubelight-glow { top: 45px; height: 55px; }
+  .fly-container { height: 75px; }
+  .fly-particle { top: 42px; }
+  .nav-absorb-glow { height: 60px; }
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .hero-title {
+  background: linear-gradient(180deg, #f0f0f0 0%, #bbb 45%, #e0e0e0 55%, #ccc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 2px 1px rgba(0,0,0,0.3)) drop-shadow(0 0 1px rgba(0,0,0,0.2));
+}
+
+[data-theme="dark"] .built-logo {
+  filter: invert(1) brightness(1.8);
+}
+
+[data-theme="dark"] .project-icon {
+  filter: invert(0.85) hue-rotate(180deg) saturate(1.4);
+}
+
+[data-theme="dark"] .submit-btn:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }

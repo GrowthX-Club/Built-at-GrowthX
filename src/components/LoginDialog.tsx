@@ -498,7 +498,7 @@ function LoginDialogInner() {
               onClick={handleNameContinue}
               style={{
                 width: "100%", padding: "13px 20px", borderRadius: 10,
-                border: "none", background: C.accent, color: "#fff",
+                border: "none", background: C.accent, color: C.accentFg,
                 fontSize: T.body, fontWeight: 600,
                 cursor: (!fullName.trim() || !email.trim()) ? "default" : "pointer",
                 fontFamily: "var(--sans)",
@@ -636,7 +636,7 @@ function LoginDialogInner() {
               disabled={sendDisabled}
               style={{
                 width: "100%", padding: "13px 20px", borderRadius: 10,
-                border: "none", background: C.accent, color: "#fff",
+                border: "none", background: C.accent, color: C.accentFg,
                 fontSize: T.body, fontWeight: 600, cursor: sendDisabled ? "default" : "pointer",
                 fontFamily: "var(--sans)", opacity: sendDisabled ? 0.5 : 1,
                 transition: "opacity 0.15s",
@@ -706,7 +706,7 @@ function LoginDialogInner() {
               disabled={loading || otp.join("").length < 4}
               style={{
                 width: "100%", padding: "13px 20px", borderRadius: 10,
-                border: "none", background: C.accent, color: "#fff",
+                border: "none", background: C.accent, color: C.accentFg,
                 fontSize: T.body, fontWeight: 600,
                 cursor: (loading || otp.join("").length < 4) ? "default" : "pointer",
                 fontFamily: "var(--sans)",

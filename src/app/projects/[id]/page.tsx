@@ -25,6 +25,7 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
+import ProjectIcon from "@/components/ProjectIcon";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -358,7 +359,39 @@ export default function ProjectDetailPage() {
       return;
     }
     setVoteAnim(true);
-    setTimeout(() => setVoteAnim(false), 800);
+    setTimeout(() => setVoteAnim(false), 500);
+    // Burst particles
+    const btn = document.querySelector("[data-vote-detail]") as HTMLElement;
+    if (btn && !hasVoted) {
+      const rect = btn.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const container = document.createElement("div");
+      container.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:9999;`;
+      const dots: HTMLElement[] = [];
+      [0, 55, 110, 170, 230, 300].forEach(deg => {
+        const rad = (deg * Math.PI) / 180;
+        const dist = 44 + Math.random() * 20;
+        const dot = document.createElement("div");
+        dot.className = "vote-burst-dot";
+        dot.style.left = `${cx}px`;
+        dot.style.top = `${cy}px`;
+        dot.style.transform = "translate(-50%, -50%) scale(1)";
+        dot.style.opacity = "1";
+        dot.dataset.tx = `${Math.cos(rad) * dist}`;
+        dot.dataset.ty = `${Math.sin(rad) * dist}`;
+        container.appendChild(dot);
+        dots.push(dot);
+      });
+      document.body.appendChild(container);
+      requestAnimationFrame(() => {
+        dots.forEach(dot => {
+          dot.style.transform = `translate(calc(-50% + ${dot.dataset.tx}px), calc(-50% + ${dot.dataset.ty}px)) scale(0)`;
+          dot.style.opacity = "0";
+        });
+      });
+      setTimeout(() => container.remove(), 550);
+    }
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -490,67 +523,62 @@ export default function ProjectDetailPage() {
         {/* Hero */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
-            <div style={{ flex: 1, paddingTop: 2 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
-                <h1 className="responsive-h1" style={{ fontSize: T.pageTitle, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
-                {p.featured && (
-                  <span style={{
-                    fontSize: T.badge, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
-                    background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
-                    letterSpacing: "0.06em", textTransform: "uppercase",
-                  }}>{"\u2726"} Featured</span>
-                )}
-              </div>
-              <p style={{ fontSize: T.subtitle, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 10px" }}>{p.tagline}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
-                <span>{p.date}</span>
-                {p.buildathon && (
-                  <>
-                    <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>
-                    <span>{p.buildathon}</span>
-                  </>
-                )}
+            <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 16 }}>
+              <ProjectIcon title={p.name} description={p.tagline} size={72} iconId={p.icon} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 2, flexWrap: "wrap" }}>
+                  <h1 className="responsive-h1" style={{ fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
+                  {p.featured && (
+                    <span style={{
+                      fontSize: T.badge, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
+                      background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
+                      letterSpacing: "0.06em", textTransform: "uppercase",
+                    }}>{"\u2726"} Featured</span>
+                  )}
+                </div>
+                <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 6px" }}>{p.tagline}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
+                  <span>{p.date}</span>
+                  {p.buildathon && (
+                    <>
+                      <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>
+                      <span>{p.buildathon}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             <div style={{ flexShrink: 0, display: "flex", gap: 8, ...(isMobile ? { width: "100%" } : {}) }}>
-              <button onClick={handleVote} style={{
+              <button data-vote-detail onClick={handleVote}
+              className={voteAnim ? "vote-pop-active" : ""}
+              style={{
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "10px 20px", borderRadius: 10,
-                border: hasVoted ? `1.5px solid ${C.brand}` : `1.5px solid ${C.accent}`,
-                background: hasVoted ? C.brandSoft : C.surface,
+                border: hasVoted ? `1.5px solid ${C.accent}` : `1.5px solid ${C.accent}`,
+                background: hasVoted ? C.accent : C.surface,
                 cursor: "pointer", fontSize: T.bodyLg, fontWeight: 650,
-                fontFamily: "var(--sans)", color: hasVoted ? C.brand : C.text,
+                fontFamily: "var(--sans)", color: hasVoted ? C.accentFg : C.text,
                 transition: "border 0.25s, background 0.25s, color 0.25s",
                 position: "relative", overflow: "visible",
               }}
-              onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.brand; e.currentTarget.style.borderColor = C.brand; e.currentTarget.style.color = "#fff"; }}}
+              onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.accentFg; }}}
               onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}}
               >
-                <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, flexShrink: 0 }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                    <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                  </svg>
-                  <span
-                    className={`vote-ghost${voteAnim ? " active" : ""}`}
-                    style={{ color: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block" }}>
-                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                </svg>
                 <span style={{ lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
               </button>
               {p.url && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
                   padding: "10px 24px", borderRadius: 10,
-                  border: "none", background: C.accent, color: "#fff",
+                  border: `1px solid ${C.border}`, background: C.surface, color: C.text,
                   fontSize: T.body, fontWeight: 600, cursor: "pointer",
-                  fontFamily: "var(--sans)", transition: "opacity 0.15s",
+                  fontFamily: "var(--sans)", transition: "border-color 0.15s, background 0.15s",
                   textDecoration: "none", display: "inline-flex", alignItems: "center",
                 }}
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}
                 >
                   Try it {"\u2192"}
                 </a>
@@ -757,7 +785,7 @@ export default function ProjectDetailPage() {
                     disabled={postingComment}
                     style={{
                       padding: "7px 18px", borderRadius: 8,
-                      border: "none", background: C.accent, color: "#fff",
+                      border: "none", background: C.accent, color: C.accentFg,
                       fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
                       fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                     }}
@@ -895,7 +923,7 @@ export default function ProjectDetailPage() {
                                   disabled={postingComment}
                                   style={{
                                     padding: "7px 14px", borderRadius: 8,
-                                    border: "none", background: C.accent, color: "#fff",
+                                    border: "none", background: C.accent, color: C.accentFg,
                                     fontSize: T.label, fontWeight: 600, cursor: "pointer",
                                     fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                                     whiteSpace: "nowrap",

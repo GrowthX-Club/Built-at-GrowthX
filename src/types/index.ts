@@ -6,28 +6,29 @@ export const T = {
   pageTitle: 40, display: 44,
 } as const;
 
-// ---- Color system (warm palette) ----
+// ---- Color system (warm palette, theme-aware via CSS custom properties) ----
 export const C = {
-  bg: "#F8F7F4",
-  surface: "#FFFFFF",
-  surfaceWarm: "#FAF9F6",
-  border: "#E8E5DE",
-  borderLight: "#F0EDE6",
-  text: "#181710",
-  textSec: "#6B665B",
-  textMute: "#A09A8C",
-  accent: "#181710",
-  accentSoft: "#EDEADE",
-  gold: "#B8962E",
-  goldSoft: "#FDF8EC",
-  goldBorder: "#E8D9A0",
-  green: "#2D7A3F",
-  greenSoft: "#EDF7F0",
-  blue: "#2255CC",
-  blueSoft: "#EEF3FF",
-  brand: "#0080FF",
-  brandSoft: "#EBF4FF",
-  brandBorder: "#99CCFF",
+  bg: "var(--c-bg)",
+  surface: "var(--c-surface)",
+  surfaceWarm: "var(--c-surfaceWarm)",
+  border: "var(--c-border)",
+  borderLight: "var(--c-borderLight)",
+  text: "var(--c-text)",
+  textSec: "var(--c-textSec)",
+  textMute: "var(--c-textMute)",
+  accent: "var(--c-accent)",
+  accentSoft: "var(--c-accentSoft)",
+  accentFg: "var(--c-accentFg)",
+  gold: "var(--c-gold)",
+  goldSoft: "var(--c-goldSoft)",
+  goldBorder: "var(--c-goldBorder)",
+  green: "var(--c-green)",
+  greenSoft: "var(--c-greenSoft)",
+  blue: "var(--c-blue)",
+  blueSoft: "var(--c-blueSoft)",
+  brand: "var(--c-brand)",
+  brandSoft: "var(--c-brandSoft)",
+  brandBorder: "var(--c-brandBorder)",
 };
 
 // ---- Custom emoji reactions ----
@@ -103,6 +104,7 @@ export interface Project {
   weighted: number;
   raw: number;
   category: string;
+  icon?: string;
   stack: string[];
   buildathon: string | null;
   heroColor: string;
@@ -333,6 +335,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     weighted: (p.weighted ?? p.weighted_votes ?? 0) as number,
     raw: (p.raw ?? p.raw_votes ?? 0) as number,
     category: (p.category ?? '') as string,
+    icon: (p.icon as string) || undefined,
     stack: (p.stack ?? []) as string[],
     buildathon: (p.buildathon ?? null) as string | null,
     heroColor: ((p.heroColor ?? p.hero_color ?? '#2255CC') as string),
