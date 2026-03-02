@@ -174,7 +174,7 @@ function HomePage() {
           return next;
         });
         const newVoted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
-        if (newVoted.length) setVotedIds((prev) => [...new Set([...prev, ...newVoted])]);
+        if (newVoted.length) setVotedIds((prev) => Array.from(new Set([...prev, ...newVoted])));
       })
       .finally(() => setLoadingMore(false));
   }, [loadingMore, hasMore, projects.length]);
