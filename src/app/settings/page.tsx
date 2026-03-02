@@ -196,7 +196,7 @@ export default function SettingsPage() {
                 onClick={() => { setShowCreateModal(true); setCreateError(""); setNewKeyName(""); }}
                 style={{
                   padding: "8px 16px", borderRadius: 10,
-                  background: C.accent, color: "#fff", border: "none",
+                  background: C.accent, color: C.accentFg, border: "none",
                   fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
                   fontFamily: "var(--sans)", display: "flex", alignItems: "center", gap: 6,
                   transition: "opacity 0.12s",
@@ -292,49 +292,57 @@ export default function SettingsPage() {
 
             {/* OpenClaw Setup Guide */}
             <div style={{
-              marginTop: 32, background: C.surface,
+              marginTop: 32, padding: "24px 28px", background: C.accentSoft,
               border: `1px solid ${C.border}`, borderRadius: 14,
-              overflow: "hidden",
             }} className="fade-up stagger-3">
-              <button
-                onClick={() => setGuideExpanded(v => !v)}
-                style={{
-                  width: "100%", padding: "16px 20px", border: "none", background: "none",
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
-                  fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)",
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: T.bodyLg }}>{"\u{1F99E}"}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+                <span style={{ fontSize: T.subtitle }}>{"\u{1F99E}"}</span>
+                <span style={{ fontSize: T.bodyLg, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>
                   Connect with OpenClaw
                 </span>
-                <span style={{
-                  fontSize: T.badge, color: C.textMute,
-                  transform: guideExpanded ? "rotate(180deg)" : "none",
-                  transition: "transform 0.2s",
-                }}>
-                  {"\u25BC"}
-                </span>
-              </button>
-              {guideExpanded && (
-                <div style={{ padding: "0 20px 20px", borderTop: `1px solid ${C.borderLight}` }}>
-                  <ol style={{ margin: "16px 0 0", paddingLeft: 20, fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.8 }}>
-                    <li>Install the <span style={{ fontFamily: "var(--mono)", fontSize: T.bodySm, background: C.bg, padding: "2px 6px", borderRadius: 4 }}>growthx-bx-submit</span> skill on OpenClaw</li>
-                    <li>
-                      Set these environment variables in your OpenClaw config:
-                      <div style={{
-                        marginTop: 8, padding: "12px 14px", background: C.bg,
-                        borderRadius: 8, fontFamily: "var(--mono)", fontSize: T.bodySm,
-                        lineHeight: 1.8, color: C.text, border: `1px solid ${C.borderLight}`,
-                      }}>
-                        <div>GROWTHX_API_KEY = <span style={{ color: C.textMute }}>&lt;your key&gt;</span></div>
-                        <div>GROWTHX_API_URL = <span style={{ color: C.blue }}>https://api.growthx.club</span></div>
-                      </div>
-                    </li>
-                    <li>Ask OpenClaw: <span style={{ fontStyle: "italic", color: C.text }}>&quot;Push my project to Built at GrowthX&quot;</span></li>
-                  </ol>
+              </div>
+
+              {[
+                {
+                  title: "Install the skill",
+                  desc: <>Ask your OpenClaw to setup the Built at GrowthX skill via{" "}<a href="https://github.com/GrowthX-Club/Built-at-growthx-Skill" target="_blank" rel="noopener noreferrer" style={{ color: C.blue, textDecoration: "none", fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"} onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>github.com/GrowthX-Club/Built-at-growthx-Skill</a></>,
+                },
+                {
+                  title: "Paste your API key",
+                  desc: <>Once the skill is setup, it will ask you for an API key {"\u2014"} paste it in OpenClaw</>,
+                },
+                {
+                  title: "You\u2019re all set",
+                  desc: <>It will take care of the rest</>,
+                  check: true,
+                },
+              ].map((step, i, arr) => (
+                <div key={i} style={{ display: "flex", gap: 16 }}>
+                  {/* Circle + line column */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 14, flexShrink: 0,
+                      background: C.accent, color: C.accentFg,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: step.check ? 14 : 13, fontWeight: 700, fontFamily: "var(--sans)",
+                    }}>
+                      {step.check ? "\u2713" : i + 1}
+                    </div>
+                    {i < arr.length - 1 && (
+                      <div style={{ width: 2, flex: 1, background: C.borderLight, marginTop: 4, marginBottom: 4, borderRadius: 1 }} />
+                    )}
+                  </div>
+                  {/* Content */}
+                  <div style={{ paddingBottom: i < arr.length - 1 ? 20 : 0, paddingTop: 3, minWidth: 0 }}>
+                    <div style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
+                      {step.title}
+                    </div>
+                    <div style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.55, marginTop: 4 }}>
+                      {step.desc}
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
           </>
         ) : null}
