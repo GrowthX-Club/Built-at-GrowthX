@@ -140,7 +140,7 @@ export default function ProjectsPage() {
 
 
   const loadProjects = useCallback(() => {
-    bxApi("/projects")
+    bxApi("/projects?limit=100")
       .then((r) => r.json())
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
