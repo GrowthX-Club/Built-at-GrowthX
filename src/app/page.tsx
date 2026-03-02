@@ -135,6 +135,7 @@ function HomePage() {
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingMoreRef = useRef(false);
   const PAGE_SIZE = 20;
   const { isMobile, isTablet } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
@@ -157,7 +158,8 @@ function HomePage() {
   }, []);
 
   const loadMore = useCallback(() => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMoreRef.current || !hasMore) return;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     bxApi(`/projects?limit=${PAGE_SIZE}&offset=${projects.length}`)
       .then((r) => r.json())
@@ -169,15 +171,17 @@ function HomePage() {
           return;
         }
         setProjects((prev) => {
-          const next = [...prev, ...list];
+          const seen = new Set(prev.map((p) => p.id));
+          const deduped = list.filter((p: Project) => !seen.has(p.id));
+          const next = [...prev, ...deduped];
           setHasMore(next.length < (d.totalCount || 0));
           return next;
         });
         const newVoted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
         if (newVoted.length) setVotedIds((prev) => Array.from(new Set([...prev, ...newVoted])));
       })
-      .finally(() => setLoadingMore(false));
-  }, [loadingMore, hasMore, projects.length]);
+      .finally(() => { loadingMoreRef.current = false; setLoadingMore(false); });
+  }, [hasMore, projects.length]);
 
   const loadUser = useCallback(() => {
     bxApi("/me")
