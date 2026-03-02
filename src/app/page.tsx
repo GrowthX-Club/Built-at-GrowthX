@@ -128,12 +128,14 @@ function HomePage() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
-  const [visibleCount, setVisibleCount] = useState(12);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const PAGE_SIZE = 20;
   const { isMobile, isTablet } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
@@ -142,18 +144,40 @@ function HomePage() {
   const collabDropdownRef = useRef<HTMLDivElement>(null);
 
   const loadProjects = useCallback(() => {
-    bxApi("/projects")
+    bxApi(`/projects?limit=${PAGE_SIZE}&offset=0`)
       .then((r) => r.json())
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
           .filter((p: Project) => p.enabled !== false);
-        list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
-        setVisibleCount(12);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
+        setHasMore(PAGE_SIZE < (d.totalCount || 0));
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    bxApi(`/projects?limit=${PAGE_SIZE}&offset=${projects.length}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
+          .filter((p: Project) => p.enabled !== false);
+        if (list.length === 0) {
+          setHasMore(false);
+          return;
+        }
+        setProjects((prev) => {
+          const next = [...prev, ...list];
+          setHasMore(next.length < (d.totalCount || 0));
+          return next;
+        });
+        const newVoted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
+        if (newVoted.length) setVotedIds((prev) => [...new Set([...prev, ...newVoted])]);
+      })
+      .finally(() => setLoadingMore(false));
+  }, [loadingMore, hasMore, projects.length]);
 
   const loadUser = useCallback(() => {
     bxApi("/me")
@@ -180,15 +204,13 @@ function HomePage() {
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => prev + 12);
-        }
+        if (entries[0].isIntersecting) loadMore();
       },
       { rootMargin: "200px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [visibleCount, projects.length]);
+  }, [loadMore]);
 
   useEffect(() => {
     if (searchParams.get("submit") !== "1" || !userLoaded) return;
@@ -371,8 +393,6 @@ function HomePage() {
   };
 
   const regularProjects = projects.filter(p => !p.featured);
-  const visibleProjects = regularProjects.slice(0, visibleCount);
-  const hasMore = visibleCount < regularProjects.length;
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
@@ -484,7 +504,7 @@ function HomePage() {
 
             {/* Project list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-              {visibleProjects.map((p, i) => (
+              {regularProjects.map((p, i) => (
                 <div
                   key={p.id}
                   className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover project-card`}
@@ -492,7 +512,7 @@ function HomePage() {
                   style={{
                     paddingTop: 16, paddingBottom: 16, cursor: "pointer",
                     borderBottom: `1px solid ${C.borderLight}`,
-                    position: "relative", zIndex: visibleProjects.length - i,
+                    position: "relative", zIndex: regularProjects.length - i,
                   }}
                 >
                   {/* Desktop/tablet: icon + product name + tagline (hidden on mobile via CSS) */}
@@ -629,7 +649,11 @@ function HomePage() {
                 </div>
               ))}
               {hasMore && (
-                <div ref={sentinelRef} style={{ height: 1, width: "100%" }} />
+                <div ref={sentinelRef} style={{ padding: "24px 0", display: "flex", justifyContent: "center" }}>
+                  {loadingMore && (
+                    <div style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)" }}>Loading more projects…</div>
+                  )}
+                </div>
               )}
             </div>
           </>

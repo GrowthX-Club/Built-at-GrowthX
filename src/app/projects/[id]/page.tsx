@@ -330,7 +330,7 @@ export default function ProjectDetailPage() {
     bxApi("/me")
       .then((r) => r.json())
       .then((d) => setUser(normalizeUser(d.user)));
-    bxApi("/projects")
+    bxApi("/projects?limit=100")
       .then((r) => r.json())
       .then((d) => {
         const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
@@ -347,7 +347,7 @@ export default function ProjectDetailPage() {
 
   const reloadUser = () => {
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
-    bxApi("/projects").then((r) => r.json()).then((d) => {
+    bxApi("/projects?limit=100").then((r) => r.json()).then((d) => {
       const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
       setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
     });

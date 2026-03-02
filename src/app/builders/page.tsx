@@ -119,7 +119,7 @@ export default function BuildersPage() {
     setSelectedBuilder(b);
     setBuilderProjects([]);
     setLoadingProjects(true);
-    bxApi("/projects")
+    bxApi("/projects?limit=100")
       .then(r => r.json())
       .then(d => {
         const all = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
