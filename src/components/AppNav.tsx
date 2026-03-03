@@ -57,7 +57,7 @@ export default function AppNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { openLoginDialog } = useLoginDialog();
-  const { override } = useNavOverride();
+  const { override, voteState, showVoteInNav } = useNavOverride();
   const { isMobile, isTablet } = useResponsive();
   const { theme, triggerFlip, isAnimating } = useTheme();
 
@@ -168,17 +168,38 @@ export default function AppNav() {
               )}
               <BuiltLogo height={36} onClick={() => router.push("/")} />
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button
-                  onClick={() => router.push("/?submit=1")}
-                  style={{
-                    width: 32, height: 32, borderRadius: 32,
-                    border: `1px solid ${C.border}`, background: C.surface,
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "all 0.12s", flexShrink: 0,
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
+                {voteState && showVoteInNav ? (
+                  <button
+                    onClick={voteState.onVote}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "5px 12px", borderRadius: 8,
+                      border: `1.5px solid ${C.accent}`,
+                      background: voteState.hasVoted ? C.accent : C.surface,
+                      cursor: "pointer", fontSize: T.label, fontWeight: 650,
+                      fontFamily: "var(--sans)",
+                      color: voteState.hasVoted ? C.accentFg : C.text,
+                      transition: "all 0.25s",
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                    </svg>
+                    <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => router.push("/?submit=1")}
+                    style={{
+                      width: 32, height: 32, borderRadius: 32,
+                      border: `1px solid ${C.border}`, background: C.surface,
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.12s", flexShrink: 0,
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                )}
                 {userLoading ? (
                   <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
                 ) : user ? (
@@ -372,8 +393,32 @@ export default function AppNav() {
                     }}>
                       {override.title}
                     </span>
-                    {/* Spacer to balance the back button for centering */}
-                    <div style={{ width: 60, flexShrink: 0 }} />
+                    {/* Vote button or spacer */}
+                    <div style={{ width: voteState ? "auto" : 60, flexShrink: 0, display: "flex", alignItems: "center" }}>
+                      {voteState && (
+                        <button
+                          onClick={voteState.onVote}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "6px 14px", borderRadius: 8,
+                            border: `1.5px solid ${C.accent}`,
+                            background: voteState.hasVoted ? C.accent : C.surface,
+                            cursor: "pointer", fontSize: T.bodySm, fontWeight: 650,
+                            fontFamily: "var(--sans)",
+                            color: voteState.hasVoted ? C.accentFg : C.text,
+                            transition: "all 0.3s ease",
+                            opacity: showVoteInNav ? 1 : 0,
+                            transform: showVoteInNav ? "translateY(0)" : "translateY(-4px)",
+                            pointerEvents: showVoteInNav ? "auto" : "none",
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                            <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                          </svg>
+                          <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <>

@@ -83,8 +83,10 @@ export default function RichTextDisplay({ description }: RichTextDisplayProps) {
             fontStyle: "italic",
           },
           ".link": {
-            color: C.blue,
-            textDecoration: "underline",
+            color: "inherit",
+            textDecoration: "none",
+            pointerEvents: "none" as const,
+            cursor: "text",
           },
           ".text-bold": { fontWeight: 600 },
           ul: { listStyle: "initial" },
