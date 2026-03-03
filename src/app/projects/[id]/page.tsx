@@ -301,7 +301,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
 export default function ProjectDetailPage() {
   const params = useParams();
   const { openLoginDialog } = useLoginDialog();
-  const { setNavOverride, clearNavOverride } = useNavOverride();
+  const { setNavOverride, clearNavOverride, setVoteState, setShowVoteInNav } = useNavOverride();
   const { isMobile } = useResponsive();
   const [project, setProject] = useState<Project | null>(null);
   const [threads, setThreads] = useState<ThreadData[]>([]);
@@ -313,6 +313,7 @@ export default function ProjectDetailPage() {
   const [postingComment, setPostingComment] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const voteBtnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bxApi(`/projects/${params.id}`)
@@ -344,6 +345,27 @@ export default function ProjectDetailPage() {
     }
     return () => clearNavOverride();
   }, [project, setNavOverride, clearNavOverride]);
+
+  // Keep nav vote state in sync
+  const handleVoteRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (project) {
+      setVoteState({ hasVoted, count: project.weighted, onVote: () => handleVoteRef.current() });
+    }
+    return () => setVoteState(null);
+  }, [project, hasVoted, setVoteState]);
+
+  // IntersectionObserver: show vote button in nav when hero vote button scrolls out
+  useEffect(() => {
+    const el = voteBtnRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowVoteInNav(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => { observer.disconnect(); setShowVoteInNav(false); };
+  }, [project, setShowVoteInNav]);
 
   const reloadUser = () => {
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
@@ -404,6 +426,7 @@ export default function ProjectDetailPage() {
     const r = result.raw ?? result.raw_votes ?? result.rawVotes ?? 0;
     setProject((p) => p ? { ...p, weighted: w, raw: r } : p);
   };
+  handleVoteRef.current = handleVote;
 
   const handlePostComment = async () => {
     if (!comment.trim() || postingComment) return;
@@ -548,7 +571,7 @@ export default function ProjectDetailPage() {
                 </div>
               </div>
             </div>
-            <div style={{ flexShrink: 0, display: "flex", gap: 8, ...(isMobile ? { width: "100%" } : {}) }}>
+            <div ref={voteBtnRef} style={{ flexShrink: 0, display: "flex", gap: 8, ...(isMobile ? { width: "100%" } : {}) }}>
               <button data-vote-detail onClick={handleVote}
               className={voteAnim ? "vote-pop-active" : ""}
               style={{

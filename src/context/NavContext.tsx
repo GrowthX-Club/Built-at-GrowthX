@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useRef } from "react";
+
+interface VoteState {
+  hasVoted: boolean;
+  count: number;
+  onVote: () => void;
+}
 
 interface NavOverride {
   title: string;
@@ -11,16 +17,27 @@ interface NavContextValue {
   override: NavOverride | null;
   setNavOverride: (override: NavOverride) => void;
   clearNavOverride: () => void;
+  voteState: VoteState | null;
+  showVoteInNav: boolean;
+  setVoteState: (state: VoteState | null) => void;
+  setShowVoteInNav: (show: boolean) => void;
 }
 
 const NavContext = createContext<NavContextValue>({
   override: null,
   setNavOverride: () => {},
   clearNavOverride: () => {},
+  voteState: null,
+  showVoteInNav: false,
+  setVoteState: () => {},
+  setShowVoteInNav: () => {},
 });
 
 export function NavProvider({ children }: { children: React.ReactNode }) {
   const [override, setOverride] = useState<NavOverride | null>(null);
+  const [voteState, setVoteStateRaw] = useState<VoteState | null>(null);
+  const [showVoteInNav, setShowVoteInNav] = useState(false);
+  const voteStateRef = useRef<VoteState | null>(null);
 
   const setNavOverride = useCallback((o: NavOverride) => {
     setOverride(o);
@@ -28,10 +45,18 @@ export function NavProvider({ children }: { children: React.ReactNode }) {
 
   const clearNavOverride = useCallback(() => {
     setOverride(null);
+    setVoteStateRaw(null);
+    voteStateRef.current = null;
+    setShowVoteInNav(false);
+  }, []);
+
+  const setVoteState = useCallback((state: VoteState | null) => {
+    voteStateRef.current = state;
+    setVoteStateRaw(state);
   }, []);
 
   return (
-    <NavContext.Provider value={{ override, setNavOverride, clearNavOverride }}>
+    <NavContext.Provider value={{ override, setNavOverride, clearNavOverride, voteState, showVoteInNav, setVoteState, setShowVoteInNav }}>
       {children}
     </NavContext.Provider>
   );
