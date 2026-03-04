@@ -940,7 +940,7 @@ export default function ProjectDetailPage() {
                 <textarea
                   ref={commentTextareaRef}
                   value={comment}
-                  onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart, setComment, "comment")}
+                  onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart ?? e.target.value.length, setComment, "comment")}
                   placeholder="Ask a question or share your thoughts..."
                   onKeyDown={e => {
                     if (e.key === "Escape" && mentionQuery !== null) { e.stopPropagation(); setMentionQuery(null); setMentionResults([]); return; }
@@ -1091,7 +1091,7 @@ export default function ProjectDetailPage() {
                               <input
                                 ref={replyInputRef}
                                 value={replyText}
-                                onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart, setReplyText, "reply")}
+                                onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart ?? e.target.value.length, setReplyText, "reply")}
                                 placeholder="Write a reply..."
                                 onKeyDown={e => {
                                   if (e.key === "Escape" && mentionQuery !== null) { e.stopPropagation(); setMentionQuery(null); setMentionResults([]); return; }
