@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import {
   C,
@@ -40,6 +40,24 @@ function timeAgo(dateStr: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function renderContentWithMentions(content: string): React.ReactNode {
+  const parts = content.split(/(@\S+)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("@") && part.length > 1) {
+      return (
+        <span key={i} style={{
+          color: C.blue, fontWeight: 600,
+          background: C.blueSoft, borderRadius: 4,
+          padding: "0 3px",
+        }}>
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
 }
 
 function Av({ initials, size = 32, highlight, role, src }: { initials: string; size?: number; highlight?: boolean; role?: string; src?: string }) {
@@ -315,6 +333,16 @@ export default function ProjectDetailPage() {
   const [replyText, setReplyText] = useState("");
   const voteBtnRef = useRef<HTMLDivElement>(null);
 
+  // @mention state
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionResults, setMentionResults] = useState<Array<{_id: string; name: string; avatar: string; avatarUrl?: string; company?: string}>>([]);
+  const [mentionLoading, setMentionLoading] = useState(false);
+  const [mentionTarget, setMentionTarget] = useState<"comment" | "reply" | null>(null);
+  const [pendingMentions, setPendingMentions] = useState<Array<{userId: string; name: string}>>([]);
+  const mentionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const replyInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     bxApi(`/projects/${params.id}`)
       .then((r) => r.json())
@@ -355,8 +383,9 @@ export default function ProjectDetailPage() {
     return () => setVoteState(null);
   }, [project, hasVoted, setVoteState]);
 
-  // IntersectionObserver: show vote button in nav when hero vote button scrolls out
+  // IntersectionObserver: show vote button in nav when hero vote button scrolls out (desktop only)
   useEffect(() => {
+    if (isMobile) { setShowVoteInNav(false); return; }
     const el = voteBtnRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -365,7 +394,7 @@ export default function ProjectDetailPage() {
     );
     observer.observe(el);
     return () => { observer.disconnect(); setShowVoteInNav(false); };
-  }, [project, setShowVoteInNav]);
+  }, [project, setShowVoteInNav, isMobile]);
 
   const reloadUser = () => {
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
@@ -383,7 +412,7 @@ export default function ProjectDetailPage() {
     setVoteAnim(true);
     setTimeout(() => setVoteAnim(false), 500);
     // Burst particles
-    const btn = document.querySelector("[data-vote-detail]") as HTMLElement;
+    const btn = document.querySelector(isMobile ? "[data-vote-float]" : "[data-vote-detail]") as HTMLElement;
     if (btn && !hasVoted) {
       const rect = btn.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
@@ -439,10 +468,11 @@ export default function ProjectDetailPage() {
       const res = await bxApi("/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: params.id, content: comment.trim() }),
+        body: JSON.stringify({ projectId: params.id, content: comment.trim(), mentions: pendingMentions.length > 0 ? pendingMentions : undefined }),
       });
       if (res.ok) {
         setComment("");
+        setPendingMentions([]);
         reloadComments();
       }
     } finally {
@@ -480,16 +510,138 @@ export default function ProjectDetailPage() {
       const res = await bxApi("/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: params.id, content: replyText.trim(), parentId }),
+        body: JSON.stringify({ projectId: params.id, content: replyText.trim(), parentId, mentions: pendingMentions.length > 0 ? pendingMentions : undefined }),
       });
       if (res.ok) {
         setReplyText("");
         setReplyingTo(null);
+        setPendingMentions([]);
         reloadComments();
       }
     } finally {
       setPostingComment(false);
     }
+  };
+
+  // @mention helpers
+  const handleMentionSearch = (query: string, target: "comment" | "reply") => {
+    setMentionTarget(target);
+    if (query.length < 1) { setMentionQuery(null); setMentionResults([]); return; }
+    setMentionQuery(query);
+    if (mentionTimer.current) clearTimeout(mentionTimer.current);
+    if (query.length < 2) { setMentionResults([]); return; }
+    setMentionLoading(true);
+    mentionTimer.current = setTimeout(() => {
+      bxApi(`/users/search?q=${encodeURIComponent(query)}`)
+        .then(r => r.json())
+        .then(d => {
+          setMentionResults((d.users || []).slice(0, 5).map((u: Record<string, unknown>) => ({
+            _id: u._id as string,
+            name: u.name as string,
+            avatar: (u.initials ?? u.avatar ?? "?") as string,
+            avatarUrl: (u.avatar_url ?? undefined) as string | undefined,
+            company: (u.company ?? "") as string,
+          })));
+        })
+        .finally(() => setMentionLoading(false));
+    }, 200);
+  };
+
+  const handleTextChangeWithMention = (
+    value: string,
+    cursorPos: number,
+    setter: (v: string) => void,
+    target: "comment" | "reply"
+  ) => {
+    setter(value);
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const mentionMatch = textBeforeCursor.match(/(^|\s)@([^\s@]*)$/);
+    if (mentionMatch) {
+      handleMentionSearch(mentionMatch[2], target);
+    } else {
+      setMentionQuery(null);
+      setMentionResults([]);
+    }
+  };
+
+  const handlePickMention = (pickedUser: { _id: string; name: string }) => {
+    const insertName = pickedUser.name;
+    if (mentionTarget === "comment") {
+      const el = commentTextareaRef.current;
+      if (!el) return;
+      const cursorPos = el.selectionStart ?? comment.length;
+      const textBeforeCursor = comment.slice(0, cursorPos);
+      const mentionStart = textBeforeCursor.lastIndexOf("@");
+      const newValue = comment.slice(0, mentionStart) + "@" + insertName + " " + comment.slice(cursorPos);
+      setComment(newValue);
+      setTimeout(() => {
+        const newCursor = mentionStart + insertName.length + 2;
+        el.setSelectionRange(newCursor, newCursor);
+        el.focus();
+      }, 0);
+    } else if (mentionTarget === "reply") {
+      const el = replyInputRef.current;
+      if (!el) return;
+      const cursorPos = el.selectionStart ?? replyText.length;
+      const textBeforeCursor = replyText.slice(0, cursorPos);
+      const mentionStart = textBeforeCursor.lastIndexOf("@");
+      const newValue = replyText.slice(0, mentionStart) + "@" + insertName + " " + replyText.slice(cursorPos);
+      setReplyText(newValue);
+      setTimeout(() => {
+        const newCursor = mentionStart + insertName.length + 2;
+        el.setSelectionRange(newCursor, newCursor);
+        el.focus();
+      }, 0);
+    }
+    // Track mention for backend notification
+    setPendingMentions(prev => {
+      if (prev.some(m => m.userId === pickedUser._id)) return prev;
+      return [...prev, { userId: pickedUser._id, name: pickedUser.name }];
+    });
+    setMentionQuery(null);
+    setMentionResults([]);
+    setMentionTarget(null);
+  };
+
+  const dismissMention = () => {
+    setTimeout(() => { setMentionQuery(null); setMentionResults([]); }, 150);
+  };
+
+  const MentionDropdown = () => {
+    if (mentionQuery === null || (mentionResults.length === 0 && !mentionLoading)) return null;
+    return (
+      <div style={{
+        position: "absolute", bottom: "calc(100% + 4px)", left: 0, right: 0,
+        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.1)", zIndex: 200,
+        overflow: "hidden", maxHeight: 220, overflowY: "auto",
+      }}>
+        {mentionLoading && mentionResults.length === 0 && (
+          <div style={{ padding: "10px 14px", fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)" }}>
+            Searching...
+          </div>
+        )}
+        {mentionResults.map(u => (
+          <button
+            key={u._id}
+            onMouseDown={e => { e.preventDefault(); handlePickMention(u); }}
+            style={{
+              width: "100%", padding: "9px 14px", border: "none", background: "none",
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+              textAlign: "left", fontFamily: "var(--sans)", transition: "background 0.1s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.accentSoft; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <Av initials={u.avatar} size={26} src={u.avatarUrl} />
+            <div>
+              <div style={{ fontSize: T.bodySm, fontWeight: 600, color: C.text }}>{u.name}</div>
+              {u.company && <div style={{ fontSize: T.caption, color: C.textMute }}>{u.company}</div>}
+            </div>
+          </button>
+        ))}
+      </div>
+    );
   };
 
   const buildCommentTree = (allComments: Comment[]) => {
@@ -542,7 +694,7 @@ export default function ProjectDetailPage() {
   const p = project;
 
   return (
-    <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 100px", fontFamily: "var(--sans)" }}>
+    <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: isMobile ? "48px 32px 140px" : "48px 32px 100px", fontFamily: "var(--sans)" }}>
         {/* Hero */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
@@ -571,37 +723,38 @@ export default function ProjectDetailPage() {
                 </div>
               </div>
             </div>
-            <div ref={voteBtnRef} style={{ flexShrink: 0, display: "flex", gap: 8, ...(isMobile ? { width: "100%" } : {}) }}>
+            <div ref={voteBtnRef} style={{ flexShrink: 0, display: isMobile ? "none" : "flex", gap: 10, alignItems: "center" }}>
               <button data-vote-detail onClick={handleVote}
               className={voteAnim ? "vote-pop-active" : ""}
               style={{
                 display: "flex", alignItems: "center", gap: 8,
-                padding: "10px 20px", borderRadius: 10,
-                border: hasVoted ? `1.5px solid ${C.accent}` : `1.5px solid ${C.accent}`,
-                background: hasVoted ? C.accent : C.surface,
-                cursor: "pointer", fontSize: T.bodyLg, fontWeight: 650,
-                fontFamily: "var(--sans)", color: hasVoted ? C.accentFg : C.text,
-                transition: "border 0.25s, background 0.25s, color 0.25s",
+                padding: "12px 28px", borderRadius: 12,
+                border: "1.5px solid transparent",
+                background: C.accent,
+                cursor: "pointer", fontSize: T.bodyLg, fontWeight: 700,
+                fontFamily: "var(--sans)", color: C.accentFg,
+                transition: "opacity 0.2s, transform 0.2s",
                 position: "relative", overflow: "visible",
+                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
               }}
-              onMouseEnter={e => { if (!hasVoted) { e.currentTarget.style.background = C.accent; e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.accentFg; }}}
-              onMouseLeave={e => { if (!hasVoted) { e.currentTarget.style.background = C.surface; e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}}
+              onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
                 </svg>
-                <span style={{ lineHeight: 1 }}>{p.weighted.toLocaleString()}</span>
+                <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
               </button>
               {p.url && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
-                  padding: "10px 24px", borderRadius: 10,
-                  border: `1px solid ${C.border}`, background: C.surface, color: C.text,
-                  fontSize: T.body, fontWeight: 600, cursor: "pointer",
-                  fontFamily: "var(--sans)", transition: "border-color 0.15s, background 0.15s",
-                  textDecoration: "none", display: "inline-flex", alignItems: "center",
+                  padding: "8px 16px", borderRadius: 8,
+                  border: "none", background: "transparent", color: C.textSec,
+                  fontSize: T.bodySm, fontWeight: 500, cursor: "pointer",
+                  fontFamily: "var(--sans)", transition: "color 0.15s",
+                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}
+                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+                onMouseLeave={e => { e.currentTarget.style.color = C.textSec; }}
                 >
                   Try it {"\u2192"}
                 </a>
@@ -783,24 +936,31 @@ export default function ProjectDetailPage() {
           }}>
             <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} src={user?.avatarUrl} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-              <textarea
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-                placeholder="Ask a question or share your thoughts..."
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostComment(); }}}
-                style={{
-                  width: "100%", padding: "11px 16px", borderRadius: 10,
-                  border: `1px solid ${C.borderLight}`, fontSize: T.body,
-                  color: C.text, fontFamily: "var(--sans)",
-                  background: "transparent", outline: "none",
-                  resize: "none", minHeight: 44, lineHeight: 1.5,
-                  transition: "border-color 0.15s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
-                onMouseLeave={e => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.borderColor = C.borderLight; }}
-                onFocus={e => { e.currentTarget.style.borderColor = C.accent; }}
-                onBlur={e => { e.currentTarget.style.borderColor = C.borderLight; }}
-              />
+              <div style={{ position: "relative" }}>
+                <textarea
+                  ref={commentTextareaRef}
+                  value={comment}
+                  onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart, setComment, "comment")}
+                  placeholder="Ask a question or share your thoughts..."
+                  onKeyDown={e => {
+                    if (e.key === "Escape" && mentionQuery !== null) { e.stopPropagation(); setMentionQuery(null); setMentionResults([]); return; }
+                    if (e.key === "Enter" && !e.shiftKey && mentionQuery === null) { e.preventDefault(); handlePostComment(); }
+                  }}
+                  style={{
+                    width: "100%", padding: "11px 16px", borderRadius: 10,
+                    border: `1px solid ${C.borderLight}`, fontSize: T.body,
+                    color: C.text, fontFamily: "var(--sans)",
+                    background: "transparent", outline: "none",
+                    resize: "none", minHeight: 44, lineHeight: 1.5,
+                    transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
+                  onMouseLeave={e => { if (document.activeElement !== e.currentTarget) e.currentTarget.style.borderColor = C.borderLight; }}
+                  onFocus={e => { e.currentTarget.style.borderColor = C.accent; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = C.borderLight; dismissMention(); }}
+                />
+                {mentionTarget === "comment" && <MentionDropdown />}
+              </div>
               {comment.trim() && (
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
@@ -847,7 +1007,7 @@ export default function ProjectDetailPage() {
                       fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400,
                       whiteSpace: "pre-wrap",
                     }}>
-                      {root.content}
+                      {renderContentWithMentions(root.content)}
                     </p>
                     <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                       <Reactions reactions={root.reactions} onReact={(code) => handleReact(root.id, code)} />
@@ -899,7 +1059,7 @@ export default function ProjectDetailPage() {
                                         <Badge role={reply.authorRole || "member"} />
                                         <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                       </div>
-                                      <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
+                                      <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{renderContentWithMentions(reply.content)}</p>
                                       <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
                                     </div>
                                   </div>
@@ -914,7 +1074,7 @@ export default function ProjectDetailPage() {
                                       <Badge role={reply.authorRole || "member"} />
                                       <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                     </div>
-                                    <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{reply.content}</p>
+                                    <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{renderContentWithMentions(reply.content)}</p>
                                     <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
                                   </div>
                                 </div>
@@ -927,12 +1087,17 @@ export default function ProjectDetailPage() {
                         {user && (
                           <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
                             <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} src={user.avatarUrl} />
-                            <div style={{ flex: 1, display: "flex", gap: 8 }}>
+                            <div style={{ flex: 1, display: "flex", gap: 8, position: "relative" }}>
                               <input
+                                ref={replyInputRef}
                                 value={replyText}
-                                onChange={e => setReplyText(e.target.value)}
+                                onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart, setReplyText, "reply")}
                                 placeholder="Write a reply..."
-                                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePostReply(root.id); }}}
+                                onKeyDown={e => {
+                                  if (e.key === "Escape" && mentionQuery !== null) { e.stopPropagation(); setMentionQuery(null); setMentionResults([]); return; }
+                                  if (e.key === "Enter" && !e.shiftKey && mentionQuery === null) { e.preventDefault(); handlePostReply(root.id); }
+                                }}
+                                onBlur={() => dismissMention()}
                                 style={{
                                   flex: 1, padding: "8px 14px", borderRadius: 8,
                                   border: `1px solid ${C.borderLight}`, fontSize: T.body,
@@ -940,6 +1105,7 @@ export default function ProjectDetailPage() {
                                   background: "transparent", outline: "none",
                                 }}
                               />
+                              {mentionTarget === "reply" && <MentionDropdown />}
                               {replyText.trim() && (
                                 <button
                                   onClick={() => handlePostReply(root.id)}
@@ -968,6 +1134,47 @@ export default function ProjectDetailPage() {
 
           {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
+
+        {/* Mobile floating bottom bar */}
+        {isMobile && (
+          <div style={{
+            position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
+            background: C.bg, borderTop: `1px solid ${C.border}`,
+            padding: "12px 16px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+            display: "flex", gap: 10,
+            boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
+          }}>
+            <button
+              data-vote-float
+              onClick={handleVote}
+              className={voteAnim ? "vote-pop-active" : ""}
+              style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "13px 20px", borderRadius: 12, border: "none",
+                background: C.accent, cursor: "pointer",
+                fontSize: T.body, fontWeight: 700, fontFamily: "var(--sans)",
+                color: C.accentFg, transition: "opacity 0.2s",
+                position: "relative", overflow: "visible",
+                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
+              </svg>
+              <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
+            </button>
+            {p.url && (
+              <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
+                padding: "13px 20px", borderRadius: 12,
+                border: `1px solid ${C.border}`, background: C.surface, color: C.text,
+                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
+                textDecoration: "none", display: "inline-flex", alignItems: "center", whiteSpace: "nowrap",
+              }}>
+                Try it {"\u2192"}
+              </a>
+            )}
+          </div>
+        )}
     </div>
   );
 }
