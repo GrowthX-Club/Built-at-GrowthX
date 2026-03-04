@@ -122,7 +122,8 @@ export default function BuildersPage() {
     bxApi("/projects?limit=100")
       .then(r => r.json())
       .then(d => {
-        const all = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
+        const all = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
+          .filter((p: Project) => p.enabled !== false);
         const matched = all.filter((p: Project) => {
           if (p.builder?.name === b.name) return true;
           if ((p.creators || []).some(c => c.name === b.name)) return true;

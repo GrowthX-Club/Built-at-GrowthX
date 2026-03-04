@@ -24,16 +24,18 @@ import ProjectIcon from "@/components/ProjectIcon";
 
 function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string; companyLogo?: string } }) {
   return (
-    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
       <div style={{
         fontSize: T.bodySm, fontWeight: 600, color: C.text,
         fontFamily: "var(--sans)", marginBottom: 2, lineHeight: 1.2,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>
         {b.name}
       </div>
       <div style={{
         display: "flex", alignItems: "center", gap: 4,
         fontSize: T.label, fontFamily: "var(--sans)",
+        minWidth: 0,
       }}>
         <span style={{
           width: 12, height: 12, borderRadius: 3,
@@ -46,7 +48,7 @@ function BuilderItem({ b }: { b: { name: string; company: string; companyColor: 
           {b.company[0]}
           {b.company && <img src={getCompanyLogoUrl(b.company, b.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
         </span>
-        <span style={{ fontWeight: 400, color: C.textMute }}>{b.company}</span>
+        <span style={{ fontWeight: 400, color: C.textMute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.company}</span>
       </div>
     </div>
   );
@@ -73,7 +75,7 @@ function BuilderCycler({ builders }: { builders: { name: string; company: string
   const next = (active + 1) % builders.length;
 
   return (
-    <div style={{ textAlign: "left", minWidth: 120 }}>
+    <div style={{ textAlign: "left", minWidth: 0, overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ minWidth: 0, overflow: "hidden", height: ITEM_H }}>
           <div style={{
@@ -694,8 +696,7 @@ function HomePage() {
               .submit-input { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: ${T.body}px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; }
               .submit-input:focus { border-color: ${C.accent}; }
               .submit-input::placeholder { color: ${C.textMute}; }
-              .submit-input-lg { font-size: ${T.logo}px; font-weight: 500; font-family: var(--serif); border: none; padding: 0; background: transparent; }
-              .submit-input-lg:focus { border: none; }
+              .submit-input-lg { font-size: ${T.logo}px; font-weight: 500; font-family: var(--serif); }
               .submit-textarea { width: 100%; border: 1px solid ${C.borderLight}; border-radius: 10px; padding: 12px 16px; font-size: ${T.body}px; font-family: var(--sans); color: ${C.text}; background: ${C.bg}; outline: none; transition: border-color 0.15s; resize: vertical; min-height: 100px; line-height: 1.5; }
               .submit-textarea:focus { border-color: ${C.accent}; }
               .submit-textarea::placeholder { color: ${C.textMute}; }
@@ -747,27 +748,46 @@ function HomePage() {
 
               {/* Step 0: Name, tagline, URL */}
               {submitStep === 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                  <div style={{
+                    fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
+                    fontWeight: 400, lineHeight: 1.55,
+                  }}>
+                    Tell us about your project. What did you ship?
+                  </div>
                   <div>
+                    <label style={{
+                      display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
+                      fontFamily: "var(--sans)", marginBottom: 8,
+                    }}>
+                      Project name <span style={{ color: C.textMute, fontWeight: 400 }}>*</span>
+                    </label>
                     <input
-                      className="submit-input submit-input-lg"
-                      placeholder="Project name"
+                      className="submit-input"
+                      placeholder="e.g. Pagesync, Mailcraft, Budgetly"
                       value={submitData.name}
                       onChange={e => setSubmitData(d => ({ ...d, name: e.target.value }))}
                       autoFocus
+                      style={{ fontSize: T.bodyLg, fontWeight: 500, fontFamily: "var(--serif)" }}
                     />
                   </div>
                   <div>
+                    <label style={{
+                      display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
+                      fontFamily: "var(--sans)", marginBottom: 8,
+                    }}>
+                      Tagline <span style={{ color: C.textMute, fontWeight: 400 }}>*</span>
+                    </label>
                     <input
                       className="submit-input"
-                      placeholder="One-line tagline (what does it do?)"
+                      placeholder="One line that explains what it does"
                       value={submitData.tagline}
                       onChange={e => setSubmitData(d => ({ ...d, tagline: e.target.value }))}
                       maxLength={100}
                       style={{ borderColor: submitData.tagline.length >= 100 ? "#DC2626" : undefined }}
                     />
                     <div style={{
-                      fontSize: T.caption, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
+                      fontSize: T.caption, marginTop: 6, textAlign: "right", fontFamily: "var(--sans)",
                       color: submitData.tagline.length >= 90 ? (submitData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
                       fontWeight: submitData.tagline.length >= 100 ? 600 : 400,
                     }}>
@@ -775,9 +795,15 @@ function HomePage() {
                     </div>
                   </div>
                   <div>
+                    <label style={{
+                      display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
+                      fontFamily: "var(--sans)", marginBottom: 8,
+                    }}>
+                      Product URL <span style={{ color: C.textMute, fontWeight: 400, fontSize: T.caption }}>(optional)</span>
+                    </label>
                     <input
                       className="submit-input"
-                      placeholder="Product URL (https://...)"
+                      placeholder="https://yourproject.com"
                       value={submitData.url}
                       onChange={e => setSubmitData(d => ({ ...d, url: e.target.value }))}
                     />
@@ -1177,14 +1203,14 @@ function HomePage() {
                       handleSubmitProject();
                     }
                   }}
-                  disabled={(submitStep === 0 && !submitData.name.trim()) || submitting}
+                  disabled={submitting}
                   style={{
                     padding: "9px 24px", borderRadius: 10,
                     border: "none",
-                    background: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.borderLight : C.accent,
+                    background: submitting ? C.borderLight : C.accent,
                     fontSize: T.bodySm, fontWeight: 600,
-                    color: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? C.textMute : "#fff",
-                    cursor: ((submitStep === 0 && !submitData.name.trim()) || submitting) ? "default" : "pointer",
+                    color: submitting ? C.textMute : "#fff",
+                    cursor: submitting ? "default" : "pointer",
                     fontFamily: "var(--sans)",
                     transition: "all 0.15s",
                     opacity: submitting ? 0.7 : 1,

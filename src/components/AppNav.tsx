@@ -238,6 +238,30 @@ export default function AppNav() {
               </div>
               {/* Right items — pinned 96px from right */}
               <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14, zIndex: 1 }}>
+                {/* Vote button in nav — desktop */}
+                {voteState && (
+                  <button
+                    onClick={voteState.onVote}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "6px 14px", borderRadius: 8,
+                      border: `1.5px solid ${C.accent}`,
+                      background: voteState.hasVoted ? C.accent : C.surface,
+                      cursor: "pointer", fontSize: T.bodySm, fontWeight: 650,
+                      fontFamily: "var(--sans)",
+                      color: voteState.hasVoted ? C.accentFg : C.text,
+                      transition: "all 0.3s ease",
+                      opacity: showVoteInNav ? 1 : 0,
+                      transform: showVoteInNav ? "translateY(0)" : "translateY(-4px)",
+                      pointerEvents: showVoteInNav ? "auto" : "none",
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                    </svg>
+                    <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
+                  </button>
+                )}
                 {/* Theme toggle — desktop only */}
                 <div style={{ position: "relative" }}>
                   <button
@@ -393,32 +417,8 @@ export default function AppNav() {
                     }}>
                       {override.title}
                     </span>
-                    {/* Vote button or spacer */}
-                    <div style={{ width: voteState ? "auto" : 60, flexShrink: 0, display: "flex", alignItems: "center" }}>
-                      {voteState && (
-                        <button
-                          onClick={voteState.onVote}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            padding: "6px 14px", borderRadius: 8,
-                            border: `1.5px solid ${C.accent}`,
-                            background: voteState.hasVoted ? C.accent : C.surface,
-                            cursor: "pointer", fontSize: T.bodySm, fontWeight: 650,
-                            fontFamily: "var(--sans)",
-                            color: voteState.hasVoted ? C.accentFg : C.text,
-                            transition: "all 0.3s ease",
-                            opacity: showVoteInNav ? 1 : 0,
-                            transform: showVoteInNav ? "translateY(0)" : "translateY(-4px)",
-                            pointerEvents: showVoteInNav ? "auto" : "none",
-                          }}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                            <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                          </svg>
-                          <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
-                        </button>
-                      )}
-                    </div>
+                    {/* Spacer to balance the Back button */}
+                    <div style={{ width: 60, flexShrink: 0 }} />
                   </div>
                 ) : (
                   <>
