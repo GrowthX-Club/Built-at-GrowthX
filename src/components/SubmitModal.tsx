@@ -159,12 +159,12 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
           {error && (
             <div
               style={{
-                background: "#FEF2F2",
-                border: "1px solid #FECACA",
+                background: C.errorSoft,
+                border: `1px solid ${C.errorBorder}`,
                 borderRadius: 8,
                 padding: "8px 12px",
                 fontSize: T.bodySm,
-                color: "#DC2626",
+                color: C.error,
                 marginBottom: 16,
               }}
             >
@@ -341,7 +341,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
                 padding: "10px 16px",
                 fontSize: T.body,
                 fontWeight: 600,
-                color: "#fff",
+                color: C.accentFg,
                 background: C.accent,
                 cursor: "pointer",
                 fontFamily: "var(--sans)",

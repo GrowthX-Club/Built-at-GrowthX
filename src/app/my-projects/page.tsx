@@ -334,11 +334,11 @@ export default function MyProjectsPage() {
                         onChange={e => setEditData(d => ({ ...d, tagline: e.target.value }))}
                         maxLength={100}
                         placeholder="One-line tagline (what does it do?)"
-                        style={{ ...inputStyle, borderColor: editData.tagline.length >= 100 ? "#DC2626" : undefined }}
+                        style={{ ...inputStyle, borderColor: editData.tagline.length >= 100 ? C.error : undefined }}
                       />
                       <div style={{
                         fontSize: T.caption, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
-                        color: editData.tagline.length >= 90 ? (editData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
+                        color: editData.tagline.length >= 90 ? (editData.tagline.length >= 100 ? C.error : C.gold) : C.textMute,
                         fontWeight: editData.tagline.length >= 100 ? 600 : 400,
                       }}>
                         {editData.tagline.length}/100{editData.tagline.length >= 100 && " — limit reached"}
@@ -384,7 +384,7 @@ export default function MyProjectsPage() {
                       {editData.stack.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
                           {editData.stack.map((s, si) => {
-                            const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                            const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: C.accentFg };
                             const logoUrl = getStackLogoUrl(s);
                             return (
                               <span key={si} style={{
@@ -450,7 +450,7 @@ export default function MyProjectsPage() {
                             </div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                               {available.map(s => {
-                                const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                                const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: C.accentFg };
                                 const logoUrl = getStackLogoUrl(s);
                                 return (
                                   <button
@@ -536,7 +536,7 @@ export default function MyProjectsPage() {
                             style={{
                               padding: "0 14px", borderRadius: 8,
                               border: "none", background: C.accent,
-                              fontSize: T.label, fontWeight: 600, color: "#fff",
+                              fontSize: T.label, fontWeight: 600, color: C.accentFg,
                               cursor: "pointer", fontFamily: "var(--sans)",
                               whiteSpace: "nowrap", transition: "opacity 0.12s",
                             }}
@@ -677,8 +677,8 @@ export default function MyProjectsPage() {
                                   fontSize: T.badge, fontWeight: 650, letterSpacing: "0.03em",
                                   padding: "2px 7px", borderRadius: 4, cursor: "pointer",
                                   fontFamily: "var(--sans)", userSelect: "none",
-                                  background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
-                                  color: c.role === 'creator' ? "#059669" : C.textMute,
+                                  background: c.role === 'creator' ? C.creatorBg : C.borderLight,
+                                  color: c.role === 'creator' ? C.creator : C.textMute,
                                   transition: "all 0.15s",
                                 }}
                               >
@@ -701,8 +701,8 @@ export default function MyProjectsPage() {
                     {editError && (
                       <div style={{
                         padding: "10px 14px", borderRadius: 10,
-                        background: "#FEF2F2", border: "1px solid #FECACA",
-                        fontSize: T.bodySm, color: "#B91C1C", fontFamily: "var(--sans)",
+                        background: C.errorSoft, border: `1px solid ${C.errorBorder}`,
+                        fontSize: T.bodySm, color: C.errorText, fontFamily: "var(--sans)",
                         fontWeight: 450, lineHeight: 1.45,
                       }}>
                         {editError}

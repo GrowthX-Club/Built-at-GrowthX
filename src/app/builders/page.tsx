@@ -312,8 +312,8 @@ export default function BuildersPage() {
                             fontSize: T.badge, fontWeight: 650, letterSpacing: "0.03em",
                             padding: "2px 7px", borderRadius: 4,
                             fontFamily: "var(--sans)",
-                            background: isCreator ? "#D1FAE5" : C.accentSoft,
-                            color: isCreator ? "#059669" : C.textMute,
+                            background: isCreator ? C.creatorBg : C.accentSoft,
+                            color: isCreator ? C.creator : C.textMute,
                           }}>
                             {isCreator ? "Creator" : "Collaborator"}
                           </span>

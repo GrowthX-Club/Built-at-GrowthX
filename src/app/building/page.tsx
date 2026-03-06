@@ -47,9 +47,9 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
 
 function StatusDot({ status }: { status: string }) {
   const map: Record<string, { color: string; bg: string; label: string }> = {
-    idea: { color: "#D97706", bg: "#FEF3C7", label: "Idea" },
-    prototyping: { color: "#2563EB", bg: "#DBEAFE", label: "Prototyping" },
-    beta: { color: "#059669", bg: "#D1FAE5", label: "Beta" },
+    idea: { color: C.gold, bg: C.goldSoft, label: "Idea" },
+    prototyping: { color: C.blue, bg: C.blueSoft, label: "Prototyping" },
+    beta: { color: C.creator, bg: C.creatorBg, label: "Beta" },
   };
   const s = map[status] || map.idea;
   return (
@@ -159,7 +159,7 @@ export default function BuildingPage() {
                           <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.errorText, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
@@ -236,11 +236,11 @@ export default function BuildingPage() {
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
+                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.errorText,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
+                        onMouseEnter={e => e.currentTarget.style.background = C.errorSoft}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
                           <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out

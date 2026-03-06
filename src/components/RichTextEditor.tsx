@@ -60,7 +60,7 @@ export default function RichTextEditor({ value, onChange, maxChars = CHAR_LIMIT 
             backgroundColor: C.bg,
             color: C.text,
             borderRadius: "10px",
-            border: `1px solid ${isAtLimit ? "#DC2626" : C.borderLight}`,
+            border: `1px solid ${isAtLimit ? C.error : C.borderLight}`,
             minHeight: "200px",
             maxHeight: "400px",
             fontFamily: "var(--sans)",
@@ -106,7 +106,7 @@ export default function RichTextEditor({ value, onChange, maxChars = CHAR_LIMIT 
           },
           ".editor-toolbar button.active": {
             background: C.accent,
-            color: "#fff",
+            color: C.accentFg,
           },
           ".editor-toolbar button.active:hover": {
             background: C.accent,
@@ -122,8 +122,8 @@ export default function RichTextEditor({ value, onChange, maxChars = CHAR_LIMIT 
             "--primary-fill": C.textSec,
           },
           ".editor-toolbar button.active svg": {
-            "--primary-stroke": "#fff",
-            "--primary-fill": "#fff",
+            "--primary-stroke": C.accentFg,
+            "--primary-fill": C.accentFg,
           },
           ".paragraph": {
             color: C.text,
@@ -153,7 +153,7 @@ export default function RichTextEditor({ value, onChange, maxChars = CHAR_LIMIT 
       <div
         style={{
           fontSize: 11, marginTop: 4, textAlign: "right", fontFamily: "var(--sans)",
-          color: isAtLimit ? "#DC2626" : isNearLimit ? "#B45309" : C.textMute,
+          color: isAtLimit ? C.error : isNearLimit ? C.gold : C.textMute,
           fontWeight: isAtLimit ? 600 : 400,
         }}
       >

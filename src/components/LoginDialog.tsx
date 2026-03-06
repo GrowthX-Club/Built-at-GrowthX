@@ -447,9 +447,9 @@ function LoginDialogInner() {
         {/* Error */}
         {error && (
           <div style={{
-            background: "#FEF2F2", border: "1px solid #FECACA",
+            background: C.errorSoft, border: `1px solid ${C.errorBorder}`,
             borderRadius: 10, padding: "10px 14px",
-            fontSize: T.bodySm, color: "#DC2626", marginBottom: 20,
+            fontSize: T.bodySm, color: C.error, marginBottom: 20,
             fontFamily: "var(--sans)", fontWeight: 450,
           }}>
             {error}

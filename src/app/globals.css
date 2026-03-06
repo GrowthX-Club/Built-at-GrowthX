@@ -34,35 +34,75 @@
   --c-shimmerVia: #F5F3EE;
   --c-scrollThumb: #E8E5DE;
   --c-scrollHover: #A09A8C;
+
+  /* Error colors */
+  --c-error: #DC2626;
+  --c-errorSoft: #FEF2F2;
+  --c-errorBorder: #FECACA;
+  --c-errorText: #B91C1C;
+
+  /* Role badge colors */
+  --c-role-builder: #8B6914;
+  --c-role-builder-bg: #FDF8EC;
+  --c-role-host: #92400E;
+  --c-role-host-bg: #FEF3C7;
+  --c-role-founder: #5B21B6;
+  --c-role-founder-bg: #F3EEFF;
+  --c-role-member: #166534;
+  --c-role-member-bg: #EDF7F0;
+
+  /* Creator badge */
+  --c-creator: #059669;
+  --c-creator-bg: #D1FAE5;
 }
 
 [data-theme="dark"] {
-  --c-bg: #1A1918;
-  --c-surface: #252422;
-  --c-surfaceWarm: #1F1E1C;
-  --c-border: #3A3835;
-  --c-borderLight: #2E2C2A;
-  --c-text: #E8E5DE;
-  --c-textSec: #A09A8C;
-  --c-textMute: #6B665B;
-  --c-accent: #E8E5DE;
-  --c-accentSoft: #2E2C2A;
+  --c-bg: #000000;
+  --c-surface: #111111;
+  --c-surfaceWarm: #0A0A0A;
+  --c-border: #2A2A2A;
+  --c-borderLight: #1A1A1A;
+  --c-text: #F0F0F0;
+  --c-textSec: #B0B0B0;
+  --c-textMute: #888888;
+  --c-accent: #F0F0F0;
+  --c-accentSoft: #1A1A1A;
   --c-gold: #D4AE3A;
-  --c-goldSoft: #2A2518;
+  --c-goldSoft: #1A1500;
   --c-goldBorder: #5C4E20;
   --c-green: #4CAF6A;
-  --c-greenSoft: #1A2E1F;
+  --c-greenSoft: #0A1A0F;
   --c-blue: #5588EE;
-  --c-blueSoft: #1A2240;
+  --c-blueSoft: #0A1225;
   --c-brand: #3399FF;
-  --c-brandSoft: #1A2A40;
+  --c-brandSoft: #0A1525;
   --c-brandBorder: #2255AA;
-  --c-accentFg: #1A1918;
-  --c-navGlass: rgba(26,25,24,0.78);
-  --c-shimmerFrom: #2E2C2A;
-  --c-shimmerVia: #3A3835;
-  --c-scrollThumb: #3A3835;
-  --c-scrollHover: #6B665B;
+  --c-accentFg: #000000;
+  --c-navGlass: rgba(0,0,0,0.82);
+  --c-shimmerFrom: #1A1A1A;
+  --c-shimmerVia: #2A2A2A;
+  --c-scrollThumb: #2A2A2A;
+  --c-scrollHover: #444444;
+
+  /* Error colors — dark mode */
+  --c-error: #F87171;
+  --c-errorSoft: #1A0A0A;
+  --c-errorBorder: #7F1D1D;
+  --c-errorText: #FCA5A5;
+
+  /* Role badge colors — dark mode */
+  --c-role-builder: #D4AE3A;
+  --c-role-builder-bg: #1A1500;
+  --c-role-host: #D97706;
+  --c-role-host-bg: #1A1000;
+  --c-role-founder: #A78BFA;
+  --c-role-founder-bg: #15102A;
+  --c-role-member: #4CAF6A;
+  --c-role-member-bg: #0A1A0F;
+
+  /* Creator badge — dark mode */
+  --c-creator: #34D399;
+  --c-creator-bg: #0A1A0F;
 }
 
 html {
@@ -421,29 +461,29 @@ body {
    No position/opacity changes — only the background. */
 @keyframes tubelight-flicker {
   /* Dead */
-  0%   { background: #1A1918; }
+  0%   { background: #000000; }
   /* 1st sputter — just the edges glow */
-  4%   { background: linear-gradient(to right, #FFF8E8 0%, #1A1918 18%, #1A1918 82%, #FFF8E8 100%); }
-  6%   { background: #1A1918; }
+  4%   { background: linear-gradient(to right, #FFF8E8 0%, #000000 18%, #000000 82%, #FFF8E8 100%); }
+  6%   { background: #000000; }
   /* 2nd sputter — edges again, slightly wider */
-  14%  { background: linear-gradient(to right, #FFF6E0 0%, #1A1918 22%, #1A1918 78%, #FFF6E0 100%); }
-  16%  { background: #1A1918; }
+  14%  { background: linear-gradient(to right, #FFF6E0 0%, #000000 22%, #000000 78%, #FFF6E0 100%); }
+  16%  { background: #000000; }
   /* Dark gap */
-  24%  { background: #1A1918; }
+  24%  { background: #000000; }
   /* 3rd — edges brighter, warmth creeping inward */
   30%  { background: linear-gradient(to right, #E8DCC0 0%, #3A3020 28%, #3A3020 72%, #E8DCC0 100%); }
-  32%  { background: #1A1918; }
+  32%  { background: #000000; }
   /* 4th — light fills from edges, center still dark */
-  40%  { background: linear-gradient(to right, #FFF8E8 0%, #FFF8E8 22%, #1E1D1B 38%, #1E1D1B 62%, #FFF8E8 78%, #FFF8E8 100%); }
-  42%  { background: #1E1D1B; }
+  40%  { background: linear-gradient(to right, #FFF8E8 0%, #FFF8E8 22%, #080808 38%, #080808 62%, #FFF8E8 78%, #FFF8E8 100%); }
+  42%  { background: #080808; }
   /* Dark gap */
-  52%  { background: #1A1918; }
+  52%  { background: #000000; }
   /* Almost — most of bar lit, just the center gap remaining */
-  60%  { background: linear-gradient(to right, #D0C8A8 0%, #D0C8A8 28%, #2A2520 42%, #2A2520 58%, #D0C8A8 72%, #D0C8A8 100%); }
-  62%  { background: #1A1918; }
+  60%  { background: linear-gradient(to right, #D0C8A8 0%, #D0C8A8 28%, #101010 42%, #101010 58%, #D0C8A8 72%, #D0C8A8 100%); }
+  62%  { background: #000000; }
   /* Strong flash — nearly full, center just slightly dimmer */
   68%  { background: linear-gradient(to right, #FFF8E8 0%, #FFF8E8 35%, #E8DCC0 50%, #FFF8E8 65%, #FFF8E8 100%); }
-  72%  { background: #2A2520; }
+  72%  { background: #101010; }
   /* Catches — fully lit */
   78%  { background: #F8F7F4; }
   82%  { background: #E8E0D0; }

@@ -784,11 +784,11 @@ function HomePage() {
                       value={submitData.tagline}
                       onChange={e => setSubmitData(d => ({ ...d, tagline: e.target.value }))}
                       maxLength={100}
-                      style={{ borderColor: submitData.tagline.length >= 100 ? "#DC2626" : undefined }}
+                      style={{ borderColor: submitData.tagline.length >= 100 ? C.error : undefined }}
                     />
                     <div style={{
                       fontSize: T.caption, marginTop: 6, textAlign: "right", fontFamily: "var(--sans)",
-                      color: submitData.tagline.length >= 90 ? (submitData.tagline.length >= 100 ? "#DC2626" : "#B45309") : C.textMute,
+                      color: submitData.tagline.length >= 90 ? (submitData.tagline.length >= 100 ? C.error : C.gold) : C.textMute,
                       fontWeight: submitData.tagline.length >= 100 ? 600 : 400,
                     }}>
                       {submitData.tagline.length}/100{submitData.tagline.length >= 100 && " — limit reached"}
@@ -865,7 +865,7 @@ function HomePage() {
                     {submitData.stack.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
                         {submitData.stack.map((s, si) => {
-                          const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                          const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: C.accentFg };
                           const logoUrl = getStackLogoUrl(s);
                           return (
                             <span key={si} style={{
@@ -931,7 +931,7 @@ function HomePage() {
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                             {available.map(s => {
-                              const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: "#fff" };
+                              const meta = STACK_META[s] || { icon: s[0]?.toUpperCase() || "?", bg: C.accent, color: C.accentFg };
                               const logoUrl = getStackLogoUrl(s);
                               return (
                                 <button
@@ -1018,7 +1018,7 @@ function HomePage() {
                           style={{
                             padding: "0 14px", borderRadius: 8,
                             border: "none", background: C.accent,
-                            fontSize: T.label, fontWeight: 600, color: "#fff",
+                            fontSize: T.label, fontWeight: 600, color: C.accentFg,
                             cursor: "pointer", fontFamily: "var(--sans)",
                             whiteSpace: "nowrap", transition: "opacity 0.12s",
                           }}
@@ -1131,8 +1131,8 @@ function HomePage() {
                                 fontSize: T.badge, fontWeight: 650, letterSpacing: "0.03em",
                                 padding: "2px 7px", borderRadius: 4, cursor: "pointer",
                                 fontFamily: "var(--sans)", userSelect: "none",
-                                background: c.role === 'creator' ? "#D1FAE5" : C.borderLight,
-                                color: c.role === 'creator' ? "#059669" : C.textMute,
+                                background: c.role === 'creator' ? C.creatorBg : C.borderLight,
+                                color: c.role === 'creator' ? C.creator : C.textMute,
                                 transition: "all 0.15s",
                               }}
                             >
@@ -1160,8 +1160,8 @@ function HomePage() {
               {submitError && (
                 <div style={{
                   marginTop: 16, padding: "10px 14px", borderRadius: 10,
-                  background: "#FEF2F2", border: "1px solid #FECACA",
-                  fontSize: T.bodySm, color: "#B91C1C", fontFamily: "var(--sans)",
+                  background: C.errorSoft, border: `1px solid ${C.errorBorder}`,
+                  fontSize: T.bodySm, color: C.errorText, fontFamily: "var(--sans)",
                   fontWeight: 450, lineHeight: 1.45,
                 }}>
                   {submitError}
@@ -1209,7 +1209,7 @@ function HomePage() {
                     border: "none",
                     background: submitting ? C.borderLight : C.accent,
                     fontSize: T.bodySm, fontWeight: 600,
-                    color: submitting ? C.textMute : "#fff",
+                    color: submitting ? C.textMute : C.accentFg,
                     cursor: submitting ? "default" : "pointer",
                     fontFamily: "var(--sans)",
                     transition: "all 0.15s",

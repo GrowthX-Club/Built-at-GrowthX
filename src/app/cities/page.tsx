@@ -142,7 +142,7 @@ export default function CitiesPage() {
                           <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C", fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.errorText, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
@@ -219,11 +219,11 @@ export default function CitiesPage() {
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          fontSize: T.bodySm, fontWeight: 500, color: "#B91C1C",
+                          fontSize: T.bodySm, fontWeight: 500, color: C.errorText,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
+                        onMouseEnter={e => e.currentTarget.style.background = C.errorSoft}
                         onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
                           <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out

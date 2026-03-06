@@ -353,7 +353,7 @@ export default function CanvasFlip({ children }: { children: React.ReactNode }) 
         height: 100vh;
         z-index: 45;
         pointer-events: none;
-        background: #1A1918;
+        background: #000000;
       `;
       document.body.appendChild(overlay);
 
