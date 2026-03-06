@@ -29,6 +29,12 @@ export const C = {
   brand: "var(--c-brand)",
   brandSoft: "var(--c-brandSoft)",
   brandBorder: "var(--c-brandBorder)",
+  error: "var(--c-error)",
+  errorSoft: "var(--c-errorSoft)",
+  errorBorder: "var(--c-errorBorder)",
+  errorText: "var(--c-errorText)",
+  creator: "var(--c-creator)",
+  creatorBg: "var(--c-creator-bg)",
 };
 
 // ---- Custom emoji reactions ----
@@ -56,14 +62,15 @@ export const CUSTOM_EMOJIS: CustomEmoji[] = [
 
 // ---- Roles ----
 export const ROLES: Record<string, { label: string; color: string; bg: string }> = {
-  builder: { label: "Builder", color: "#8B6914", bg: "#FDF8EC" },
-  host: { label: "Host", color: "#92400E", bg: "#FEF3C7" },
-  founder: { label: "Founder", color: "#5B21B6", bg: "#F3EEFF" },
-  member: { label: "Member", color: "#166534", bg: "#EDF7F0" },
+  builder: { label: "Builder", color: "var(--c-role-builder)", bg: "var(--c-role-builder-bg)" },
+  host: { label: "Host", color: "var(--c-role-host)", bg: "var(--c-role-host-bg)" },
+  founder: { label: "Founder", color: "var(--c-role-founder)", bg: "var(--c-role-founder-bg)" },
+  member: { label: "Member", color: "var(--c-role-member)", bg: "var(--c-role-member-bg)" },
 };
 
 // ---- Data types ----
 export interface Builder {
+  _id?: string;
   name: string;
   avatar: string;
   avatarUrl?: string;
@@ -286,6 +293,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
   if (creatorRaw && typeof creatorRaw === 'object' && (creatorRaw as Record<string, unknown>).name) {
     const u = formatPopulatedUser(creatorRaw as Record<string, unknown>);
     builder = {
+      _id: ((creatorRaw as Record<string, unknown>)._id ?? '') as string,
       name: u.name, avatar: u.initials, avatarUrl: u.avatarUrl,
       city: u.city, title: u.role || undefined,
       company: u.company || undefined, companyColor: u.companyColor || undefined,

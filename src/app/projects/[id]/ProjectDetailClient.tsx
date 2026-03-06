@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import {
   C,
   T,
@@ -282,7 +283,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                             <span style={{ fontSize: T.bodySm, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
                             <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             <Badge role={reply.author.role} />
                             <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
                           </div>
@@ -692,6 +693,7 @@ export default function ProjectDetailPage() {
   }
 
   const p = project;
+  const isOwner = user?._id && (user._id === p.builder._id || p.creators?.some(c => c._id === user._id));
 
   return (
     <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: isMobile ? "48px 32px 140px" : "48px 32px 100px", fontFamily: "var(--sans)" }}>
@@ -758,6 +760,24 @@ export default function ProjectDetailPage() {
                 >
                   Try it {"\u2192"}
                 </a>
+              )}
+              {isOwner && (
+                <Link href="/my-projects" style={{
+                  padding: "8px 16px", borderRadius: 8,
+                  border: "none", background: "transparent", color: C.textSec,
+                  fontSize: T.bodySm, fontWeight: 500, cursor: "pointer",
+                  fontFamily: "var(--sans)", transition: "color 0.15s",
+                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
+                onMouseLeave={e => { e.currentTarget.style.color = C.textSec; }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Manage
+                </Link>
               )}
             </div>
           </div>
@@ -884,7 +904,7 @@ export default function ProjectDetailPage() {
             {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
             <div style={{ display: "flex", gap: 8, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
               {p.stack.map((t, i) => {
-                const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: "#fff" };
+                const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: C.accentFg };
                 const logoUrl = getStackLogoUrl(t);
                 return (
                   <div key={i} style={{
@@ -995,7 +1015,7 @@ export default function ProjectDetailPage() {
                       </span>
                       <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} companyLogo={root.authorCompanyLogo || (isRootOP ? p.builder.companyLogo : undefined)} />
                       {isRootOP && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                       )}
                       <Badge role={root.authorRole || "member"} />
                       <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
@@ -1055,7 +1075,7 @@ export default function ProjectDetailPage() {
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
                                         <span style={{ fontSize: T.bodySm, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
                                         <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} companyLogo={reply.authorCompanyLogo || p.builder.companyLogo} />
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: "#D1FAE5", color: "#059669", letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                                         <Badge role={reply.authorRole || "member"} />
                                         <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                                       </div>
@@ -1172,6 +1192,20 @@ export default function ProjectDetailPage() {
               }}>
                 Try it {"\u2192"}
               </a>
+            )}
+            {isOwner && (
+              <Link href="/my-projects" style={{
+                padding: "13px 20px", borderRadius: 12,
+                border: `1px solid ${C.border}`, background: C.surface, color: C.text,
+                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
+                textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                Manage
+              </Link>
             )}
           </div>
         )}

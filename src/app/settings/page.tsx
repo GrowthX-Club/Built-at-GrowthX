@@ -275,12 +275,12 @@ export default function SettingsPage() {
                       onClick={() => setRevokeTarget(k)}
                       style={{
                         padding: "6px 14px", borderRadius: 8,
-                        border: "1px solid #FECACA", background: "transparent",
-                        fontSize: T.label, fontWeight: 550, color: "#DC2626",
+                        border: `1px solid ${C.errorBorder}`, background: "transparent",
+                        fontSize: T.label, fontWeight: 550, color: C.error,
                         cursor: "pointer", fontFamily: "var(--sans)",
                         transition: "all 0.12s",
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#FEF2F2"}
+                      onMouseEnter={e => e.currentTarget.style.background = C.errorSoft}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                     >
                       Revoke
@@ -410,8 +410,8 @@ export default function SettingsPage() {
             {createError && (
               <div style={{
                 padding: "10px 14px", borderRadius: 8, marginBottom: 16,
-                background: "#FEF2F2", border: "1px solid #FECACA",
-                fontSize: T.bodySm, color: "#B91C1C", fontFamily: "var(--sans)",
+                background: C.errorSoft, border: `1px solid ${C.errorBorder}`,
+                fontSize: T.bodySm, color: C.errorText, fontFamily: "var(--sans)",
               }}>
                 {createError}
               </div>
@@ -575,7 +575,7 @@ export default function SettingsPage() {
               </button>
               <button onClick={handleRevokeKey} disabled={revoking} style={{
                 flex: 1, padding: "10px 0", borderRadius: 10,
-                border: "none", background: "#DC2626",
+                border: "none", background: C.error,
                 fontSize: T.bodySm, fontWeight: 600, color: "#fff",
                 cursor: revoking ? "not-allowed" : "pointer",
                 fontFamily: "var(--sans)", transition: "opacity 0.12s",

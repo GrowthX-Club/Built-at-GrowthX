@@ -53,7 +53,7 @@ export default function Header({
             onClick={onSubmit}
             style={{
               background: C.accent,
-              color: "#fff",
+              color: C.accentFg,
               border: "none",
               borderRadius: 8,
               padding: "8px 16px",
