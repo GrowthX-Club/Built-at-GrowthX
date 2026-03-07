@@ -783,9 +783,38 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
+        {/* Draft banner */}
+        {p.isDraft && (
+          <div className="fade-up stagger-1" style={{
+            padding: "14px 20px", borderRadius: 12, marginBottom: 24,
+            background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
+            display: "flex", alignItems: "center", gap: 10,
+            fontSize: T.bodySm, fontFamily: "var(--sans)", color: C.text,
+          }}>
+            <span style={{ fontSize: T.bodyLg }}>&#9998;</span>
+            <div>
+              <span style={{ fontWeight: 600 }}>Draft</span>
+              <span style={{ color: C.textSec, fontWeight: 400 }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
+            </div>
+          </div>
+        )}
+
         {/* Product info */}
         <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
           <RichTextDisplay description={p.description} />
+
+          {/* Build process */}
+          {p.buildProcess && (
+            <div style={{ marginTop: 28 }}>
+              <div style={{
+                fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em",
+                textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)",
+              }}>
+                How it was built
+              </div>
+              <RichTextDisplay description={p.buildProcess} />
+            </div>
+          )}
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>

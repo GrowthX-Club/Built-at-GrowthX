@@ -76,7 +76,8 @@ export function mockBxApi(path: string, init?: RequestInit): Response | null {
 
   // POST /projects
   if (route === "/projects" && method === "POST") {
-    return jsonResponse({ project: { id: "mock-new", name: "New Project" } });
+    const body = init?.body ? JSON.parse(init.body as string) : {};
+    return jsonResponse({ project: { id: "mock-new", name: body.name || "New Project", isDraft: body.isDraft || false, buildProcess: body.buildProcess || "" } });
   }
 
   // PUT /projects/:id

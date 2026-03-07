@@ -120,10 +120,10 @@ function HomePage() {
   const [showSubmit, setShowSubmit] = useState(false);
   const [submitStep, setSubmitStep] = useState(0);
   const [submitData, setSubmitData] = useState({
-    name: "", tagline: "", description: "",
+    name: "", tagline: "", description: "", buildProcess: "",
     stack: [] as string[], stackInput: "",
     team: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string; role: 'creator' | 'collaborator' }[], teamInput: "",
-    url: "",
+    url: "", isDraft: false,
   });
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -151,7 +151,7 @@ function HomePage() {
       .then((r) => r.json())
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
-          .filter((p: Project) => p.enabled !== false);
+          .filter((p: Project) => p.enabled !== false && !p.isDraft);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
         setHasMore(PAGE_SIZE < (d.totalCount || 0));
@@ -167,7 +167,7 @@ function HomePage() {
       .then((r) => r.json())
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
-          .filter((p: Project) => p.enabled !== false);
+          .filter((p: Project) => p.enabled !== false && !p.isDraft);
         if (list.length === 0) {
           setHasMore(false);
           return;
@@ -227,7 +227,7 @@ function HomePage() {
     }
     setShowSubmit(true);
     setSubmitStep(0);
-    setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
+    setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false });
     setSubmitError("");
   }, [searchParams, user, userLoaded, router, openLoginDialog, loadUser]);
 
@@ -329,12 +329,14 @@ function HomePage() {
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, weighted: w, raw: rv } : p));
   };
 
-  const handleSubmitProject = async () => {
+  const handleSubmitProject = async (asDraft = false) => {
     if (!user) {
       handleSignIn();
       return;
     }
     setSubmitError("");
+
+    const savingAsDraft = asDraft || submitData.isDraft;
 
     // Client-side validation
     if (!submitData.name.trim()) {
@@ -347,14 +349,25 @@ function HomePage() {
       setSubmitStep(0);
       return;
     }
-    if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) {
+    if (!savingAsDraft) {
+      if (!submitData.url?.trim()) {
+        setSubmitError("Product URL is required. Save as draft if you don't have one yet.");
+        setSubmitStep(0);
+        return;
+      }
+      if (!/^https?:\/\/.+/.test(submitData.url.trim())) {
+        setSubmitError("Please enter a valid URL starting with http:// or https://");
+        setSubmitStep(0);
+        return;
+      }
+    } else if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) {
       setSubmitError("Please enter a valid URL starting with http:// or https://");
       setSubmitStep(0);
       return;
     }
     if (submitData.stack.length === 0) {
       setSubmitError("Add at least one tech stack item.");
-      setSubmitStep(2);
+      setSubmitStep(3);
       return;
     }
 
@@ -370,6 +383,8 @@ function HomePage() {
           category: "AI",
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
+          buildProcess: submitData.buildProcess || undefined,
+          isDraft: savingAsDraft || undefined,
           creators: submitData.team.filter(c => c.role === 'creator').map(c => c._id),
           collabs: submitData.team.filter(c => c.role === 'collaborator').map(c => c._id),
         }),
@@ -377,7 +392,7 @@ function HomePage() {
       if (res.ok) {
         setShowSubmit(false);
         setSubmitStep(0);
-        setSubmitData({ name: "", tagline: "", description: "", stack: [], stackInput: "", team: [], teamInput: "", url: "" });
+        setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false });
         setSubmitError("");
         loadProjects();
       } else {
@@ -706,7 +721,7 @@ function HomePage() {
             <div style={{ height: 3, background: C.borderLight }}>
               <div style={{
                 height: 3, background: C.accent,
-                width: `${((submitStep + 1) / 3) * 100}%`,
+                width: `${((submitStep + 1) / 4) * 100}%`,
                 transition: "width 0.3s ease",
                 borderRadius: 3,
               }} />
@@ -723,12 +738,12 @@ function HomePage() {
                   fontFamily: "var(--sans)", letterSpacing: "0.04em",
                   textTransform: "uppercase", marginBottom: 4,
                 }}>
-                  {["The basics", "The story", "Tech and team"][submitStep]}
+                  {["The basics", "The story", "Build process", "Tech and team"][submitStep]}
                 </div>
                 <div style={{
                   fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 400,
                 }}>
-                  Step {submitStep + 1} of 3
+                  Step {submitStep + 1} of 4
                 </div>
               </div>
               <button onClick={() => setShowSubmit(false)} style={{
@@ -799,7 +814,7 @@ function HomePage() {
                       display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
                       fontFamily: "var(--sans)", marginBottom: 8,
                     }}>
-                      Product URL <span style={{ color: C.textMute, fontWeight: 400, fontSize: T.caption }}>(optional)</span>
+                      Product URL <span style={{ color: C.textMute, fontWeight: 400 }}>*</span>
                     </label>
                     <input
                       className="submit-input"
@@ -853,8 +868,50 @@ function HomePage() {
                 </div>
               )}
 
-              {/* Step 2: Tech stack + collaborators */}
+              {/* Step 2: Build process */}
               {submitStep === 2 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  <div style={{
+                    fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
+                    fontWeight: 400, lineHeight: 1.55, marginBottom: 20,
+                  }}>
+                    Walk us through how you actually built this. Think of it as the behind-the-scenes for fellow builders.
+                  </div>
+
+                  <div style={{ marginBottom: 20, paddingLeft: 2 }}>
+                    {[
+                      { q: "Tools & tech choices", hint: "e.g. \"Went with Next.js + Supabase because I needed auth fast\"" },
+                      { q: "Biggest challenge", hint: "e.g. \"Spent 2 days debugging OAuth — turned out it was a cookie domain issue\"" },
+                      { q: "What you'd do differently", hint: "e.g. \"Would skip building a custom CMS and just use Notion API\"" },
+                    ].map((prompt, pi) => (
+                      <div key={pi} style={{
+                        display: "flex", alignItems: "baseline", gap: 8,
+                        marginBottom: pi < 2 ? 8 : 0,
+                      }}>
+                        <span style={{
+                          fontSize: T.label, fontWeight: 650, color: C.textMute,
+                          fontFamily: "var(--mono)", minWidth: 16,
+                        }}>
+                          {pi + 1}.
+                        </span>
+                        <span style={{ fontSize: T.body, fontFamily: "var(--sans)", lineHeight: 1.4 }}>
+                          <span style={{ fontWeight: 580, color: C.text }}>{prompt.q}</span>
+                          <span style={{ color: C.textMute, fontWeight: 400 }}> — {prompt.hint}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <RichTextEditor
+                    value={submitData.buildProcess}
+                    onChange={(json) => setSubmitData(d => ({ ...d, buildProcess: json }))}
+                    maxChars={1500}
+                  />
+                </div>
+              )}
+
+              {/* Step 3: Tech stack + collaborators */}
+              {submitStep === 3 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                   <div>
                     <div style={{ fontSize: T.label, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 500, marginBottom: 10 }}>
@@ -1198,6 +1255,8 @@ function HomePage() {
                       if (descriptionCharCount(submitData.description) === 0) { setSubmitError("Description is required. Tell us what you built."); return; }
                       if (descriptionCharCount(submitData.description) > 1500) { setSubmitError("Description must be 1500 characters or less."); return; }
                       setSubmitStep(2);
+                    } else if (submitStep === 2) {
+                      setSubmitStep(3);
                     } else {
                       if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }
                       handleSubmitProject();
@@ -1216,8 +1275,29 @@ function HomePage() {
                     opacity: submitting ? 0.7 : 1,
                   }}
                 >
-                  {submitting ? "Submitting\u2026" : submitStep === 2 ? "Submit" : "Continue"}
+                  {submitting ? "Submitting\u2026" : submitStep === 3 ? "Submit" : "Continue"}
                 </button>
+
+                {submitStep === 3 && !submitting && (
+                  <button
+                    onClick={() => {
+                      setSubmitError("");
+                      if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }
+                      handleSubmitProject(true);
+                    }}
+                    style={{
+                      padding: "9px 20px", borderRadius: 10,
+                      border: `1px dashed ${C.border}`, background: "transparent",
+                      fontSize: T.bodySm, fontWeight: 500, color: C.textMute,
+                      cursor: "pointer", fontFamily: "var(--sans)",
+                      transition: "all 0.12s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMute; }}
+                  >
+                    Save as Draft
+                  </button>
+                )}
               </div>
             </div>
           </div>

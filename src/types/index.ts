@@ -119,6 +119,8 @@ export interface Project {
   date: string;
   gallery: GalleryItem[];
   url?: string;
+  buildProcess?: string;
+  isDraft?: boolean;
   enabled: boolean;
 }
 
@@ -351,6 +353,8 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     date: (p.date ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
     url: (p.url as string) || undefined,
+    buildProcess: (p.buildProcess ?? p.build_process ?? undefined) as string | undefined,
+    isDraft: (p.isDraft ?? p.is_draft ?? false) as boolean,
     enabled: (p.enabled !== undefined ? p.enabled : true) as boolean,
   };
 }
