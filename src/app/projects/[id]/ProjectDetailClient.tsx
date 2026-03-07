@@ -993,7 +993,6 @@ export default function ProjectDetailPage() {
                   placeholder="Ask a question or share your thoughts..."
                   onKeyDown={e => {
                     if (e.key === "Escape" && mentionQuery !== null) { e.stopPropagation(); setMentionQuery(null); setMentionResults([]); return; }
-                    if (e.key === "Enter" && !e.shiftKey && mentionQuery === null) { e.preventDefault(); handlePostComment(); }
                   }}
                   style={{
                     width: "100%", padding: "11px 16px", borderRadius: 10,
