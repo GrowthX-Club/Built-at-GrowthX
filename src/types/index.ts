@@ -350,7 +350,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     buildathon: (p.buildathon ?? null) as string | null,
     heroColor: ((p.heroColor ?? p.hero_color ?? '#2255CC') as string),
     featured: (p.featured ?? false) as boolean,
-    date: (p.date ?? '') as string,
+    date: (p.date ?? p.createdAt ?? p.created_at ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
     url: (p.url as string) || undefined,
     buildProcess: (p.buildProcess ?? p.build_process ?? undefined) as string | undefined,

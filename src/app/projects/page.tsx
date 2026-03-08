@@ -137,6 +137,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
+  const [sortMode, setSortMode] = useState<'trending' | 'new' | 'top'>('trending');
 
 
   const loadProjects = useCallback(() => {
@@ -145,7 +146,6 @@ export default function ProjectsPage() {
       .then((d) => {
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
           .filter((p: Project) => p.enabled !== false);
-        list.sort((a: Project, b: Project) => b.weighted - a.weighted);
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
       })
@@ -185,6 +185,24 @@ export default function ProjectsPage() {
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, weighted: w, raw: rv } : p));
   };
 
+  const regularProjects = (() => {
+    const filtered = projects.filter(p => !p.featured);
+    const sorted = [...filtered];
+    if (sortMode === 'top') {
+      sorted.sort((a, b) => b.weighted - a.weighted);
+    } else if (sortMode === 'new') {
+      sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } else {
+      const now = Date.now();
+      const trendingScore = (p: Project) => {
+        const hoursAge = (now - new Date(p.date).getTime()) / 3600000;
+        return p.weighted / Math.pow(hoursAge + 2, 1.5);
+      };
+      sorted.sort((a, b) => trendingScore(b) - trendingScore(a));
+    }
+    return sorted;
+  })();
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
       <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: "32px 32px 100px" }}>
@@ -199,6 +217,35 @@ export default function ProjectsPage() {
           <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
             Products built by the GrowthX community. Ranked by the people who build.
           </p>
+        </div>
+
+        {/* Sort Tabs */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+          {([
+            { key: 'trending' as const, label: 'Trending' },
+            { key: 'new' as const, label: 'New' },
+            { key: 'top' as const, label: 'Top' },
+          ]).map(tab => {
+            const active = sortMode === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setSortMode(tab.key)}
+                style={{
+                  padding: isMobile ? "6px 14px" : "6px 18px",
+                  borderRadius: 20,
+                  border: active ? "none" : `1px solid ${C.border}`,
+                  background: active ? C.accent : "transparent",
+                  color: active ? C.accentFg : C.textSec,
+                  fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
+                  cursor: "pointer", transition: "all 0.2s",
+                  ...(isMobile ? { flex: 1 } : {}),
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {loading && projects.length === 0 ? (
@@ -263,7 +310,7 @@ export default function ProjectsPage() {
 
             {/* Project list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-              {projects.map((p, i) => (
+              {regularProjects.map((p, i) => (
                 <div
                   key={p.id}
                   className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover`}
@@ -276,7 +323,7 @@ export default function ProjectsPage() {
                     gridTemplateColumns: isMobile ? undefined : "2fr 1fr 80px",
                     alignItems: isMobile ? undefined : "center",
                     gap: isMobile ? 8 : isTablet ? 16 : 24,
-                    position: "relative", zIndex: projects.length - i,
+                    position: "relative", zIndex: regularProjects.length - i,
                   }}
                 >
                   {/* Top: product name + tagline + upvote (mobile: row with square button) */}
