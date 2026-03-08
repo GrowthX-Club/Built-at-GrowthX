@@ -18,6 +18,7 @@ import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextEditor from "@/components/RichTextEditor";
+import ActivityFeed from "@/components/ActivityFeed";
 import { descriptionCharCount } from "@/lib/editor-utils";
 import ProjectIcon from "@/components/ProjectIcon";
 // ---- UI Components ----
@@ -136,6 +137,7 @@ function HomePage() {
   const [userLoaded, setUserLoaded] = useState(false);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
+  const [sortMode, setSortMode] = useState<'trending' | 'new' | 'top'>('trending');
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
   const PAGE_SIZE = 20;
@@ -413,11 +415,35 @@ function HomePage() {
     }
   };
 
-  const regularProjects = projects.filter(p => !p.featured);
+  const regularProjects = (() => {
+    const filtered = projects.filter(p => !p.featured);
+    const sorted = [...filtered];
+    if (sortMode === 'top') {
+      sorted.sort((a, b) => b.weighted - a.weighted);
+    } else if (sortMode === 'new') {
+      sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } else {
+      // Trending: Hacker News-style decay
+      const now = Date.now();
+      const trendingScore = (p: Project) => {
+        const hoursAge = (now - new Date(p.date).getTime()) / 3600000;
+        return p.weighted / Math.pow(hoursAge + 2, 1.5);
+      };
+      sorted.sort((a, b) => trendingScore(b) - trendingScore(a));
+    }
+    return sorted;
+  })();
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <main className="responsive-main" style={{ maxWidth: 960, margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "32px 32px 100px" }}>
+      <div style={{
+        maxWidth: isMobile || isTablet ? 960 : 1280,
+        margin: "0 auto",
+        display: isMobile || isTablet ? "block" : "flex",
+        gap: 40,
+        padding: isMobile ? "0" : isTablet ? "0" : "0 32px",
+      }}>
+      <main className="responsive-main" style={{ flex: 1, maxWidth: 960, padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
         {/* Header */}
         <div className="fade-up" style={{ marginBottom: 36 }}>
           <h1 className="responsive-h1 hero-title" style={{
@@ -429,6 +455,35 @@ function HomePage() {
           <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
             Products built by the GrowthX community. Ranked by the people who build.
           </p>
+        </div>
+
+        {/* Sort Tabs */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+          {([
+            { key: 'trending' as const, label: 'Trending' },
+            { key: 'new' as const, label: 'New' },
+            { key: 'top' as const, label: 'Top' },
+          ]).map(tab => {
+            const active = sortMode === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setSortMode(tab.key)}
+                style={{
+                  padding: isMobile ? "6px 14px" : "6px 18px",
+                  borderRadius: 20,
+                  border: active ? "none" : `1px solid ${C.border}`,
+                  background: active ? C.accent : "transparent",
+                  color: active ? C.accentFg : C.textSec,
+                  fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
+                  cursor: "pointer", transition: "all 0.2s",
+                  ...(isMobile ? { flex: 1 } : {}),
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {loading && projects.length === 0 ? (
@@ -680,6 +735,16 @@ function HomePage() {
           </>
         )}
       </main>
+
+      {/* Activity Feed Sidebar — desktop only */}
+      {!isMobile && !isTablet && (
+        <aside style={{ width: 280, flexShrink: 0 }}>
+          <div style={{ paddingTop: 32 }}>
+            <ActivityFeed />
+          </div>
+        </aside>
+      )}
+      </div>
 
       {/* ---- SUBMIT FLOW ---- */}
       {showSubmit && createPortal(
@@ -1228,7 +1293,7 @@ function HomePage() {
               {/* Navigation */}
               <div style={{
                 display: "flex", justifyContent: "space-between",
-                alignItems: "center", marginTop: submitError ? 16 : 28,
+                alignItems: "flex-start", marginTop: submitError ? 16 : 28,
               }}>
                 {submitStep > 0 ? (
                   <button onClick={() => { setSubmitError(""); setSubmitStep(s => s - 1); }} disabled={submitting} style={{
@@ -1237,67 +1302,70 @@ function HomePage() {
                     fontSize: T.bodySm, fontWeight: 500, color: C.textSec,
                     cursor: submitting ? "default" : "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s", opacity: submitting ? 0.5 : 1,
+                    marginTop: 2,
                   }}
                   onMouseEnter={e => { if (!submitting) { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; } }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
                   >Back</button>
                 ) : <div />}
 
-                <button
-                  onClick={() => {
-                    setSubmitError("");
-                    if (submitStep === 0) {
-                      if (!submitData.name.trim()) { setSubmitError("Project name is required."); return; }
-                      if (!submitData.tagline.trim()) { setSubmitError("Tagline is required."); return; }
-                      if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) { setSubmitError("Please enter a valid URL starting with http:// or https://"); return; }
-                      setSubmitStep(1);
-                    } else if (submitStep === 1) {
-                      if (descriptionCharCount(submitData.description) === 0) { setSubmitError("Description is required. Tell us what you built."); return; }
-                      if (descriptionCharCount(submitData.description) > 1500) { setSubmitError("Description must be 1500 characters or less."); return; }
-                      setSubmitStep(2);
-                    } else if (submitStep === 2) {
-                      setSubmitStep(3);
-                    } else {
-                      if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }
-                      handleSubmitProject();
-                    }
-                  }}
-                  disabled={submitting}
-                  style={{
-                    padding: "9px 24px", borderRadius: 10,
-                    border: "none",
-                    background: submitting ? C.borderLight : C.accent,
-                    fontSize: T.bodySm, fontWeight: 600,
-                    color: submitting ? C.textMute : C.accentFg,
-                    cursor: submitting ? "default" : "pointer",
-                    fontFamily: "var(--sans)",
-                    transition: "all 0.15s",
-                    opacity: submitting ? 0.7 : 1,
-                  }}
-                >
-                  {submitting ? "Submitting\u2026" : submitStep === 3 ? "Submit" : "Continue"}
-                </button>
-
-                {submitStep === 3 && !submitting && (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
                   <button
                     onClick={() => {
                       setSubmitError("");
-                      if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }
-                      handleSubmitProject(true);
+                      if (submitStep === 0) {
+                        if (!submitData.name.trim()) { setSubmitError("Project name is required."); return; }
+                        if (!submitData.tagline.trim()) { setSubmitError("Tagline is required."); return; }
+                        if (submitData.url?.trim() && !/^https?:\/\/.+/.test(submitData.url.trim())) { setSubmitError("Please enter a valid URL starting with http:// or https://"); return; }
+                        setSubmitStep(1);
+                      } else if (submitStep === 1) {
+                        if (descriptionCharCount(submitData.description) === 0) { setSubmitError("Description is required. Tell us what you built."); return; }
+                        if (descriptionCharCount(submitData.description) > 1500) { setSubmitError("Description must be 1500 characters or less."); return; }
+                        setSubmitStep(2);
+                      } else if (submitStep === 2) {
+                        setSubmitStep(3);
+                      } else {
+                        if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }
+                        handleSubmitProject();
+                      }
                     }}
+                    disabled={submitting}
                     style={{
-                      padding: "9px 20px", borderRadius: 10,
-                      border: `1px dashed ${C.border}`, background: "transparent",
-                      fontSize: T.bodySm, fontWeight: 500, color: C.textMute,
-                      cursor: "pointer", fontFamily: "var(--sans)",
-                      transition: "all 0.12s",
+                      padding: "9px 24px", borderRadius: 10,
+                      border: "none",
+                      background: submitting ? C.borderLight : C.accent,
+                      fontSize: T.bodySm, fontWeight: 600,
+                      color: submitting ? C.textMute : C.accentFg,
+                      cursor: submitting ? "default" : "pointer",
+                      fontFamily: "var(--sans)",
+                      transition: "all 0.15s",
+                      opacity: submitting ? 0.7 : 1,
+                      minWidth: 160,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMute; }}
                   >
-                    Save as Draft
+                    {submitting ? "Submitting\u2026" : submitStep === 3 ? "Submit" : "Continue"}
                   </button>
-                )}
+
+                  {submitStep === 3 && !submitting && (
+                    <button
+                      onClick={() => {
+                        setSubmitError("");
+                        if (submitData.stack.length === 0) { setSubmitError("Add at least one tech stack item."); return; }
+                        handleSubmitProject(true);
+                      }}
+                      style={{
+                        background: "none", border: "none", padding: 0,
+                        fontSize: T.bodySm, fontWeight: 450, color: C.textMute,
+                        cursor: "pointer", fontFamily: "var(--sans)",
+                        transition: "color 0.12s",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = C.text; e.currentTarget.style.textDecoration = "underline"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = C.textMute; e.currentTarget.style.textDecoration = "none"; }}
+                    >
+                      or save as draft
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

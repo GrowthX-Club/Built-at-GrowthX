@@ -16,6 +16,7 @@ import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import { useTheme } from "@/context/ThemeContext";
 import BuiltLogo from "@/components/BuiltLogo";
+import NotificationBell from "@/components/NotificationBell";
 
 function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
@@ -168,6 +169,7 @@ export default function AppNav() {
               )}
               <BuiltLogo height={36} onClick={() => router.push("/")} />
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {user && <NotificationBell />}
                 {voteState && showVoteInNav ? (
                   <button
                     onClick={voteState.onVote}
@@ -262,6 +264,8 @@ export default function AppNav() {
                     <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
                   </button>
                 )}
+                {/* Notification bell — desktop, logged in only */}
+                {user && <NotificationBell />}
                 {/* Theme toggle — desktop only */}
                 <div style={{ position: "relative" }}>
                   <button
