@@ -549,6 +549,28 @@ export interface RevokeApiKeyResponse {
   msg: string;
 }
 
+export interface ActivityItem {
+  id: string;
+  type: 'vote' | 'comment' | 'project';
+  actorName: string;
+  actorAvatar?: string;
+  projectName: string;
+  projectId: string;
+  timestamp: string;
+}
+
+export interface BxNotification {
+  id: string;
+  type: 'vote' | 'comment' | 'reaction';
+  actorName: string;
+  actorAvatar?: string;
+  projectName: string;
+  projectId: string;
+  commentPreview?: string;
+  read: boolean;
+  createdAt: string;
+}
+
 export const ROLE_WEIGHTS: Record<string, number> = {
   founder: 5,
   host: 4,
