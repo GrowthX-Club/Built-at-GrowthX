@@ -383,8 +383,8 @@ function HomePage() {
           category: "AI",
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
-          buildProcess: submitData.buildProcess || undefined,
-          isDraft: savingAsDraft || undefined,
+          // buildProcess and isDraft are collected in the form but not sent yet
+          // (backend needs to be updated per BACKEND_CHANGES.md to accept these fields)
           creators: submitData.team.filter(c => c.role === 'creator').map(c => c._id),
           collabs: submitData.team.filter(c => c.role === 'collaborator').map(c => c._id),
         }),
