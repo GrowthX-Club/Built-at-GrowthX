@@ -50,7 +50,7 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
 }
 
 const NAV_TABS = [
-  { href: "/projects", label: "Projects" },
+  { href: "/", label: "Projects" },
   { href: "/builders", label: "Builders" },
 ];
 
@@ -107,7 +107,7 @@ export default function AppNav() {
 
   const updateUnderline = useCallback(() => {
     const checkActive = (href: string) => {
-      if (href === "/projects") return pathname === "/" || pathname === "/projects";
+      if (href === "/") return pathname === "/" || pathname === "/projects";
       return pathname === href;
     };
     const activeTab = NAV_TABS.find(t => checkActive(t.href));
@@ -130,14 +130,14 @@ export default function AppNav() {
   };
 
   const handleSignOut = async () => {
-    await bxApi("/logout", { method: "POST" }).catch(() => {});
+    await bxApi("/logout", { method: "POST" }).catch(() => { });
     clearToken();
     setUser(null);
     setShowProfileMenu(false);
   };
 
   const isTabActive = (href: string) => {
-    if (href === "/projects") return pathname === "/" || pathname === "/projects";
+    if (href === "/") return pathname === "/" || pathname === "/projects";
     return pathname === href;
   };
 
@@ -160,11 +160,11 @@ export default function AppNav() {
             <>
               {override ? (
                 <button onClick={() => router.push(override.backHref)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                 </button>
               ) : (
                 <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
                 </button>
               )}
               <BuiltLogo height={36} onClick={() => router.push("/")} />
@@ -199,7 +199,7 @@ export default function AppNav() {
                       transition: "all 0.12s", flexShrink: 0,
                     }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                   </button>
                 )}
                 {userLoading ? (
@@ -286,15 +286,15 @@ export default function AppNav() {
                   >
                     {theme === "light" ? (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                       </svg>
                     ) : (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="5"/>
-                        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        <circle cx="12" cy="12" r="5" />
+                        <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                        <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                       </svg>
                     )}
                   </button>
@@ -318,14 +318,14 @@ export default function AppNav() {
                   transition: "color 0.25s, border-color 0.25s, box-shadow 0.25s",
                   display: "flex", alignItems: "center", gap: 6,
                 }}
-                onMouseMove={e => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  e.currentTarget.style.setProperty("--mx", `${e.clientX - rect.left}px`);
-                  e.currentTarget.style.setProperty("--my", `${e.clientY - rect.top}px`);
-                }}
-                onClick={() => router.push("/?submit=1")}
+                  onMouseMove={e => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    e.currentTarget.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+                    e.currentTarget.style.setProperty("--my", `${e.clientY - rect.top}px`);
+                  }}
+                  onClick={() => router.push("/?submit=1")}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
                   {isTablet ? "" : "Submit your project"}
                 </button>
                 {userLoading ? (
@@ -349,8 +349,8 @@ export default function AppNav() {
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
-                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                          onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
+                          onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
                           <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
@@ -361,8 +361,8 @@ export default function AppNav() {
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
-                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                          onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
+                          onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
                           <span style={{ fontSize: T.body }}>{"\u2699\uFE0F"}</span> Settings
                         </button>
@@ -373,8 +373,8 @@ export default function AppNav() {
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = C.errorSoft}
-                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                          onMouseEnter={e => e.currentTarget.style.background = C.errorSoft}
+                          onMouseLeave={e => e.currentTarget.style.background = "none"}
                         >
                           <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
@@ -389,8 +389,8 @@ export default function AppNav() {
                     cursor: "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
                   >
                     Sign in
                   </button>
@@ -411,7 +411,7 @@ export default function AppNav() {
                       onMouseEnter={e => e.currentTarget.style.color = C.text}
                       onMouseLeave={e => e.currentTarget.style.color = C.textSec}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                       Back
                     </button>
                     <span style={{
@@ -439,8 +439,8 @@ export default function AppNav() {
                             letterSpacing: "0.005em",
                             position: "relative",
                           }}
-                          onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
-                          onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
+                            onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
+                            onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
                           >
                             <span style={{ fontWeight: 600, visibility: "hidden" }}>{t.label}</span>
                             <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: active ? 600 : 400 }}>{t.label}</span>
@@ -482,7 +482,7 @@ export default function AppNav() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 60, borderBottom: `1px solid ${C.borderLight}` }}>
               <BuiltLogo height={36} />
               <button onClick={() => setMobileMenuOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.textMute} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.textMute} strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
             <div style={{ padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
@@ -502,7 +502,7 @@ export default function AppNav() {
                 fontSize: T.body, fontWeight: 500, color: C.textSec, fontFamily: "var(--sans)", textAlign: "left",
                 display: "flex", alignItems: "center", gap: 10,
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
                 Submit your project
               </button>
             </div>

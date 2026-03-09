@@ -56,10 +56,26 @@ export function mockBxApi(path: string, init?: RequestInit): Response | null {
   if (route === "/projects" && method === "GET") {
     const limit = parseInt(params.get("limit") || "20", 10);
     const offset = parseInt(params.get("offset") || "0", 10);
-    const slice = seedProjects.slice(offset, offset + limit);
+    const sort = params.get("sort") || "trending";
+
+    // Sort projects the same way the backend would
+    const sortedProjects = [...seedProjects].sort((a, b) => {
+      if (sort === "top") return b.weighted - a.weighted;
+      if (sort === "new") return new Date(b.date).getTime() - new Date(a.date).getTime();
+
+      // Trending (default fallback)
+      const now = Date.now();
+      const trendingScore = (p: typeof a) => {
+        const hoursAge = (now - new Date(p.date).getTime()) / 3600000;
+        return p.weighted / Math.pow(hoursAge + 2, 1.5);
+      };
+      return trendingScore(b) - trendingScore(a);
+    });
+
+    const slice = sortedProjects.slice(offset, offset + limit);
     return jsonResponse({
       projects: slice,
-      totalCount: seedProjects.length,
+      totalCount: sortedProjects.length,
       votedProjectIds: [],
     });
   }
