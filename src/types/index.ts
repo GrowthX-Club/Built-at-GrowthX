@@ -275,15 +275,15 @@ function normalizeReactions(raw: unknown[]): Reaction[] {
   return raw.map((item) => {
     const r = item as Record<string, unknown>;
     return {
-    emoji: {
-      code: (r.emoji_code ?? '') as string,
-      display: (r.emoji_display ?? '') as string,
-      label: (r.emoji_label ?? '') as string,
-      special: (r.emoji_special ?? false) as boolean,
-    },
-    count: (r.count ?? 0) as number,
-    mine: (r.mine ?? false) as boolean,
-  };
+      emoji: {
+        code: (r.emoji_code ?? '') as string,
+        display: (r.emoji_display ?? '') as string,
+        label: (r.emoji_label ?? '') as string,
+        special: (r.emoji_special ?? false) as boolean,
+      },
+      count: (r.count ?? 0) as number,
+      mine: (r.mine ?? false) as boolean,
+    };
   });
 }
 
@@ -350,7 +350,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     buildathon: (p.buildathon ?? null) as string | null,
     heroColor: ((p.heroColor ?? p.hero_color ?? '#2255CC') as string),
     featured: (p.featured ?? false) as boolean,
-    date: (p.date ?? '') as string,
+    date: (p.date ?? p.created_at ?? p.createdAt ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
     url: (p.url as string) || undefined,
     buildProcess: (p.buildProcess ?? p.build_process ?? undefined) as string | undefined,
