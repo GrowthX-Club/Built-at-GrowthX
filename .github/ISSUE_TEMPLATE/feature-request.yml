@@ -1,0 +1,56 @@
+name: Feature Request
+description: Propose a new feature for Built at GrowthX
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! If you'd like to build it yourself, check out [CONTRIBUTING.md](../../CONTRIBUTING.md) for the contract-first workflow.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What should this feature do?
+      description: Describe the feature from a user's perspective.
+      placeholder: "As a user, I want to bookmark projects so I can find them later."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Does this need backend changes?
+      options:
+        - "No — UI only"
+        - "Yes — needs new API endpoints"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: api
+    attributes:
+      label: Proposed API endpoints (if applicable)
+      description: |
+        If this needs backend work, sketch out the endpoints.
+        Example: `GET /bookmarks` — returns user's bookmarked projects
+      placeholder: |
+        GET /endpoint — description
+        POST /endpoint — description, body: { field1, field2 }
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: UI mockup or reference
+      description: Sketch, screenshot, or description of how it should look.
+
+  - type: dropdown
+    id: willing
+    attributes:
+      label: Are you willing to build this?
+      options:
+        - "Yes — I'll submit a PR"
+        - "No — just suggesting"
+        - "Maybe — need guidance"
+    validations:
+      required: true

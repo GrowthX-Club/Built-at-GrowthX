@@ -62,7 +62,13 @@ src/
 ├── components/             # Shared components (Nav, LoginDialog, etc.)
 ├── lib/
 │   ├── api.ts              # API client (auto-switches to mock in dev)
-│   ├── mock-api.ts         # Mock responses from seed data
+│   ├── mock-api/           # Mock handlers — one file per feature domain
+│   │   ├── index.ts        # Router (registers all handlers)
+│   │   ├── types.ts        # MockRoute type definition
+│   │   ├── projects.ts     # Project CRUD
+│   │   ├── votes.ts        # Voting
+│   │   ├── comments.ts     # Comments + reactions
+│   │   └── ...             # More domains
 │   └── seed-data.ts        # Seed data (projects, builders, cities, threads)
 ├── types/
 │   └── index.ts            # All TypeScript types, color system, normalizers
@@ -72,20 +78,19 @@ src/
 
 ## Contributing
 
-1. Fork the repo and create your branch from `main`
-2. `cp .env.example .env.local` (mock mode is on by default)
-3. Make your changes
-4. Test locally with `npm run dev`
-5. Run `npm run build` to verify there are no build errors
-6. Open a pull request against `main`
+**Read [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.**
 
-### Guidelines
+The short version:
 
-- Keep the warm, editorial design language (serif headings, monospace numbers, `#F8F7F4` background)
-- Use inline styles for components — that's the existing pattern
-- Color constants are in `src/types/index.ts` as the `C` object — use them instead of hardcoding colors
-- Typography scale is in `src/types/index.ts` as the `T` object
-- Don't commit `.env.local` or any credentials
+1. Fork the repo and create a branch from `dev`
+2. `cp .env.example .env.local` (mock mode on by default)
+3. Make your changes — for features needing backend, use the **contract-first** approach (add types + mock handler + frontend)
+4. Test with `npm run dev`, verify with `npm run build`
+5. Open a PR against **`dev`** (not `main`)
+
+### Want to add a feature that needs backend changes?
+
+You don't need backend access. Create a mock handler file in `src/lib/mock-api/` that defines the API contract, build your frontend against it, and submit a PR. The maintainers implement the real backend to match your contract. See [CONTRIBUTING.md](CONTRIBUTING.md) for the step-by-step guide.
 
 ### Good first issues
 
@@ -96,6 +101,14 @@ Look for issues tagged [`good first issue`](https://github.com/GrowthX-Club/Buil
 - New badge/tag designs
 - Animation refinements
 - Dark mode enhancements
+
+### Guidelines
+
+- Keep the warm, editorial design language (serif headings, monospace numbers, `#F8F7F4` background)
+- Use inline styles for components — that's the existing pattern
+- Color constants are in `src/types/index.ts` as the `C` object — use them instead of hardcoding colors
+- Typography scale is in `src/types/index.ts` as the `T` object
+- Don't commit `.env.local` or any credentials
 
 ## Environment Variables
 
@@ -108,6 +121,8 @@ Look for issues tagged [`good first issue`](https://github.com/GrowthX-Club/Buil
 ## For Team Members
 
 If you have backend access, set `NEXT_PUBLIC_MOCK_MODE=false` (or remove it) in `.env.local` and configure `NEXT_PUBLIC_API_URL` to point to the running gx-backend instance.
+
+See [BACKEND_GUIDE.md](BACKEND_GUIDE.md) for how to implement contributor API contracts in gx-backend.
 
 ## License
 

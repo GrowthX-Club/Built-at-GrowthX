@@ -1,4 +1,4 @@
-import { mockBxApi, mockGxApi } from './mock-api';
+import { mockBxApi, mockGxApi } from './mock-api/index';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 const MOCK_MODE = process.env.NEXT_PUBLIC_MOCK_MODE === 'true';
