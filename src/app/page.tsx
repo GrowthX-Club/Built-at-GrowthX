@@ -140,6 +140,8 @@ function HomePage() {
   const [sortMode, setSortMode] = useState<'trending' | 'new' | 'top'>('trending');
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
+  const sortModeRef = useRef(sortMode);
+  sortModeRef.current = sortMode;
   const PAGE_SIZE = 20;
   const { isMobile, isTablet } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
@@ -149,12 +151,14 @@ function HomePage() {
   const collabDropdownRef = useRef<HTMLDivElement>(null);
 
   const loadProjects = useCallback(() => {
+    const requestedSort = sortMode;
     setLoading(true);
     setProjects([]);
     setHasMore(false);
     bxApi(`/projects?limit=${PAGE_SIZE}&offset=0&sort=${sortMode}`)
       .then((r) => r.json())
       .then((d) => {
+        if (sortModeRef.current !== requestedSort) return; // stale response
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
