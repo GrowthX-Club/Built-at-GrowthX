@@ -158,22 +158,26 @@ function HomePage() {
     bxApi(`/projects?limit=${PAGE_SIZE}&offset=0&sort=${sortMode}`)
       .then((r) => r.json())
       .then((d) => {
-        if (sortModeRef.current !== requestedSort) return; // stale response
+        if (sortModeRef.current !== requestedSort) return;
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
         setHasMore(PAGE_SIZE < (d.totalCount || 0));
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (sortModeRef.current === requestedSort) setLoading(false);
+      });
   }, [sortMode]);
 
   const loadMore = useCallback(() => {
     if (loadingMoreRef.current || !hasMore) return;
+    const requestedSort = sortMode;
     loadingMoreRef.current = true;
     setLoadingMore(true);
     bxApi(`/projects?limit=${PAGE_SIZE}&offset=${projects.length}&sort=${sortMode}`)
       .then((r) => r.json())
       .then((d) => {
+        if (sortModeRef.current !== requestedSort) return;
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
         if (list.length === 0) {
           setHasMore(false);
