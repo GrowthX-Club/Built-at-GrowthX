@@ -544,7 +544,7 @@ function HomePage() {
                 padding: "20px 24px", marginBottom: 24,
                 background: C.surface, border: `1px solid ${C.goldBorder}`,
                 borderRadius: 14, cursor: "pointer",
-              }} onClick={() => router.push(`/projects/${fp.id}`)}>
+              }} onClick={() => router.push(`/projects/${fp.slug || fp.id}`)}>
                 <div style={{
                   fontSize: T.badge, fontWeight: 720, color: C.gold,
                   letterSpacing: "0.08em", textTransform: "uppercase",
@@ -576,7 +576,7 @@ function HomePage() {
                 <div
                   key={p.id}
                   className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover project-card`}
-                  onClick={() => router.push(`/projects/${p.id}`)}
+                  onClick={() => router.push(`/projects/${p.slug || p.id}`)}
                   style={{
                     paddingTop: 16, paddingBottom: 16, cursor: "pointer",
                     borderBottom: `1px solid ${C.borderLight}`,

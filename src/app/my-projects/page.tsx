@@ -69,6 +69,7 @@ interface EditState {
   stackInput: string;
   team: CollabEntry[];
   teamInput: string;
+  mediaUrls: string;
 }
 
 export default function MyProjectsPage() {
@@ -81,7 +82,7 @@ export default function MyProjectsPage() {
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [editData, setEditData] = useState<EditState>({
     name: "", tagline: "", description: "", url: "",
-    stack: [], stackInput: "", team: [], teamInput: "",
+    stack: [], stackInput: "", team: [], teamInput: "", mediaUrls: "",
   });
   const [saving, setSaving] = useState(false);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
@@ -172,6 +173,7 @@ export default function MyProjectsPage() {
         ...(p.collabs || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor, role: 'collaborator' as const })),
       ],
       teamInput: "",
+      mediaUrls: (p.media || []).map((m: { url: string }) => m.url).join("\n"),
     });
   };
 
@@ -215,6 +217,7 @@ export default function MyProjectsPage() {
         description: editData.description,
         url: editData.url,
         stack: editData.stack,
+        media: editData.mediaUrls.split("\n").map(u => u.trim()).filter(Boolean),
         creators: editData.team.filter(c => c.role === 'creator').map(c => c._id).filter(Boolean),
         collabs: editData.team.filter(c => c.role === 'collaborator').map(c => c._id).filter(Boolean),
       };
@@ -230,6 +233,10 @@ export default function MyProjectsPage() {
           tagline: editData.tagline,
           description: editData.description,
           stack: editData.stack,
+          media: editData.mediaUrls.split("\n").map(u => u.trim()).filter(Boolean).map(u => ({
+            type: (/loom\.com\/(share|embed)\//.test(u) ? "loom" : "image") as "loom" | "image",
+            url: u,
+          })),
           creators: editData.team.filter(c => c.role === 'creator').map(c => ({
             name: c.name,
             avatar: c.avatar || c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
@@ -372,6 +379,34 @@ export default function MyProjectsPage() {
                         onChange={(json) => setEditData(d => ({ ...d, description: json }))}
                         maxChars={1500}
                       />
+                    </div>
+
+                    <div style={{ height: 1, background: C.borderLight }} />
+
+                    {/* Media URLs */}
+                    <div>
+                      <label style={labelStyle}>Screenshots &amp; Loom videos</label>
+                      <textarea
+                        value={editData.mediaUrls}
+                        onChange={e => setEditData(d => ({ ...d, mediaUrls: e.target.value }))}
+                        placeholder={"Paste image or Loom URLs, one per line\ne.g. https://www.loom.com/share/abc123"}
+                        rows={3}
+                        style={{
+                          width: "100%",
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 8,
+                          padding: "10px 12px",
+                          fontSize: T.label,
+                          color: C.text,
+                          background: C.surface,
+                          outline: "none",
+                          fontFamily: "var(--sans)",
+                          resize: "none" as const,
+                        }}
+                      />
+                      <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 4 }}>
+                        Supports image URLs and Loom video links
+                      </div>
                     </div>
 
                     <div style={{ height: 1, background: C.borderLight }} />
@@ -738,7 +773,7 @@ export default function MyProjectsPage() {
                           <div style={{
                             fontSize: T.subtitle, fontWeight: 550, color: C.text,
                             fontFamily: "var(--sans)", cursor: "pointer",
-                          }} onClick={() => router.push(`/projects/${p.id}`)}>
+                          }} onClick={() => router.push(`/projects/${p.slug || p.id}`)}>
                             {p.name}
                           </div>
                           {!p.enabled && (

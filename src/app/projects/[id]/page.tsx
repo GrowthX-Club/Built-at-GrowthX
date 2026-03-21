@@ -53,11 +53,49 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
     },
     alternates: {
-      canonical: `https://built.growthx.club/projects/${id}`,
+      canonical: `https://built.growthx.club/projects/${project.slug || id}`,
     },
   };
 }
 
-export default function ProjectDetailPage() {
-  return <ProjectDetailClient />;
+export default async function ProjectDetailPage({ params }: Props) {
+  const { id } = params;
+  const project = await getProject(id);
+
+  const jsonLd = project
+    ? {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: project.name,
+        description:
+          project.tagline || project.description || "A project built at GrowthX",
+        url: `https://built.growthx.club/projects/${project.slug || id}`,
+        applicationCategory: project.category || "WebApplication",
+        ...(project.url && { installUrl: project.url }),
+        author: {
+          "@type": "Person",
+          name:
+            (project.creator?.name?.first
+              ? `${project.creator.name.first} ${project.creator.name.last || ""}`.trim()
+              : undefined) || "GrowthX Builder",
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "GrowthX",
+          url: "https://growthx.club",
+        },
+      }
+    : null;
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <ProjectDetailClient />
+    </>
+  );
 }
