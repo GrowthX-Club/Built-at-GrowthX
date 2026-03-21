@@ -18,8 +18,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (res.ok) {
       const data = await res.json();
       const projects = data.projects || data || [];
-      projectRoutes = projects.map((p: { _id?: string; id?: string; updatedAt?: string; createdAt?: string }) => ({
-        url: `${SITE_URL}/projects/${p._id || p.id}`,
+      projectRoutes = projects.map((p: { _id?: string; id?: string; slug?: string; updatedAt?: string; createdAt?: string; updated_at?: string; created_at?: string }) => ({
+        url: `${SITE_URL}/projects/${p.slug || p._id || p.id}`,
         lastModified: p.updatedAt || p.createdAt || new Date().toISOString(),
         changeFrequency: 'weekly' as const,
         priority: 0.8,

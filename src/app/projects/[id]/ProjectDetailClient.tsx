@@ -27,6 +27,7 @@ import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
 import ProjectIcon from "@/components/ProjectIcon";
+import MediaGallery from "@/components/MediaGallery";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -447,7 +448,7 @@ export default function ProjectDetailPage() {
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId: params.id }),
+      body: JSON.stringify({ projectId: project?._id || project?.id || params.id }),
     });
     if (!res.ok) return;
     const result = await res.json();
@@ -469,7 +470,7 @@ export default function ProjectDetailPage() {
       const res = await bxApi("/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: params.id, content: comment.trim(), mentions: pendingMentions.length > 0 ? pendingMentions : undefined }),
+        body: JSON.stringify({ projectId: project?._id || project?.id || params.id, content: comment.trim(), mentions: pendingMentions.length > 0 ? pendingMentions : undefined }),
       });
       if (res.ok) {
         setComment("");
@@ -482,7 +483,7 @@ export default function ProjectDetailPage() {
   };
 
   const reloadComments = () => {
-    bxApi(`/comments?projectId=${params.id}`)
+    bxApi(`/comments?projectId=${project?._id || project?.id || params.id}`)
       .then((r) => r.json())
       .then((d) => setComments((d.comments || []).map(normalizeComment)));
   };
@@ -511,7 +512,7 @@ export default function ProjectDetailPage() {
       const res = await bxApi("/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: params.id, content: replyText.trim(), parentId, mentions: pendingMentions.length > 0 ? pendingMentions : undefined }),
+        body: JSON.stringify({ projectId: project?._id || project?.id || params.id, content: replyText.trim(), parentId, mentions: pendingMentions.length > 0 ? pendingMentions : undefined }),
       });
       if (res.ok) {
         setReplyText("");
@@ -796,6 +797,13 @@ export default function ProjectDetailPage() {
               <span style={{ fontWeight: 600 }}>Draft</span>
               <span style={{ color: C.textSec, fontWeight: 400 }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
             </div>
+          </div>
+        )}
+
+        {/* Media gallery */}
+        {p.media.length > 0 && (
+          <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
+            <MediaGallery media={p.media} />
           </div>
         )}
 

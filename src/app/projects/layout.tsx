@@ -4,6 +4,18 @@ export const metadata: Metadata = {
   title: "Projects",
   description:
     "Browse all projects built by the GrowthX community — discover, vote, and comment.",
+  openGraph: {
+    title: "Projects — Built at GrowthX",
+    description:
+      "Browse all projects built by the GrowthX community — discover, vote, and comment.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Projects — Built at GrowthX",
+    description:
+      "Browse all projects built by the GrowthX community — discover, vote, and comment.",
+  },
   alternates: {
     canonical: "https://built.growthx.club/projects",
   },

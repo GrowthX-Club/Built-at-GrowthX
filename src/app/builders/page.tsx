@@ -295,7 +295,7 @@ export default function BuildersPage() {
                     return (
                       <div
                         key={p.id}
-                        onClick={() => { setSelectedBuilder(null); router.push(`/projects/${p.id}`); }}
+                        onClick={() => { setSelectedBuilder(null); router.push(`/projects/${p.slug || p.id}`); }}
                         style={{
                           padding: "14px 18px", background: C.bg,
                           border: `1px solid ${C.borderLight}`, borderRadius: 12,

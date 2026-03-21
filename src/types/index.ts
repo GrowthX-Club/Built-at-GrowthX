@@ -99,6 +99,11 @@ export interface GalleryItem {
   colors: string[];
 }
 
+export interface MediaItem {
+  type: "image" | "loom";
+  url: string;
+}
+
 export interface Project {
   id: string | number;
   _id?: string;
@@ -118,6 +123,8 @@ export interface Project {
   featured: boolean;
   date: string;
   gallery: GalleryItem[];
+  media: MediaItem[];
+  slug?: string;
   url?: string;
   buildProcess?: string;
   isDraft?: boolean;
@@ -287,6 +294,33 @@ function normalizeReactions(raw: unknown[]): Reaction[] {
   });
 }
 
+/** Detect if a URL is a Loom video */
+function isLoomUrl(url: string): boolean {
+  return /^https?:\/\/(www\.)?loom\.com\/(share|embed)\//.test(url);
+}
+
+/** Parse raw media array (strings or objects) into typed MediaItem[] */
+function normalizeMedia(raw: unknown): MediaItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === "string") {
+        const url = item.trim();
+        if (!url) return null;
+        return { type: isLoomUrl(url) ? "loom" : "image", url } as MediaItem;
+      }
+      if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        const url = ((obj.url ?? "") as string).trim();
+        if (!url) return null;
+        const type = obj.type === "loom" || isLoomUrl(url) ? "loom" : "image";
+        return { type, url } as MediaItem;
+      }
+      return null;
+    })
+    .filter(Boolean) as MediaItem[];
+}
+
 /** Normalize a backend project (with populated creator/collabs) to frontend Project shape */
 export function normalizeProject(p: Record<string, unknown>): Project {
   // Handle populated creator object
@@ -352,6 +386,8 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     featured: (p.featured ?? false) as boolean,
     date: (p.date ?? p.created_at ?? p.createdAt ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
+    media: normalizeMedia(p.media),
+    slug: (p.slug ?? undefined) as string | undefined,
     url: (p.url as string) || undefined,
     buildProcess: (p.buildProcess ?? p.build_process ?? undefined) as string | undefined,
     isDraft: (p.isDraft ?? p.is_draft ?? false) as boolean,

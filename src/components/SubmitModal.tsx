@@ -19,6 +19,7 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [stack, setStack] = useState("");
+  const [mediaUrls, setMediaUrls] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [icon, setIcon] = useState<AgentCategory>(() => assignRandomIcon());
@@ -56,6 +57,10 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
           stack: stack
             .split(",")
             .map((s) => s.trim())
+            .filter(Boolean),
+          media: mediaUrls
+            .split("\n")
+            .map((u) => u.trim())
             .filter(Boolean),
         }),
       });
@@ -310,6 +315,30 @@ export default function SubmitModal({ onClose, onSuccess }: SubmitModalProps) {
               rows={3}
               style={{ ...inputStyle, resize: "none" as const }}
             />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: T.bodySm,
+                fontWeight: 500,
+                color: C.text,
+                marginBottom: 6,
+              }}
+            >
+              Screenshots &amp; Loom videos
+            </label>
+            <textarea
+              value={mediaUrls}
+              onChange={(e) => setMediaUrls(e.target.value)}
+              placeholder={"Paste image or Loom URLs, one per line\ne.g. https://www.loom.com/share/abc123"}
+              rows={3}
+              style={{ ...inputStyle, resize: "none" as const, fontSize: T.label }}
+            />
+            <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 4 }}>
+              Supports image URLs and Loom video links
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 12, paddingTop: 8 }}>

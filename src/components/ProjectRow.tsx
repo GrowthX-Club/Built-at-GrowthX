@@ -88,7 +88,7 @@ export function HostPickCard({
 
       {/* Content */}
       <Link
-        href={`/projects/${project.id}`}
+        href={`/projects/${project.slug || project.id}`}
         style={{ textDecoration: "none", color: "inherit" }}
       >
         <div
@@ -242,7 +242,7 @@ export default function ProjectRow({
 }) {
   return (
     <Link
-      href={`/projects/${project.id}`}
+      href={`/projects/${project.slug || project.id}`}
       style={{ textDecoration: "none", color: "inherit" }}
     >
       <div
