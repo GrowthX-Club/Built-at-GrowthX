@@ -350,23 +350,26 @@ export default function ProjectDetailPage() {
       .then((r) => r.json())
       .then((d) => {
         if (!d.project) return;
-        setProject(normalizeProject(d.project));
+        const p = normalizeProject(d.project);
+        setProject(p);
+        const pid = p._id || p.id;
+        // Fetch comments and vote status using resolved ObjectId
+        bxApi(`/comments?projectId=${pid}`)
+          .then((r) => r.json())
+          .then((d) => setComments((d.comments || []).map(normalizeComment)));
+        bxApi("/projects?limit=100")
+          .then((r) => r.json())
+          .then((d) => {
+            const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
+            setHasVoted(voted.includes(String(pid)) || voted.includes(Number(pid)));
+          });
       });
     bxApi("/threads")
       .then((r) => r.json())
       .then((d) => setThreads((d.threads || []).map((t: Record<string, unknown>) => normalizeThread(t))));
-    bxApi(`/comments?projectId=${params.id}`)
-      .then((r) => r.json())
-      .then((d) => setComments((d.comments || []).map(normalizeComment)));
     bxApi("/me")
       .then((r) => r.json())
       .then((d) => setUser(normalizeUser(d.user)));
-    bxApi("/projects?limit=100")
-      .then((r) => r.json())
-      .then((d) => {
-        const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
-        setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
-      });
   }, [params.id]);
 
   useEffect(() => {
