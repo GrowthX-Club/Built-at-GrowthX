@@ -44,6 +44,7 @@ export const seedProjects: Project[] = [
       { type: "screenshot", label: "Market analysis report", colors: ["#0a2540", "#1a3a5c", "#2563eb"] },
       { type: "screenshot", label: "Competitor mapping", colors: ["#1b2838", "#2d4a5c", "#3b82f6"] },
     ],
+    media: [],
     enabled: true,
   },
   {
@@ -73,6 +74,7 @@ export const seedProjects: Project[] = [
       { type: "screenshot", label: "Payment dashboard", colors: ["#0a2540", "#163b5c", "#1e5a8a"] },
       { type: "screenshot", label: "Subscription flow", colors: ["#1a1a3e", "#2a2a5e", "#3a3a7e"] },
     ],
+    media: [],
     enabled: true,
   },
   {
@@ -110,6 +112,7 @@ export const seedProjects: Project[] = [
       { type: "screenshot", label: "Voice recording", colors: ["#1b4332", "#2d6a4f", "#40916c"] },
       { type: "screenshot", label: "Draft editor", colors: ["#1b2a1b", "#2d4a2d", "#3d6a3d"] },
     ],
+    media: [],
     enabled: true,
   },
   {
@@ -136,6 +139,7 @@ export const seedProjects: Project[] = [
     featured: false,
     date: "15 Feb 2026",
     gallery: [],
+    media: [],
     enabled: true,
   },
   {
@@ -180,6 +184,7 @@ export const seedProjects: Project[] = [
       { type: "screenshot", label: "Route optimization", colors: ["#7c2d12", "#b45309", "#d97706"] },
       { type: "screenshot", label: "Tracking view", colors: ["#78350f", "#92400e", "#b45309"] },
     ],
+    media: [],
     enabled: true,
   },
   {
@@ -206,6 +211,7 @@ export const seedProjects: Project[] = [
     featured: false,
     date: "5 Jan 2026",
     gallery: [],
+    media: [],
     enabled: true,
   },
 ];
