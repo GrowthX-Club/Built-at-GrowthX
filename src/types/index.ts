@@ -123,7 +123,7 @@ export interface Project {
   featured: boolean;
   date: string;
   gallery: GalleryItem[];
-  media: MediaItem[];
+  media?: MediaItem[];
   slug?: string;
   url?: string;
   buildProcess?: string;

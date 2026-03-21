@@ -804,7 +804,7 @@ export default function ProjectDetailPage() {
         )}
 
         {/* Media gallery */}
-        {p.media.length > 0 && (
+        {p.media && p.media.length > 0 && (
           <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
             <MediaGallery media={p.media} />
           </div>
