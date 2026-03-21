@@ -149,27 +149,28 @@ function HomePage() {
   const collabDropdownRef = useRef<HTMLDivElement>(null);
 
   const loadProjects = useCallback(() => {
-    bxApi(`/projects?limit=${PAGE_SIZE}&offset=0`)
+    setLoading(true);
+    setProjects([]);
+    setHasMore(false);
+    bxApi(`/projects?limit=${PAGE_SIZE}&offset=0&sort=${sortMode}`)
       .then((r) => r.json())
       .then((d) => {
-        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
-          .filter((p: Project) => p.enabled !== false && !p.isDraft);
+        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
         setHasMore(PAGE_SIZE < (d.totalCount || 0));
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [sortMode]);
 
   const loadMore = useCallback(() => {
     if (loadingMoreRef.current || !hasMore) return;
     loadingMoreRef.current = true;
     setLoadingMore(true);
-    bxApi(`/projects?limit=${PAGE_SIZE}&offset=${projects.length}`)
+    bxApi(`/projects?limit=${PAGE_SIZE}&offset=${projects.length}&sort=${sortMode}`)
       .then((r) => r.json())
       .then((d) => {
-        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
-          .filter((p: Project) => p.enabled !== false && !p.isDraft);
+        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
         if (list.length === 0) {
           setHasMore(false);
           return;
@@ -185,7 +186,7 @@ function HomePage() {
         if (newVoted.length) setVotedIds((prev) => Array.from(new Set([...prev, ...newVoted])));
       })
       .finally(() => { loadingMoreRef.current = false; setLoadingMore(false); });
-  }, [hasMore, projects.length]);
+  }, [hasMore, projects.length, sortMode]);
 
   const loadUser = useCallback(() => {
     bxApi("/me")
@@ -415,24 +416,7 @@ function HomePage() {
     }
   };
 
-  const regularProjects = (() => {
-    const filtered = projects.filter(p => !p.featured);
-    const sorted = [...filtered];
-    if (sortMode === 'top') {
-      sorted.sort((a, b) => b.weighted - a.weighted);
-    } else if (sortMode === 'new') {
-      sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    } else {
-      // Trending: Hacker News-style decay
-      const now = Date.now();
-      const trendingScore = (p: Project) => {
-        const hoursAge = (now - new Date(p.date).getTime()) / 3600000;
-        return p.weighted / Math.pow(hoursAge + 2, 1.5);
-      };
-      sorted.sort((a, b) => trendingScore(b) - trendingScore(a));
-    }
-    return sorted;
-  })();
+  const regularProjects = projects.filter(p => !p.featured);
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
