@@ -2,16 +2,18 @@
   "name": "builtatgrowthx",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "rm -rf .next && next dev",
-    "dev:fast": "next dev",
-    "build": "NODE_OPTIONS='--max_old_space_size=4096' next build",
-    "start": "next start",
-    "lint": "next lint",
-    "clean": "rm -rf .next node_modules/.cache"
+    "dev": "react-router dev",
+    "build": "react-router build",
+    "start": "react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc",
+    "lint": "eslint ."
   },
   "dependencies": {
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
+    "@emotion/server": "^11.11.0",
     "@emotion/styled": "^11.14.1",
     "@growthx-club/gx-editor": "^2.3.4",
     "@growthx-club/icons": "^1.0.56",
@@ -21,19 +23,26 @@
     "@lexical/rich-text": "^0.19.0",
     "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.18.0",
+    "@react-router/fs-routes": "^7.13.1",
+    "@react-router/node": "^7",
+    "@react-router/serve": "^7",
+    "@vercel/react-router": "^1.2.6",
+    "isbot": "^5.1.0",
     "lexical": "^0.19.0",
-    "next": "14.2.35",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-helmet-async": "^2.0.0",
+    "react-router": "^7"
   },
   "devDependencies": {
+    "@react-router/dev": "^7",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
-    "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^6"
   }
 }
