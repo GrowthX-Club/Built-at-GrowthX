@@ -20,12 +20,13 @@ export function clearToken() {
 
 function authHeaders(init?: RequestInit): RequestInit {
   const token = getToken();
-  if (!token) return init || {};
+  const merged: RequestInit = { ...init, credentials: 'include' };
+  if (!token) return merged;
   const headers = new Headers(init?.headers);
   if (!headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  return { ...init, headers };
+  return { ...merged, headers };
 }
 
 export function bxApi(path: string, init?: RequestInit): Promise<Response> {
