@@ -145,6 +145,7 @@ export default function HomePage() {
     setLoading(true);
     setProjects([]);
     setHasMore(false);
+    loadingMoreRef.current = false;
     bxApi(`/projects?limit=${PAGE_SIZE}&offset=0&sort=${sortMode}`)
       .then((r) => r.json())
       .then((d) => {
@@ -327,7 +328,15 @@ export default function HomePage() {
     }
     const w = result.weighted ?? result.weighted_votes ?? result.weightedVotes ?? 0;
     const rv = result.raw ?? result.raw_votes ?? result.rawVotes ?? 0;
-    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, weighted: w, raw: rv } : p));
+    setProjects(prev => {
+      const updated = prev.map(p => p.id === projectId ? { ...p, weighted: w, raw: rv } : p);
+      // Re-sort after vote to keep list order consistent
+      if (sortMode === "top") {
+        updated.sort((a, b) => b.weighted - a.weighted);
+      }
+      // For trending/new, don't re-sort client-side — the server formula is complex
+      return updated;
+    });
   };
 
   const handleSubmitProject = async (asDraft = false) => {
