@@ -19,6 +19,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import ActivityFeed from "@/components/ActivityFeed";
 import { descriptionCharCount } from "@/lib/editor-utils";
 import ProjectIcon from "@/components/ProjectIcon";
+import MediaUpload from "@/components/MediaUpload";
 // ---- UI Components ----
 
 function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string; companyLogo?: string } }) {
@@ -114,7 +115,7 @@ export default function HomePage() {
     name: "", tagline: "", description: "", buildProcess: "",
     stack: [] as string[], stackInput: "",
     team: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string; role: 'creator' | 'collaborator' }[], teamInput: "",
-    url: "", isDraft: false, mediaUrls: "",
+    url: "", isDraft: false, mediaFiles: [] as { url: string; type: "image" | "loom"; uploading?: boolean; progress?: string }[],
   });
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -229,7 +230,7 @@ export default function HomePage() {
     }
     setShowSubmit(true);
     setSubmitStep(0);
-    setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaUrls: "" });
+    setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaFiles: [] });
     setSubmitError("");
   }, [searchParams, user, userLoaded, navigate, openLoginDialog, loadUser]);
 
@@ -393,7 +394,7 @@ export default function HomePage() {
           category: "AI",
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
-          media: submitData.mediaUrls.split("\n").map(u => u.trim()).filter(Boolean),
+          media: submitData.mediaFiles.filter(m => !m.uploading).map(m => m.url),
           creators: submitData.team.filter(c => c.role === 'creator').map(c => c._id),
           collabs: submitData.team.filter(c => c.role === 'collaborator').map(c => c._id),
         }),
@@ -401,7 +402,7 @@ export default function HomePage() {
       if (res.ok) {
         setShowSubmit(false);
         setSubmitStep(0);
-        setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaUrls: "" });
+        setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaFiles: [] });
         setSubmitError("");
         loadProjects();
       } else {
@@ -878,25 +879,10 @@ export default function HomePage() {
                       onChange={e => setSubmitData(d => ({ ...d, url: e.target.value }))}
                     />
                   </div>
-                  <div>
-                    <label style={{
-                      display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
-                      fontFamily: "var(--sans)", marginBottom: 8,
-                    }}>
-                      Screenshots &amp; Loom videos
-                    </label>
-                    <textarea
-                      className="submit-input"
-                      placeholder={"Paste image or Loom URLs, one per line\ne.g. https://www.loom.com/share/abc123"}
-                      value={submitData.mediaUrls}
-                      onChange={e => setSubmitData(d => ({ ...d, mediaUrls: e.target.value }))}
-                      rows={3}
-                      style={{ resize: "none" as const }}
-                    />
-                    <div style={{ fontSize: T.caption, color: C.textMute, marginTop: 4, fontFamily: "var(--sans)" }}>
-                      Supports image URLs and Loom video links
-                    </div>
-                  </div>
+                  <MediaUpload
+                    value={submitData.mediaFiles}
+                    onChange={files => setSubmitData(d => ({ ...d, mediaFiles: typeof files === 'function' ? files(d.mediaFiles) : files }))}
+                  />
                 </div>
               )}
 
