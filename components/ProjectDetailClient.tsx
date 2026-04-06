@@ -234,7 +234,6 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
 
 function ThreadBlock({ thread }: { thread: ThreadData }) {
   const { isMobile } = useResponsive();
-  const [open, setOpen] = useState(false);
   return (
     <div style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
       <div style={{ display: "flex", gap: 14 }}>
@@ -247,25 +246,8 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
             <span style={{ fontSize: T.label, color: C.textMute }}>{thread.time}</span>
           </div>
           <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400 }}>{thread.content}</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-            <Reactions reactions={thread.reactions} />
-            {thread.replies.length > 0 && (
-              <button onClick={() => setOpen(!open)} style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                padding: "5px 12px", borderRadius: 8,
-                border: "none", background: open ? C.accentSoft : "transparent",
-                cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
-                color: C.blue, fontFamily: "var(--sans)",
-              }}>
-                {thread.replies.length} {thread.replies.length === 1 ? "reply" : "replies"}
-                <span style={{ fontSize: 9, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>{"\u25BC"}</span>
-              </button>
-            )}
-            {thread.replies.length === 0 && (
-              <button style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: "transparent", cursor: "pointer", fontSize: T.label, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)" }}>Reply</button>
-            )}
-          </div>
-          {open && (
+          <Reactions reactions={thread.reactions} />
+          {thread.replies.length > 0 && (
             <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
               {thread.replies.map((reply, i) => (
                 <div key={i} style={{ padding: "16px 0", borderBottom: i < thread.replies.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
@@ -1066,32 +1048,19 @@ export default function ProjectDetailPage() {
                     </p>
                     <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                       <Reactions reactions={root.reactions} onReact={(code) => handleReact(root.id, code)} />
-                      {replies.length > 0 && (
-                        <button onClick={() => setReplyingTo(replyingTo === root.id ? null : root.id)} style={{
-                          display: "inline-flex", alignItems: "center", gap: 5,
-                          padding: "5px 12px", borderRadius: 8,
-                          border: "none", background: replyingTo === root.id ? C.accentSoft : "transparent",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
-                          color: C.blue, fontFamily: "var(--sans)",
-                        }}>
-                          {replies.length} {replies.length === 1 ? "reply" : "replies"}
-                          <span style={{ fontSize: 9, transform: replyingTo === root.id ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>{"\u25BC"}</span>
-                        </button>
-                      )}
-                      {replies.length === 0 && (
-                        <button onClick={() => {
-                          if (!user) { openLoginDialog(() => { reloadUser(); reloadComments(); }); return; }
-                          setReplyingTo(replyingTo === root.id ? null : root.id);
-                        }} style={{
-                          padding: "5px 12px", borderRadius: 8, border: "none",
-                          background: "transparent", cursor: "pointer",
-                          fontSize: T.label, fontWeight: 500, color: C.textMute, fontFamily: "var(--sans)",
-                        }}>Reply</button>
-                      )}
+                      <button onClick={() => {
+                        if (!user) { openLoginDialog(() => { reloadUser(); reloadComments(); }); return; }
+                        setReplyingTo(replyingTo === root.id ? null : root.id);
+                      }} style={{
+                        padding: "5px 12px", borderRadius: 8, border: "none",
+                        background: replyingTo === root.id ? C.accentSoft : "transparent",
+                        cursor: "pointer", fontSize: T.label, fontWeight: 500,
+                        color: replyingTo === root.id ? C.blue : C.textMute, fontFamily: "var(--sans)",
+                      }}>Reply</button>
                     </div>
 
-                    {/* Nested replies */}
-                    {(replyingTo === root.id || replies.length > 0) && replyingTo === root.id && (
+                    {/* Replies + compose (single container for continuous border) */}
+                    {(replies.length > 0 || replyingTo === root.id) && (
                       <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
                         {replies.map((reply, i) => {
                           const replyInitials = reply.authorAvatar || (reply.authorName ? reply.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
@@ -1139,7 +1108,7 @@ export default function ProjectDetailPage() {
                         })}
 
                         {/* Reply compose */}
-                        {user && (
+                        {replyingTo === root.id && user && (
                           <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
                             <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} src={user.avatarUrl} />
                             <div style={{ flex: 1, display: "flex", gap: 8, position: "relative" }}>
