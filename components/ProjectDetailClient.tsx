@@ -65,7 +65,6 @@ function Av({ initials, size = 32, highlight, role, src }: { initials: string; s
     return (
       <img src={src} alt={initials} style={{
         width: size, height: size, borderRadius: size,
-        border: highlight ? `2px solid ${C.gold}` : `1px solid ${C.borderLight}`,
         flexShrink: 0, objectFit: "cover",
       }} />
     );
@@ -78,7 +77,6 @@ function Av({ initials, size = 32, highlight, role, src }: { initials: string; s
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: Math.round(size * 0.36), fontWeight: 650,
       fontFamily: "var(--sans)", letterSpacing: "0.01em",
-      border: highlight ? `2px solid ${C.gold}` : `1px solid ${C.borderLight}`,
       flexShrink: 0,
     }}>
       {initials}
@@ -87,6 +85,7 @@ function Av({ initials, size = 32, highlight, role, src }: { initials: string; s
 }
 
 function Badge({ role, size = "sm" }: { role: string; size?: "sm" | "md" }) {
+  if (role === "member") return null;
   const r = ROLES[role];
   if (!r) return null;
   const s = size === "sm" ? { fs: T.badge, px: 6, py: 2 } : { fs: T.caption, px: 8, py: 3 };
@@ -236,13 +235,15 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
   return (
     <div style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
       <div style={{ display: "flex", gap: 14 }}>
-        <Av initials={thread.author.avatar} size={38} role={thread.author.role} />
+        <Av initials={thread.author.avatar} size={52} role={thread.author.role} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>{thread.author.name}</span>
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>{thread.author.name}</span>
+              <Badge role={thread.author.role} />
+              <span style={{ fontSize: T.label, color: C.textMute }}>{thread.time}</span>
+            </div>
             <CompanyTag title={thread.author.title} company={thread.author.company} companyColor={thread.author.companyColor} companyLogo={thread.author.companyLogo} />
-            <Badge role={thread.author.role} />
-            <span style={{ fontSize: T.label, color: C.textMute }}>{thread.time}</span>
           </div>
           <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400 }}>{thread.content}</p>
           <Reactions reactions={thread.reactions} />
@@ -254,26 +255,28 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
       {thread.replies.map((reply, i) => {
         const isLast = i === thread.replies.length - 1;
         return (
-          <div key={i} style={{ position: "relative", paddingTop: 14, paddingLeft: 52 }}>
+          <div key={i} style={{ position: "relative", paddingTop: 14, paddingLeft: 66 }}>
             {!isLast && (
-              <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+              <div style={{ position: "absolute", left: 25, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
             )}
             <div style={{
-              position: "absolute", left: 18, top: 0, width: 24, height: 29,
+              position: "absolute", left: 25, top: 0, width: 30, height: 40,
               borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
               borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
             }} />
-            <div style={{ display: "flex", gap: 10 }}>
-              <Av initials={reply.author.avatar} size={30} role={reply.author.role} />
+            <div style={{ display: "flex", gap: 12 }}>
+              <Av initials={reply.author.avatar} size={52} role={reply.author.role} />
               <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
+                <div style={{ marginBottom: 5 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
+                    {reply.author.isCreator && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                    )}
+                    <Badge role={reply.author.role} />
+                    <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
+                  </div>
                   <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
-                  {reply.author.isCreator && (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
-                  )}
-                  <Badge role={reply.author.role} />
-                  <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
                 </div>
                 <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
                 <Reactions reactions={reply.reactions} />
@@ -1013,20 +1016,22 @@ export default function ProjectDetailPage() {
             return (
               <div key={root.id} style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
                 <div style={{ display: "flex", gap: 14 }}>
-                  <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
+                  <Av initials={rootInitials} size={52} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
-                        {root.authorName || "Anonymous"}
-                      </span>
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
+                          {root.authorName || "Anonymous"}
+                        </span>
+                        {isRootOP && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                        )}
+                        <Badge role={root.authorRole || "member"} />
+                        <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
+                          {timeAgo(root.createdAt)}
+                        </span>
+                      </div>
                       <CompanyTag title={root.authorTitle || (isRootOP ? p.builder.title : undefined)} company={root.authorCompany || (isRootOP ? p.builder.company : undefined)} companyColor={root.authorCompanyColor || (isRootOP ? p.builder.companyColor : undefined)} companyLogo={root.authorCompanyLogo || (isRootOP ? p.builder.companyLogo : undefined)} />
-                      {isRootOP && (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
-                      )}
-                      <Badge role={root.authorRole || "member"} />
-                      <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
-                        {timeAgo(root.createdAt)}
-                      </span>
                     </div>
                     <p style={{
                       fontSize: T.body, lineHeight: 1.65, color: C.text,
@@ -1057,28 +1062,28 @@ export default function ProjectDetailPage() {
                   const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
                   const isLast = i === replies.length - 1;
                   return (
-                    <div key={reply.id} style={{ position: "relative", paddingTop: 14, paddingLeft: 52 }}>
-                      {/* Vertical trunk (continues to next reply) */}
+                    <div key={reply.id} style={{ position: "relative", paddingTop: 14, paddingLeft: 66 }}>
                       {!isLast && (
-                        <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+                        <div style={{ position: "absolute", left: 25, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
                       )}
-                      {/* Curved branch to this reply */}
                       <div style={{
-                        position: "absolute", left: 18, top: 0, width: 24, height: 29,
+                        position: "absolute", left: 25, top: 0, width: 30, height: 40,
                         borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
                         borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                       }} />
-                      <div style={{ display: "flex", gap: 10 }}>
-                      <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
+                      <div style={{ display: "flex", gap: 12 }}>
+                      <Av initials={replyInitials} size={52} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
+                        <div style={{ marginBottom: 5 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
+                            {isReplyOP && (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                            )}
+                            <Badge role={reply.authorRole || "member"} />
+                            <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                          </div>
                           <CompanyTag title={isReplyOP ? (reply.authorTitle || p.builder.title) : reply.authorTitle} company={isReplyOP ? (reply.authorCompany || p.builder.company) : reply.authorCompany} companyColor={isReplyOP ? (reply.authorCompanyColor || p.builder.companyColor) : reply.authorCompanyColor} companyLogo={isReplyOP ? (reply.authorCompanyLogo || p.builder.companyLogo) : reply.authorCompanyLogo} />
-                          {isReplyOP && (
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
-                          )}
-                          <Badge role={reply.authorRole || "member"} />
-                          <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                         </div>
                         <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{renderContentWithMentions(reply.content)}</p>
                         <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
@@ -1090,9 +1095,9 @@ export default function ProjectDetailPage() {
 
                 {/* Reply compose */}
                 {replyingTo === root.id && user && (
-                  <div style={{ position: "relative", paddingTop: 14, paddingLeft: 52 }}>
+                  <div style={{ position: "relative", paddingTop: 14, paddingLeft: 66 }}>
                     <div style={{
-                      position: "absolute", left: 18, top: 0, width: 24, height: 28,
+                      position: "absolute", left: 25, top: 0, width: 30, height: 28,
                       borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
                       borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                     }} />
