@@ -17,7 +17,6 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 import { useTheme } from "@/context/ThemeContext";
 import BuiltLogo from "@/components/BuiltLogo";
 import NotificationBell from "@/components/NotificationBell";
-import UpvoteButton from "@/components/UpvoteButton";
 
 function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
@@ -172,13 +171,24 @@ export default function AppNav() {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {user && <NotificationBell />}
                 {voteState && showVoteInNav ? (
-                  <UpvoteButton
-                    projectId={voteState.projectId}
-                    weighted={voteState.count}
-                    hasVoted={voteState.hasVoted}
-                    onVote={voteState.onVote}
-                    onUnauthClick={voteState.onUnauthClick}
-                  />
+                  <button
+                    onClick={voteState.onVote}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "5px 12px", borderRadius: 8,
+                      border: `1.5px solid ${C.accent}`,
+                      background: voteState.hasVoted ? C.accent : C.surface,
+                      cursor: "pointer", fontSize: T.label, fontWeight: 650,
+                      fontFamily: "var(--sans)",
+                      color: voteState.hasVoted ? C.accentFg : C.text,
+                      transition: "all 0.25s",
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                    </svg>
+                    <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
+                  </button>
                 ) : (
                   <button
                     onClick={() => router.push("/?submit=1")}
@@ -232,20 +242,27 @@ export default function AppNav() {
               <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14, zIndex: 1 }}>
                 {/* Vote button in nav — desktop */}
                 {voteState && (
-                  <div style={{
-                    transition: "all 0.3s ease",
-                    opacity: showVoteInNav ? 1 : 0,
-                    transform: showVoteInNav ? "translateY(0)" : "translateY(-4px)",
-                    pointerEvents: showVoteInNav ? "auto" : "none",
-                  }}>
-                    <UpvoteButton
-                      projectId={voteState.projectId}
-                      weighted={voteState.count}
-                      hasVoted={voteState.hasVoted}
-                      onVote={voteState.onVote}
-                      onUnauthClick={voteState.onUnauthClick}
-                    />
-                  </div>
+                  <button
+                    onClick={voteState.onVote}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "6px 14px", borderRadius: 8,
+                      border: `1.5px solid ${C.accent}`,
+                      background: voteState.hasVoted ? C.accent : C.surface,
+                      cursor: "pointer", fontSize: T.bodySm, fontWeight: 650,
+                      fontFamily: "var(--sans)",
+                      color: voteState.hasVoted ? C.accentFg : C.text,
+                      transition: "all 0.3s ease",
+                      opacity: showVoteInNav ? 1 : 0,
+                      transform: showVoteInNav ? "translateY(0)" : "translateY(-4px)",
+                      pointerEvents: showVoteInNav ? "auto" : "none",
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                    </svg>
+                    <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
+                  </button>
                 )}
                 {/* Notification bell — desktop, logged in only */}
                 {user && <NotificationBell />}

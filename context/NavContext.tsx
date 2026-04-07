@@ -3,11 +3,9 @@
 import { createContext, useContext, useState, useCallback, useRef } from "react";
 
 interface VoteState {
-  projectId: string | number;
   hasVoted: boolean;
   count: number;
-  onVote: (id: string | number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
-  onUnauthClick?: () => void;
+  onVote: () => void;
 }
 
 interface NavOverride {

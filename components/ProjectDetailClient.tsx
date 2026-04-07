@@ -25,7 +25,6 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
 import MediaGallery from "@/components/MediaGallery";
 import ProjectIcon from "@/components/ProjectIcon";
-import UpvoteButton from "@/components/UpvoteButton";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -354,13 +353,7 @@ export default function ProjectDetailPage() {
   const handleVoteRef = useRef<() => void>(() => {});
   useEffect(() => {
     if (project) {
-      setVoteState({
-        projectId: project._id || project.id,
-        hasVoted,
-        count: project.weighted,
-        onVote: onVoteForButton,
-        onUnauthClick: () => openLoginDialog(() => { reloadUser(); reloadComments(); }),
-      });
+      setVoteState({ hasVoted, count: project.weighted, onVote: () => handleVoteRef.current() });
     }
     return () => setVoteState(null);
   }, [project, hasVoted, setVoteState]);
@@ -438,22 +431,6 @@ export default function ProjectDetailPage() {
     setProject((p) => p ? { ...p, weighted: w, raw: r } : p);
   };
   handleVoteRef.current = handleVote;
-
-  // Wrapper for UpvoteButton component
-  const onVoteForButton = async (): Promise<{ voted: boolean; weighted: number; raw: number } | null> => {
-    const res = await bxApi("/votes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId: project?._id || project?.id || params.id }),
-    });
-    if (!res.ok) return null;
-    const result = await res.json();
-    const w = result.weighted ?? result.weighted_votes ?? result.weightedVotes ?? 0;
-    const r = result.raw ?? result.raw_votes ?? result.rawVotes ?? 0;
-    setHasVoted(result.voted);
-    setProject((prev) => prev ? { ...prev, weighted: w, raw: r } : prev);
-    return { voted: result.voted, weighted: w, raw: r };
-  };
 
   const handlePostComment = async () => {
     if (!comment.trim() || postingComment) return;
@@ -723,14 +700,27 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             <div ref={voteBtnRef} style={{ flexShrink: 0, display: isMobile ? "none" : "flex", gap: 10, alignItems: "center" }}>
-              <UpvoteButton
-                projectId={p._id || p.id}
-                weighted={p.weighted}
-                hasVoted={hasVoted}
-                onVote={user ? onVoteForButton : undefined}
-                onUnauthClick={() => openLoginDialog(() => { reloadUser(); reloadComments(); })}
-                size="detail"
-              />
+              <button data-vote-detail onClick={handleVote}
+              className={voteAnim ? "vote-pop-active" : ""}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "12px 28px", borderRadius: 12,
+                border: "1.5px solid transparent",
+                background: C.accent,
+                cursor: "pointer", fontSize: T.bodyLg, fontWeight: 700,
+                fontFamily: "var(--sans)", color: C.accentFg,
+                transition: "opacity 0.2s, transform 0.2s",
+                position: "relative", overflow: "visible",
+                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
+                </svg>
+                <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
+              </button>
               {p.url && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
                   padding: "8px 16px", borderRadius: 8,
@@ -1167,15 +1157,25 @@ export default function ProjectDetailPage() {
             display: "flex", gap: 10,
             boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
           }}>
-            <UpvoteButton
-              projectId={p._id || p.id}
-              weighted={p.weighted}
-              hasVoted={hasVoted}
-              onVote={user ? onVoteForButton : undefined}
-              onUnauthClick={() => openLoginDialog(() => { reloadUser(); reloadComments(); })}
-              size="float"
-              style={{ flex: 1 }}
-            />
+            <button
+              data-vote-float
+              onClick={handleVote}
+              className={voteAnim ? "vote-pop-active" : ""}
+              style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "13px 20px", borderRadius: 12, border: "none",
+                background: C.accent, cursor: "pointer",
+                fontSize: T.body, fontWeight: 700, fontFamily: "var(--sans)",
+                color: C.accentFg, transition: "opacity 0.2s",
+                position: "relative", overflow: "visible",
+                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
+              </svg>
+              <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
+            </button>
             {p.url && (
               <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
                 padding: "13px 20px", borderRadius: 12,
