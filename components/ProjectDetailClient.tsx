@@ -107,7 +107,7 @@ function CompanyTag({ title, company, companyColor, companyLogo }: { title?: str
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
-      fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450,
+      fontSize: T.label, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 450,
     }}>
       {title && <span>{title}</span>}
       <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
@@ -122,7 +122,7 @@ function CompanyTag({ title, company, companyColor, companyLogo }: { title?: str
           {company[0]}
           <img src={getCompanyLogoUrl(company, companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </span>
-        <span style={{ fontWeight: 520, color: C.textSec }}>{company}</span>
+        <span style={{ fontWeight: 520 }}>{company}</span>
       </span>
     </span>
   );
@@ -269,7 +269,7 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
               <div style={{ flex: 1 }}>
                 <div style={{ marginBottom: 5 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
+                    <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
                     {reply.author.isCreator && (
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                     )}
@@ -1076,7 +1076,7 @@ export default function ProjectDetailPage() {
                       <div style={{ flex: 1 }}>
                         <div style={{ marginBottom: 5 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
+                            <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
                             {isReplyOP && (
                               <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             )}
