@@ -704,22 +704,21 @@ export default function ProjectDetailPage() {
               className={voteAnim ? "vote-pop-active" : ""}
               style={{
                 display: "flex", alignItems: "center", gap: 8,
-                padding: "12px 28px", borderRadius: 12,
-                border: "1.5px solid transparent",
-                background: C.accent,
-                cursor: "pointer", fontSize: T.bodyLg, fontWeight: 700,
-                fontFamily: "var(--sans)", color: C.accentFg,
-                transition: "opacity 0.2s, transform 0.2s",
+                padding: hasVoted ? "12px 28px" : "10px 22px", borderRadius: hasVoted ? 12 : 24,
+                border: hasVoted ? `1.5px solid ${C.accent}` : `1.5px solid ${C.border}`,
+                background: hasVoted ? C.accent : "transparent",
+                cursor: "pointer", fontSize: hasVoted ? T.bodyLg : T.body, fontWeight: hasVoted ? 700 : 600,
+                fontFamily: "var(--sans)", color: hasVoted ? C.accentFg : C.text,
+                transition: "all 0.25s",
                 position: "relative", overflow: "visible",
-                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
               }}
               onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
+                <svg width={hasVoted ? 20 : 16} height={hasVoted ? 20 : 16} viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} />
                 </svg>
-                <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
+                <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : ""} {hasVoted ? "\u00B7 " : ""}{p.weighted.toLocaleString()}</span>
               </button>
               {p.url && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
@@ -1163,18 +1162,18 @@ export default function ProjectDetailPage() {
               className={voteAnim ? "vote-pop-active" : ""}
               style={{
                 flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "13px 20px", borderRadius: 12, border: "none",
-                background: C.accent, cursor: "pointer",
-                fontSize: T.body, fontWeight: 700, fontFamily: "var(--sans)",
-                color: C.accentFg, transition: "opacity 0.2s",
+                padding: "13px 20px", borderRadius: hasVoted ? 12 : 24,
+                border: hasVoted ? "none" : `1.5px solid ${C.border}`,
+                background: hasVoted ? C.accent : "transparent", cursor: "pointer",
+                fontSize: T.body, fontWeight: hasVoted ? 700 : 600, fontFamily: "var(--sans)",
+                color: hasVoted ? C.accentFg : C.text, transition: "all 0.25s",
                 position: "relative", overflow: "visible",
-                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
+                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} />
               </svg>
-              <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
+              <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : ""} {hasVoted ? "\u00B7 " : ""}{p.weighted.toLocaleString()}</span>
             </button>
             {p.url && (
               <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
