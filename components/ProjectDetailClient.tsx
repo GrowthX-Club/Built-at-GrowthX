@@ -255,12 +255,12 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
       {thread.replies.map((reply, i) => {
         const isLast = i === thread.replies.length - 1;
         return (
-          <div key={i} style={{ position: "relative", paddingTop: 16, paddingLeft: 62 }}>
+          <div key={i} style={{ position: "relative", paddingTop: 18, paddingLeft: 62 }}>
             {!isLast && (
               <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
             )}
             <div style={{
-              position: "absolute", left: 23, top: 0, width: 28, height: 38,
+              position: "absolute", left: 23, top: 0, width: 28, height: 42,
               borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
               borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
             }} />
@@ -1062,12 +1062,12 @@ export default function ProjectDetailPage() {
                   const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
                   const isLast = i === replies.length - 1;
                   return (
-                    <div key={reply.id} style={{ position: "relative", paddingTop: 16, paddingLeft: 62 }}>
+                    <div key={reply.id} style={{ position: "relative", paddingTop: 18, paddingLeft: 62 }}>
                       {!isLast && (
                         <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
                       )}
                       <div style={{
-                        position: "absolute", left: 23, top: 0, width: 28, height: 38,
+                        position: "absolute", left: 23, top: 0, width: 28, height: 42,
                         borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
                         borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                       }} />
@@ -1095,9 +1095,9 @@ export default function ProjectDetailPage() {
 
                 {/* Reply compose */}
                 {replyingTo === root.id && user && (
-                  <div style={{ position: "relative", paddingTop: 16, paddingLeft: 62 }}>
+                  <div style={{ position: "relative", paddingTop: 18, paddingLeft: 62 }}>
                     <div style={{
-                      position: "absolute", left: 23, top: 0, width: 28, height: 30,
+                      position: "absolute", left: 23, top: 0, width: 28, height: 32,
                       borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
                       borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                     }} />
