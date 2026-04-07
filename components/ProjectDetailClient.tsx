@@ -250,24 +250,38 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
       </div>
 
       {/* Replies — indented under parent */}
-      {thread.replies.map((reply, i) => (
-        <div key={i} style={{ display: "flex", gap: 10, paddingTop: 14, paddingLeft: 52 }}>
-          <Av initials={reply.author.avatar} size={30} role={reply.author.role} />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-              <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
-              <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
-              {reply.author.isCreator && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
-              )}
-              <Badge role={reply.author.role} />
-              <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
+      {/* Replies with curved connectors */}
+      {thread.replies.map((reply, i) => {
+        const isLast = i === thread.replies.length - 1;
+        return (
+          <div key={i} style={{ position: "relative", paddingTop: 14, paddingLeft: 52 }}>
+            {!isLast && (
+              <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+            )}
+            <div style={{
+              position: "absolute", left: 18, top: 0, width: 24, height: 29,
+              borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
+              borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
+            }} />
+            <div style={{ display: "flex", gap: 10 }}>
+              <Av initials={reply.author.avatar} size={30} role={reply.author.role} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
+                  <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
+                  {reply.author.isCreator && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                  )}
+                  <Badge role={reply.author.role} />
+                  <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
+                </div>
+                <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
+                <Reactions reactions={reply.reactions} />
+              </div>
             </div>
-            <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
-            <Reactions reactions={reply.reactions} />
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -1037,12 +1051,24 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
 
-                {/* Replies — indented under parent */}
-                {replies.map((reply) => {
+                {/* Replies — indented with curved connectors */}
+                {replies.map((reply, i) => {
                   const replyInitials = reply.authorAvatar || (reply.authorName ? reply.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
                   const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
+                  const isLast = i === replies.length - 1;
                   return (
-                    <div key={reply.id} style={{ display: "flex", gap: 10, paddingTop: 14, paddingLeft: 52 }}>
+                    <div key={reply.id} style={{ position: "relative", paddingTop: 14, paddingLeft: 52 }}>
+                      {/* Vertical trunk (continues to next reply) */}
+                      {!isLast && (
+                        <div style={{ position: "absolute", left: 18, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+                      )}
+                      {/* Curved branch to this reply */}
+                      <div style={{
+                        position: "absolute", left: 18, top: 0, width: 24, height: 29,
+                        borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
+                        borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
+                      }} />
+                      <div style={{ display: "flex", gap: 10 }}>
                       <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
@@ -1057,13 +1083,20 @@ export default function ProjectDetailPage() {
                         <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{renderContentWithMentions(reply.content)}</p>
                         <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
                       </div>
+                      </div>
                     </div>
                   );
                 })}
 
                 {/* Reply compose */}
                 {replyingTo === root.id && user && (
-                  <div style={{ display: "flex", gap: 10, paddingTop: 14, paddingLeft: 52 }}>
+                  <div style={{ position: "relative", paddingTop: 14, paddingLeft: 52 }}>
+                    <div style={{
+                      position: "absolute", left: 18, top: 0, width: 24, height: 28,
+                      borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
+                      borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
+                    }} />
+                  <div style={{ display: "flex", gap: 10 }}>
                     <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} src={user.avatarUrl} />
                     <div style={{ flex: 1, display: "flex", gap: 8, position: "relative" }}>
                       <input
@@ -1100,6 +1133,7 @@ export default function ProjectDetailPage() {
                         </button>
                       )}
                     </div>
+                  </div>
                   </div>
                 )}
               </div>
