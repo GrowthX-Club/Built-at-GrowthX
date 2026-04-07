@@ -354,7 +354,13 @@ export default function ProjectDetailPage() {
   const handleVoteRef = useRef<() => void>(() => {});
   useEffect(() => {
     if (project) {
-      setVoteState({ hasVoted, count: project.weighted, onVote: () => handleVoteRef.current() });
+      setVoteState({
+        projectId: project._id || project.id,
+        hasVoted,
+        count: project.weighted,
+        onVote: onVoteForButton,
+        onUnauthClick: () => openLoginDialog(() => { reloadUser(); reloadComments(); }),
+      });
     }
     return () => setVoteState(null);
   }, [project, hasVoted, setVoteState]);
