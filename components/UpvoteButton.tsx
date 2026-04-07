@@ -160,7 +160,7 @@ export default function UpvoteButton({
         <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
       </svg>
       <span style={{ fontSize: cfg.fontSize, fontWeight: cfg.fontWeight, color: voted ? C.accentFg : C.text, lineHeight: 1 }}>
-        {cfg.showLabel && voted ? "Voted \u00B7 " : ""}{fmt(weighted)}
+        {cfg.showLabel ? (voted ? "Voted \u00B7 " : "Upvote \u00B7 ") : ""}{fmt(weighted)}
       </span>
     </button>
   );
