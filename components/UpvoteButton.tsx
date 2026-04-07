@@ -14,9 +14,7 @@ interface UpvoteButtonProps {
   hasVoted: boolean;
   onVote?: (projectId: string | number) => Promise<{ voted: boolean; weighted: number; raw: number } | null>;
   onUnauthClick?: () => void;
-  size?: "default" | "large" | "detail" | "float";
-  className?: string;
-  style?: React.CSSProperties;
+  size?: "default" | "large";
 }
 
 export default function UpvoteButton({
@@ -26,14 +24,14 @@ export default function UpvoteButton({
   onVote,
   onUnauthClick,
   size = "default",
-  className,
-  style: extraStyle,
 }: UpvoteButtonProps) {
   const [voted, setVoted] = useState(initialVoted);
   const [weighted, setWeighted] = useState(initialWeighted);
   const [loading, setLoading] = useState(false);
   const [popActive, setPopActive] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+
+  const isLarge = size === "large";
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -91,76 +89,42 @@ export default function UpvoteButton({
     }
   };
 
-  // Size-specific styles
-  const sizeConfig = {
-    default: {
-      iconSize: 12,
-      padding: voted ? "4px 10px" : "6px 14px",
-      borderRadius: voted ? 8 : 20,
-      fontSize: T.bodySm,
-      fontWeight: 650,
-      showLabel: false,
-    },
-    large: {
-      iconSize: 16,
-      padding: "10px 18px",
-      borderRadius: 10,
-      fontSize: T.subtitle,
-      fontWeight: 650,
-      showLabel: false,
-    },
-    detail: {
-      iconSize: voted ? 20 : 16,
-      padding: voted ? "12px 28px" : "10px 22px",
-      borderRadius: voted ? 12 : 24,
-      fontSize: voted ? T.bodyLg : T.body,
-      fontWeight: voted ? 700 : 600,
-      showLabel: true,
-    },
-    float: {
-      iconSize: 18,
-      padding: "13px 20px",
-      borderRadius: voted ? 12 : 24,
-      fontSize: T.body,
-      fontWeight: voted ? 700 : 600,
-      showLabel: true,
-    },
-  };
-
-  const cfg = sizeConfig[size];
+  const iconSize = isLarge ? 16 : 12;
 
   return (
     <button
       ref={btnRef}
       onClick={handleClick}
-      className={[popActive ? "vote-pop-active" : "", className].filter(Boolean).join(" ") || undefined}
+      className={popActive ? "vote-pop-active" : ""}
       style={{
         display: "flex",
-        flexDirection: size === "large" ? "column" : "row",
+        flexDirection: isLarge ? "column" : "row",
         alignItems: "center",
-        justifyContent: size === "float" ? "center" : undefined,
-        gap: size === "large" ? 2 : 8,
-        background: voted ? C.accent : "transparent",
-        borderRadius: cfg.borderRadius,
-        padding: cfg.padding,
-        border: voted ? `1.5px solid ${C.accent}` : `1.5px solid ${C.border}`,
+        gap: isLarge ? 2 : 4,
+        background: voted ? C.accent : C.surface,
+        borderRadius: isLarge ? 10 : 8,
+        padding: isLarge ? "10px 18px" : "4px 10px",
+        border: voted ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
         cursor: "pointer",
-        transition: "all 0.25s",
+        transition: "border 0.25s, background 0.25s, color 0.25s",
         opacity: loading ? 0.6 : 1,
         fontFamily: "var(--sans)",
         color: voted ? C.accentFg : C.text,
         position: "relative",
         overflow: "visible",
-        ...extraStyle,
       }}
-      onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
     >
-      <svg width={cfg.iconSize} height={cfg.iconSize} viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
+      <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
         <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
       </svg>
-      <span style={{ fontSize: cfg.fontSize, fontWeight: cfg.fontWeight, color: voted ? C.accentFg : C.text, lineHeight: 1 }}>
-        {cfg.showLabel ? (voted ? "Voted \u00B7 " : "Upvote \u00B7 ") : ""}{fmt(weighted)}
+      <span
+        style={{
+          fontSize: isLarge ? T.subtitle : T.bodySm,
+          fontWeight: 650,
+          color: voted ? C.accentFg : C.text,
+        }}
+      >
+        {fmt(weighted)}
       </span>
     </button>
   );
