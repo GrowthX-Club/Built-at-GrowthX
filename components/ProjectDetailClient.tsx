@@ -233,9 +233,9 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
 
 function ThreadBlock({ thread }: { thread: ThreadData }) {
   return (
-    <div style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
+    <div style={{ padding: "28px 0", borderBottom: `1px solid ${C.borderLight}` }}>
       <div style={{ display: "flex", gap: 14 }}>
-        <Av initials={thread.author.avatar} size={52} role={thread.author.role} />
+        <Av initials={thread.author.avatar} size={48} role={thread.author.role} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -255,17 +255,17 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
       {thread.replies.map((reply, i) => {
         const isLast = i === thread.replies.length - 1;
         return (
-          <div key={i} style={{ position: "relative", paddingTop: 14, paddingLeft: 66 }}>
+          <div key={i} style={{ position: "relative", paddingTop: 16, paddingLeft: 62 }}>
             {!isLast && (
-              <div style={{ position: "absolute", left: 25, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+              <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
             )}
             <div style={{
-              position: "absolute", left: 25, top: 0, width: 30, height: 40,
+              position: "absolute", left: 23, top: 0, width: 28, height: 38,
               borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
               borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
             }} />
             <div style={{ display: "flex", gap: 12 }}>
-              <Av initials={reply.author.avatar} size={52} role={reply.author.role} />
+              <Av initials={reply.author.avatar} size={48} role={reply.author.role} />
               <div style={{ flex: 1 }}>
                 <div style={{ marginBottom: 5 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -1014,9 +1014,9 @@ export default function ProjectDetailPage() {
             const rootInitials = root.authorAvatar || (root.authorName ? root.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
             const isRootOP = p.builder?.name && root.authorName === p.builder.name;
             return (
-              <div key={root.id} style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
+              <div key={root.id} style={{ padding: "28px 0", borderBottom: `1px solid ${C.borderLight}` }}>
                 <div style={{ display: "flex", gap: 14 }}>
-                  <Av initials={rootInitials} size={52} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
+                  <Av initials={rootInitials} size={48} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ marginBottom: 6 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -1062,17 +1062,17 @@ export default function ProjectDetailPage() {
                   const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
                   const isLast = i === replies.length - 1;
                   return (
-                    <div key={reply.id} style={{ position: "relative", paddingTop: 14, paddingLeft: 66 }}>
+                    <div key={reply.id} style={{ position: "relative", paddingTop: 16, paddingLeft: 62 }}>
                       {!isLast && (
-                        <div style={{ position: "absolute", left: 25, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+                        <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
                       )}
                       <div style={{
-                        position: "absolute", left: 25, top: 0, width: 30, height: 40,
+                        position: "absolute", left: 23, top: 0, width: 28, height: 38,
                         borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
                         borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                       }} />
                       <div style={{ display: "flex", gap: 12 }}>
-                      <Av initials={replyInitials} size={52} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
+                      <Av initials={replyInitials} size={48} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
                       <div style={{ flex: 1 }}>
                         <div style={{ marginBottom: 5 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -1095,9 +1095,9 @@ export default function ProjectDetailPage() {
 
                 {/* Reply compose */}
                 {replyingTo === root.id && user && (
-                  <div style={{ position: "relative", paddingTop: 14, paddingLeft: 66 }}>
+                  <div style={{ position: "relative", paddingTop: 16, paddingLeft: 62 }}>
                     <div style={{
-                      position: "absolute", left: 25, top: 0, width: 30, height: 28,
+                      position: "absolute", left: 23, top: 0, width: 28, height: 30,
                       borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
                       borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                     }} />
