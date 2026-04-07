@@ -257,11 +257,11 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
         return (
           <div key={i} style={{ position: "relative", paddingTop: 18, paddingLeft: 62 }}>
             {!isLast && (
-              <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+              <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.border }} />
             )}
             <div style={{
               position: "absolute", left: 23, top: 0, width: 28, height: 42,
-              borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
+              borderLeft: `2px solid ${C.border}`, borderBottom: `2px solid ${C.border}`,
               borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
             }} />
             <div style={{ display: "flex", gap: 12 }}>
@@ -1064,11 +1064,11 @@ export default function ProjectDetailPage() {
                   return (
                     <div key={reply.id} style={{ position: "relative", paddingTop: 18, paddingLeft: 62 }}>
                       {!isLast && (
-                        <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.borderLight }} />
+                        <div style={{ position: "absolute", left: 23, top: 0, bottom: 0, width: 2, background: C.border }} />
                       )}
                       <div style={{
                         position: "absolute", left: 23, top: 0, width: 28, height: 42,
-                        borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
+                        borderLeft: `2px solid ${C.border}`, borderBottom: `2px solid ${C.border}`,
                         borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                       }} />
                       <div style={{ display: "flex", gap: 12 }}>
@@ -1098,7 +1098,7 @@ export default function ProjectDetailPage() {
                   <div style={{ position: "relative", paddingTop: 18, paddingLeft: 62 }}>
                     <div style={{
                       position: "absolute", left: 23, top: 0, width: 28, height: 32,
-                      borderLeft: `2px solid ${C.borderLight}`, borderBottom: `2px solid ${C.borderLight}`,
+                      borderLeft: `2px solid ${C.border}`, borderBottom: `2px solid ${C.border}`,
                       borderBottomLeftRadius: 12, borderRight: "none", borderTop: "none",
                     }} />
                   <div style={{ display: "flex", gap: 10 }}>
