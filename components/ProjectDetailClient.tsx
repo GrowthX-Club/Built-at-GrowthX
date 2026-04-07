@@ -233,11 +233,16 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
 }
 
 function ThreadBlock({ thread }: { thread: ThreadData }) {
-  const { isMobile } = useResponsive();
   return (
     <div style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
       <div style={{ display: "flex", gap: 14 }}>
-        <Av initials={thread.author.avatar} size={38} role={thread.author.role} />
+        {/* Avatar column with thread line */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: 38 }}>
+          <Av initials={thread.author.avatar} size={38} role={thread.author.role} />
+          {thread.replies.length > 0 && (
+            <div style={{ width: 2, flex: 1, background: C.borderLight, marginTop: 6, borderRadius: 1 }} />
+          )}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>{thread.author.name}</span>
@@ -247,50 +252,34 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
           </div>
           <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, fontFamily: "var(--sans)", margin: "0 0 14px", fontWeight: 400 }}>{thread.content}</p>
           <Reactions reactions={thread.reactions} />
-          {thread.replies.length > 0 && (
-            <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
-              {thread.replies.map((reply, i) => (
-                <div key={i} style={{ padding: "16px 0", borderBottom: i < thread.replies.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
-                  {reply.author.isCreator ? (
-                    <div style={{
-                      background: `linear-gradient(90deg, ${C.goldSoft} 0%, transparent 100%)`,
-                      margin: "-16px -16px 0 -20px", padding: "16px 16px 16px 20px",
-                      borderRadius: "0 10px 10px 0",
-                    }}>
-                      <div style={{ display: "flex", gap: 10 }}>
-                        <Av initials={reply.author.avatar} size={30} highlight role={reply.author.role} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: T.bodySm, fontWeight: 650, color: C.text }}>{reply.author.name}</span>
-                            <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
-                            <Badge role={reply.author.role} />
-                            <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
-                          </div>
-                          <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
-                          <Reactions reactions={reply.reactions} />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <Av initials={reply.author.avatar} size={30} role={reply.author.role} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
-                          <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
-                          <Badge role={reply.author.role} />
-                          <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
-                        </div>
-                        <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
-                        <Reactions reactions={reply.reactions} />
-                      </div>
-                    </div>
+
+          {/* Replies — flat under parent avatar line */}
+          {thread.replies.map((reply, i) => (
+            <div key={i} style={{
+              display: "flex", gap: 10, paddingTop: 14,
+              ...(reply.author.isCreator ? {
+                background: `linear-gradient(90deg, ${C.goldSoft} 0%, transparent 100%)`,
+                borderRadius: "0 10px 10px 0",
+                marginRight: -16, paddingRight: 16,
+                marginTop: i === 0 ? 16 : 0,
+              } : { marginTop: i === 0 ? 16 : 0 }),
+            }}>
+              <Av initials={reply.author.avatar} size={30} highlight={reply.author.isCreator} role={reply.author.role} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: T.bodySm, fontWeight: reply.author.isCreator ? 650 : 620, color: C.text }}>{reply.author.name}</span>
+                  <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
+                  {reply.author.isCreator && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                   )}
+                  <Badge role={reply.author.role} />
+                  <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
                 </div>
-              ))}
+                <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400 }}>{reply.content}</p>
+                <Reactions reactions={reply.reactions} />
+              </div>
             </div>
-          )}
+          ))}
         </div>
       </div>
     </div>
@@ -1024,7 +1013,13 @@ export default function ProjectDetailPage() {
             return (
               <div key={root.id} style={{ padding: "24px 0", borderBottom: `1px solid ${C.borderLight}` }}>
                 <div style={{ display: "flex", gap: 14 }}>
-                  <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
+                  {/* Avatar column with thread line */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: 38 }}>
+                    <Av initials={rootInitials} size={38} highlight={!!isRootOP} role={root.authorRole || "member"} src={root.authorAvatarUrl} />
+                    {(replies.length > 0 || replyingTo === root.id) && (
+                      <div style={{ width: 2, flex: 1, background: C.borderLight, marginTop: 6, borderRadius: 1 }} />
+                    )}
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                       <span style={{ fontSize: T.body, fontWeight: 620, color: C.text, fontFamily: "var(--sans)" }}>
@@ -1059,95 +1054,77 @@ export default function ProjectDetailPage() {
                       }}>Reply</button>
                     </div>
 
-                    {/* Replies + compose (single container for continuous border) */}
-                    {(replies.length > 0 || replyingTo === root.id) && (
-                      <div style={{ marginTop: 16, borderLeft: `2px solid ${C.borderLight}`, paddingLeft: isMobile ? 12 : 20, marginLeft: 2 }}>
-                        {replies.map((reply, i) => {
-                          const replyInitials = reply.authorAvatar || (reply.authorName ? reply.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
-                          const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
-                          return (
-                            <div key={reply.id} style={{ padding: "16px 0", borderBottom: i < replies.length - 1 ? `1px solid ${C.borderLight}` : "none" }}>
-                              {isReplyOP ? (
-                                <div style={{
-                                  background: `linear-gradient(90deg, ${C.goldSoft} 0%, transparent 100%)`,
-                                  margin: "-16px -16px 0 -20px", padding: "16px 16px 16px 20px",
-                                  borderRadius: "0 10px 10px 0",
-                                }}>
-                                  <div style={{ display: "flex", gap: 10 }}>
-                                    <Av initials={replyInitials} size={30} highlight role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                                        <span style={{ fontSize: T.bodySm, fontWeight: 650, color: C.text }}>{reply.authorName}</span>
-                                        <CompanyTag title={reply.authorTitle || p.builder.title} company={reply.authorCompany || p.builder.company} companyColor={reply.authorCompanyColor || p.builder.companyColor} companyLogo={reply.authorCompanyLogo || p.builder.companyLogo} />
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
-                                        <Badge role={reply.authorRole || "member"} />
-                                        <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
-                                      </div>
-                                      <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{renderContentWithMentions(reply.content)}</p>
-                                      <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div style={{ display: "flex", gap: 10 }}>
-                                  <Av initials={replyInitials} size={30} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
-                                      <span style={{ fontSize: T.bodySm, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
-                                      <CompanyTag title={reply.authorTitle} company={reply.authorCompany} companyColor={reply.authorCompanyColor} companyLogo={reply.authorCompanyLogo} />
-                                      <Badge role={reply.authorRole || "member"} />
-                                      <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
-                                    </div>
-                                    <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{renderContentWithMentions(reply.content)}</p>
-                                    <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
-                                  </div>
-                                </div>
+                    {/* Replies — flat, threaded under parent avatar line */}
+                    {replies.map((reply, i) => {
+                      const replyInitials = reply.authorAvatar || (reply.authorName ? reply.authorName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?");
+                      const isReplyOP = p.builder?.name && reply.authorName === p.builder.name;
+                      return (
+                        <div key={reply.id} style={{
+                          display: "flex", gap: 10, marginTop: i === 0 ? 16 : 0, paddingTop: 14,
+                          ...(isReplyOP ? {
+                            background: `linear-gradient(90deg, ${C.goldSoft} 0%, transparent 100%)`,
+                            borderRadius: "0 10px 10px 0",
+                            margin: `${i === 0 ? 16 : 0}px -16px 0 0`, marginTop: i === 0 ? 16 : 0,
+                            padding: "14px 16px 14px 0",
+                          } : {}),
+                        }}>
+                          <Av initials={replyInitials} size={30} highlight={!!isReplyOP} role={reply.authorRole || "member"} src={reply.authorAvatarUrl} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: T.bodySm, fontWeight: isReplyOP ? 650 : 620, color: C.text }}>{reply.authorName}</span>
+                              <CompanyTag title={isReplyOP ? (reply.authorTitle || p.builder.title) : reply.authorTitle} company={isReplyOP ? (reply.authorCompany || p.builder.company) : reply.authorCompany} companyColor={isReplyOP ? (reply.authorCompanyColor || p.builder.companyColor) : reply.authorCompanyColor} companyLogo={isReplyOP ? (reply.authorCompanyLogo || p.builder.companyLogo) : reply.authorCompanyLogo} />
+                              {isReplyOP && (
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                               )}
+                              <Badge role={reply.authorRole || "member"} />
+                              <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                             </div>
-                          );
-                        })}
-
-                        {/* Reply compose */}
-                        {replyingTo === root.id && user && (
-                          <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
-                            <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} src={user.avatarUrl} />
-                            <div style={{ flex: 1, display: "flex", gap: 8, position: "relative" }}>
-                              <input
-                                ref={replyInputRef}
-                                value={replyText}
-                                onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart ?? e.target.value.length, setReplyText, "reply")}
-                                placeholder="Write a reply..."
-                                onKeyDown={e => {
-                                  if (e.key === "Escape" && mentionQuery !== null) { e.stopPropagation(); setMentionQuery(null); setMentionResults([]); return; }
-                                  if (e.key === "Enter" && !e.shiftKey && mentionQuery === null) { e.preventDefault(); handlePostReply(root.id); }
-                                }}
-                                onBlur={() => dismissMention()}
-                                style={{
-                                  flex: 1, padding: "8px 14px", borderRadius: 8,
-                                  border: `1px solid ${C.borderLight}`, fontSize: T.body,
-                                  color: C.text, fontFamily: "var(--sans)",
-                                  background: "transparent", outline: "none",
-                                }}
-                              />
-                              {mentionTarget === "reply" && <MentionDropdown />}
-                              {replyText.trim() && (
-                                <button
-                                  onClick={() => handlePostReply(root.id)}
-                                  disabled={postingComment}
-                                  style={{
-                                    padding: "7px 14px", borderRadius: 8,
-                                    border: "none", background: C.accent, color: C.accentFg,
-                                    fontSize: T.label, fontWeight: 600, cursor: "pointer",
-                                    fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  Reply
-                                </button>
-                              )}
-                            </div>
+                            <p style={{ fontSize: T.body, lineHeight: 1.65, color: C.text, margin: "0 0 10px", fontWeight: 400, whiteSpace: "pre-wrap" }}>{renderContentWithMentions(reply.content)}</p>
+                            <Reactions reactions={reply.reactions} onReact={(code) => handleReact(reply.id, code)} />
                           </div>
-                        )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Reply compose */}
+                    {replyingTo === root.id && user && (
+                      <div style={{ display: "flex", gap: 10, paddingTop: 14 }}>
+                        <Av initials={user.avatar || "U"} size={28} role={user.role || "member"} src={user.avatarUrl} />
+                        <div style={{ flex: 1, display: "flex", gap: 8, position: "relative" }}>
+                          <input
+                            ref={replyInputRef}
+                            value={replyText}
+                            onChange={e => handleTextChangeWithMention(e.target.value, e.target.selectionStart ?? e.target.value.length, setReplyText, "reply")}
+                            placeholder="Write a reply..."
+                            onKeyDown={e => {
+                              if (e.key === "Escape" && mentionQuery !== null) { e.stopPropagation(); setMentionQuery(null); setMentionResults([]); return; }
+                              if (e.key === "Enter" && !e.shiftKey && mentionQuery === null) { e.preventDefault(); handlePostReply(root.id); }
+                            }}
+                            onBlur={() => dismissMention()}
+                            style={{
+                              flex: 1, padding: "8px 14px", borderRadius: 8,
+                              border: `1px solid ${C.borderLight}`, fontSize: T.body,
+                              color: C.text, fontFamily: "var(--sans)",
+                              background: "transparent", outline: "none",
+                            }}
+                          />
+                          {mentionTarget === "reply" && <MentionDropdown />}
+                          {replyText.trim() && (
+                            <button
+                              onClick={() => handlePostReply(root.id)}
+                              disabled={postingComment}
+                              style={{
+                                padding: "7px 14px", borderRadius: 8,
+                                border: "none", background: C.accent, color: C.accentFg,
+                                fontSize: T.label, fontWeight: 600, cursor: "pointer",
+                                fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              Reply
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
