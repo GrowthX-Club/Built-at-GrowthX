@@ -12,7 +12,8 @@ const routes: MockRoute[] = [
       const offset = parseInt(query.get("offset") || "0", 10);
       const sort = query.get("sort") || "trending";
 
-      const sorted = [...seedProjects].sort((a, b) => {
+      const published = seedProjects.filter(p => !p.isDraft);
+      const sorted = [...published].sort((a, b) => {
         if (sort === "top") return b.weighted - a.weighted;
         if (sort === "new")
           return (

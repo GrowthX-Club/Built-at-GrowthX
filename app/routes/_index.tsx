@@ -397,6 +397,7 @@ export default function HomePage() {
           media: submitData.mediaFiles.filter(m => !m.uploading).map(m => m.url),
           creators: submitData.team.filter(c => c.role === 'creator').map(c => c._id),
           collabs: submitData.team.filter(c => c.role === 'collaborator').map(c => c._id),
+          isDraft: savingAsDraft,
         }),
       });
       if (res.ok) {
