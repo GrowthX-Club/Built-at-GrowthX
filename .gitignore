@@ -6,3 +6,4 @@ build
 .gstack
 built-at-growthx
 .claude/.supermemory-claude
+tsconfig.tsbuildinfo
