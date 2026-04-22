@@ -21,16 +21,14 @@ async function getProject(id: string) {
 export async function loader({ params }: LoaderFunctionArgs) {
   const { id } = params;
   const project = await getProject(id!);
+  if (!project) throw new Response("Not Found", { status: 404 });
 
-  // Redirect ObjectId URLs to slug URLs when backend is reachable
-  if (project?.slug && /^[0-9a-fA-F]{24}$/.test(id!) && project.slug !== id) {
+  // Redirect ObjectId URLs to slug URLs
+  if (project.slug && /^[0-9a-fA-F]{24}$/.test(id!) && project.slug !== id) {
     throw redirect(`/projects/${project.slug}`, 301);
   }
 
-  // Loader's only job is SEO meta. When the backend is unreachable (mock
-  // mode, local dev without gx-backend running, mock-* IDs), fall through
-  // with project: null — the client fetches via bxApi and renders normally.
-  return { project: project ?? null };
+  return { project };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {

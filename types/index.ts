@@ -635,7 +635,6 @@ export const STACK_META: Record<string, { icon: string; bg: string; color: strin
   "React Native": { icon: "\u{269B}", bg: "#61DAFB", color: "#222" },
   "WhatsApp Business API": { icon: "W", bg: "#25D366", color: "#fff" },
   "OpenClaw": { icon: "\u{1F99E}", bg: "#D63B2F", color: "#fff" },
-  "Open Code": { icon: "OC", bg: "#FC5200", color: "#fff" },
 };
 
 // Stack name → logo.dev domain mapping
@@ -688,135 +687,11 @@ const STACK_DOMAINS: Record<string, string> = {
   "Linear": "linear.app",
   "Framer": "framer.com",
   "OpenClaw": "openclaw.com",
-  "Open Code": "opencode.ai",
 };
 
 // Hardcoded logo URLs for stacks where logo.dev doesn't have a good match
 const STACK_LOGO_OVERRIDES: Record<string, string> = {
   "OpenClaw": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/openclaw.png",
-};
-
-// ---- Track-scoring data (OC submission) ----
-
-export type TrackKey = "virality" | "revenue" | "maas";
-
-export interface ProofMedia {
-  url: string;
-  uploadedAt: string;
-  filename?: string;
-}
-
-export interface ViralityTrackData {
-  impressionsTotal?: string;
-  reactionsTotal?: string;
-  amplificationNotes?: string;
-  amplificationProofs?: ProofMedia[];
-  analyticsProvider?: "datafast" | "posthog" | "plausible" | "ga4" | "other" | "";
-  analyticsProviderOther?: string;
-  analyticsReadOnlyUrl?: string;
-  uniqueVisitors?: string;
-  signupsCount?: string;
-  signupEventDefinition?: string;
-  signupsProof?: ProofMedia;
-}
-
-export interface RevenueTrackData {
-  painPoint?: string;
-  marketSize?: string;
-  rightToWin?: string;
-  whyNow?: string;
-  tractionStage?:
-    | "none"
-    | "waitlist_lt_50"
-    | "waitlist_50_500"
-    | "first_paying_or_signed_loi"
-    | "multiple_paying_or_contract"
-    | "";
-  tractionDetails?: string;
-  tractionProofs?: ProofMedia[];
-  moat?: string;
-}
-
-export type MaasTier = "L1" | "L2" | "L3" | "L4" | "L5";
-export type MaasTaskDomain =
-  | "marketing"
-  | "hiring"
-  | "sales"
-  | "legal"
-  | "support"
-  | "design"
-  | "engineering"
-  | "other";
-
-export interface MaasRealOutputClaim {
-  tier?: MaasTier;
-  taskDomain?: MaasTaskDomain;
-  taskDomainOther?: string;
-  surfaceUrl?: string;
-  overflowCount?: number;
-  overflowNotes?: string;
-  proofs?: ProofMedia[];
-}
-export interface MaasOrgStructureClaim {
-  tier?: MaasTier;
-  notes?: string;
-  proofs?: ProofMedia[];
-}
-export interface MaasObservabilityClaim {
-  tier?: MaasTier;
-  tool?: string;
-  proofs?: ProofMedia[];
-}
-export interface MaasEvalsClaim {
-  tier?: MaasTier;
-  notes?: string;
-  ciUrl?: string;
-  proofs?: ProofMedia[];
-}
-export interface MaasMemoryClaim {
-  tier?: MaasTier;
-  architecture?: string;
-}
-export interface MaasCostLatencyClaim {
-  tier?: MaasTier;
-  timePerTask?: string;
-  costPerTask?: string;
-}
-export interface MaasManagementUiClaim {
-  tier?: MaasTier;
-  url?: string;
-  proofs?: ProofMedia[];
-}
-
-export interface MaasTrackData {
-  realOutput?: MaasRealOutputClaim;
-  orgStructure?: MaasOrgStructureClaim;
-  observability?: MaasObservabilityClaim;
-  evals?: MaasEvalsClaim;
-  memory?: MaasMemoryClaim;
-  costLatency?: MaasCostLatencyClaim;
-  managementUi?: MaasManagementUiClaim;
-}
-
-export type FormError = { id: string; message: string; step: number };
-
-export interface SecondaryTrackClaim {
-  tier?: string;
-  summary?: string;
-  proofs?: ProofMedia[];
-}
-
-export interface TrackData {
-  virality?: ViralityTrackData;
-  revenue?: RevenueTrackData;
-  maas?: MaasTrackData;
-  secondaryClaims?: Partial<Record<TrackKey, SecondaryTrackClaim>>;
-}
-
-export const TRACK_LABELS: Record<TrackKey, string> = {
-  virality: "Virality",
-  revenue: "Revenue",
-  maas: "MaaS",
 };
 
 /** Generate a logo.dev URL for a tech stack item */
