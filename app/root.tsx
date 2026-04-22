@@ -4,6 +4,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 import type { LinksFunction, MetaFunction } from "react-router";
 
@@ -13,6 +14,7 @@ import { NavProvider } from "@/context/NavContext";
 import LoginDialog from "@/components/LoginDialog";
 import AppNav from "@/components/AppNav";
 import CanvasFlip from "@/components/CanvasFlip";
+import OpenCodeBuildathonBanner from "@/components/OpenCodeBuildathonBanner";
 
 import "./globals.css";
 
@@ -28,7 +30,7 @@ export const links: LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap",
   },
   { rel: "icon", href: "/favicon-16.png", sizes: "16x16", type: "image/png" },
   { rel: "icon", href: "/favicon-32.png", sizes: "32x32", type: "image/png" },
@@ -120,11 +122,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 /*  App — providers + shell chrome                                     */
 /* ------------------------------------------------------------------ */
 export default function App() {
+  const { pathname } = useLocation();
+  const isOC = pathname === "/oc" || pathname.startsWith("/oc/");
   return (
     <ThemeProvider>
       <LoginDialogProvider>
         <NavProvider>
-          <AppNav />
+          {!isOC && <OpenCodeBuildathonBanner />}
+          {!isOC && <AppNav />}
           <CanvasFlip>
             <Outlet />
             <LoginDialog />

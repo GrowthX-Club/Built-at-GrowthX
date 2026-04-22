@@ -4,7 +4,7 @@ import { gxApi } from "@/lib/api";
 
 interface MediaFile {
   url: string;
-  type: "image" | "loom";
+  type: "image";
   uploading?: boolean;
   progress?: string;
 }
@@ -17,6 +17,7 @@ interface MediaUploadProps {
   value: MediaFile[];
   onChange: (files: FilesOrUpdater) => void;
   maxFiles?: number;
+  label?: string;
 }
 
 async function getUploadUrl(fileName: string, mimeType: string, contentLength: number) {
@@ -33,7 +34,19 @@ async function getUploadUrl(fileName: string, mimeType: string, contentLength: n
   return { uploadUrl: data.upload_url, retrievalUrl: data.retrieval_url };
 }
 
+const MOCK_MODE = ((typeof import.meta !== "undefined" ? (import.meta as unknown as { env?: { VITE_MOCK_MODE?: string } }).env?.VITE_MOCK_MODE : undefined) === "true");
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("Read failed"));
+    r.readAsDataURL(file);
+  });
+}
+
 async function uploadFile(file: File): Promise<string> {
+  if (MOCK_MODE) return readAsDataUrl(file);
   const { uploadUrl, retrievalUrl } = await getUploadUrl(file.name, file.type, file.size);
   const putRes = await fetch(uploadUrl, {
     method: "PUT",
@@ -44,9 +57,8 @@ async function uploadFile(file: File): Promise<string> {
   return retrievalUrl;
 }
 
-export default function MediaUpload({ value, onChange, maxFiles = 5 }: MediaUploadProps) {
+export default function MediaUpload({ value, onChange, maxFiles = 5, label = "Screenshots" }: MediaUploadProps) {
   const [dragOver, setDragOver] = useState(false);
-  const [loomInput, setLoomInput] = useState("");
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -102,22 +114,6 @@ export default function MediaUpload({ value, onChange, maxFiles = 5 }: MediaUplo
     if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   }, [addFiles]);
 
-  const addLoom = () => {
-    const url = loomInput.trim();
-    if (!url) return;
-    if (!/^https?:\/\/(www\.)?loom\.com\/(share|embed)\//.test(url)) {
-      setError("Enter a valid Loom URL (loom.com/share/...)");
-      return;
-    }
-    if (value.length >= maxFiles) {
-      setError(`Maximum ${maxFiles} items allowed`);
-      return;
-    }
-    setError("");
-    onChange([...value, { url, type: "loom" }]);
-    setLoomInput("");
-  };
-
   const remove = (idx: number) => {
     const copy = [...value];
     if (copy[idx].uploading) URL.revokeObjectURL(copy[idx].url);
@@ -131,7 +127,7 @@ export default function MediaUpload({ value, onChange, maxFiles = 5 }: MediaUplo
         display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
         fontFamily: "var(--sans)", marginBottom: 8,
       }}>
-        Screenshots & Loom videos
+        {label}
       </label>
 
       {/* Thumbnails */}
@@ -145,22 +141,11 @@ export default function MediaUpload({ value, onChange, maxFiles = 5 }: MediaUplo
               overflow: "hidden", border: `1px solid ${C.border}`,
               background: C.surface,
             }}>
-              {m.type === "image" ? (
-                <img
-                  src={m.url}
-                  alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover", opacity: m.uploading ? 0.4 : 1 }}
-                />
-              ) : (
-                <div style={{
-                  width: "100%", height: "100%", display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  background: "#1a1a2e", color: "#fff",
-                  fontSize: T.caption, fontFamily: "var(--sans)", fontWeight: 500,
-                }}>
-                  Loom
-                </div>
-              )}
+              <img
+                src={m.url}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", opacity: m.uploading ? 0.4 : 1 }}
+              />
               {m.uploading && (
                 <div style={{
                   position: "absolute", inset: 0, display: "flex",
@@ -229,33 +214,6 @@ export default function MediaUpload({ value, onChange, maxFiles = 5 }: MediaUplo
         style={{ display: "none" }}
         onChange={e => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ""; }}
       />
-
-      {/* Loom URL input */}
-      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <input
-          placeholder="Paste a Loom URL"
-          value={loomInput}
-          onChange={e => setLoomInput(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addLoom(); } }}
-          style={{
-            flex: 1, border: `1px solid ${C.border}`, borderRadius: 8,
-            padding: "8px 12px", fontSize: T.label, color: C.text,
-            background: C.surface, outline: "none", fontFamily: "var(--sans)",
-          }}
-        />
-        <button
-          type="button"
-          onClick={addLoom}
-          style={{
-            padding: "8px 14px", borderRadius: 8,
-            background: C.accent, color: C.accentFg,
-            border: "none", cursor: "pointer",
-            fontSize: T.label, fontFamily: "var(--sans)", fontWeight: 600,
-          }}
-        >
-          Add
-        </button>
-      </div>
 
       {error && (
         <div style={{
