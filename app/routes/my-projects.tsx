@@ -183,12 +183,12 @@ export default function MyProjectsPage() {
     setEditingId(null);
   };
 
-  const [togglingId, setTogglingId] = useState<string | number | null>(null);
+  const [busyAction, setBusyAction] = useState<{ id: string | number; type: "toggle" | "publish" } | null>(null);
 
   const toggleEnabled = async (p: Project) => {
-    if (togglingId) return;
+    if (busyAction) return;
     const newEnabled = !p.enabled;
-    setTogglingId(p.id);
+    setBusyAction({ id: p.id, type: "toggle" });
     try {
       const res = await bxApi(`/projects/${p.id}`, {
         method: "PUT",
@@ -199,20 +199,44 @@ export default function MyProjectsPage() {
         setProjects(prev => prev.map(proj => proj.id === p.id ? { ...proj, enabled: newEnabled } : proj));
       }
     } catch { /* ignore */ }
-    setTogglingId(null);
+    setBusyAction(null);
+  };
+
+  const publishProject = async (p: Project) => {
+    if (busyAction) return;
+    if (!p.url?.trim()) {
+      startEdit(p);
+      setEditError("Add a product URL before publishing.");
+      return;
+    }
+    setBusyAction({ id: p.id, type: "publish" });
+    try {
+      const res = await bxApi(`/projects/${p.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDraft: false }),
+      });
+      if (res.ok) {
+        setProjects(prev => prev.map(proj => proj.id === p.id ? { ...proj, isDraft: false } : proj));
+      }
+    } catch { /* ignore */ }
+    setBusyAction(null);
   };
 
   const [editError, setEditError] = useState("");
 
-  const saveEdit = async () => {
+  const saveEdit = async (publish = false) => {
     if (!editingId || saving) return;
     setEditError("");
     if (!editData.name.trim()) { setEditError("Project name is required."); return; }
     if (!editData.tagline.trim()) { setEditError("Tagline is required."); return; }
     if (descriptionCharCount(editData.description) === 0) { setEditError("Description is required. Tell us what you built."); return; }
     if (editData.stack.length === 0) { setEditError("Add at least one tech stack item."); return; }
+    if (publish && !editData.url?.trim()) { setEditError("Add a product URL before publishing."); return; }
     setSaving(true);
     try {
+      const editingProject = projects.find(p => p.id === editingId);
+      const isDraft = publish ? false : (editingProject?.isDraft ?? false);
       const payload = {
         name: editData.name,
         tagline: editData.tagline,
@@ -222,6 +246,7 @@ export default function MyProjectsPage() {
         media: editData.mediaFiles.filter(m => !m.uploading).map(m => m.url),
         creators: editData.team.filter(c => c.role === 'creator').map(c => c._id).filter(Boolean),
         collabs: editData.team.filter(c => c.role === 'collaborator').map(c => c._id).filter(Boolean),
+        isDraft,
       };
       const res = await bxApi(`/projects/${editingId}`, {
         method: "PUT",
@@ -234,7 +259,9 @@ export default function MyProjectsPage() {
           name: editData.name,
           tagline: editData.tagline,
           description: editData.description,
+          url: editData.url,
           stack: editData.stack,
+          isDraft,
           creators: editData.team.filter(c => c.role === 'creator').map(c => ({
             name: c.name,
             avatar: c.avatar || c.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
@@ -736,7 +763,7 @@ export default function MyProjectsPage() {
                       onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
                       >Cancel</button>
-                      <button onClick={saveEdit} disabled={saving || !editData.name.trim()} style={{
+                      <button onClick={() => saveEdit(false)} disabled={saving || !editData.name.trim()} style={{
                         padding: "9px 24px", borderRadius: 10, border: "none",
                         background: (!editData.name.trim() || saving) ? C.borderLight : C.accent,
                         fontSize: T.bodySm, fontWeight: 600,
@@ -744,6 +771,16 @@ export default function MyProjectsPage() {
                         cursor: (!editData.name.trim() || saving) ? "default" : "pointer",
                         fontFamily: "var(--sans)", transition: "all 0.15s",
                       }}>{saving ? "Saving..." : "Save changes"}</button>
+                      {projects.find(proj => proj.id === editingId)?.isDraft && (
+                        <button onClick={() => saveEdit(true)} disabled={saving || !editData.name.trim()} style={{
+                          padding: "9px 24px", borderRadius: 10, border: "none",
+                          background: (!editData.name.trim() || saving) ? C.borderLight : C.green,
+                          fontSize: T.bodySm, fontWeight: 600,
+                          color: (!editData.name.trim() || saving) ? C.textMute : "#fff",
+                          cursor: (!editData.name.trim() || saving) ? "default" : "pointer",
+                          fontFamily: "var(--sans)", transition: "all 0.15s",
+                        }}>{saving ? "Publishing..." : "Save & Publish"}</button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -758,7 +795,15 @@ export default function MyProjectsPage() {
                           }} onClick={() => navigate(`/projects/${p.slug || p.id}`)}>
                             {p.name}
                           </div>
-                          {!p.enabled && (
+                          {p.isDraft && (
+                            <span style={{
+                              fontSize: T.badge, fontWeight: 600, color: C.gold,
+                              fontFamily: "var(--sans)", padding: "2px 6px",
+                              borderRadius: 4, background: C.goldSoft,
+                              textTransform: "uppercase", letterSpacing: "0.04em",
+                            }}>Draft</span>
+                          )}
+                          {!p.enabled && !p.isDraft && (
                             <span style={{
                               fontSize: T.badge, fontWeight: 600, color: C.textMute,
                               fontFamily: "var(--sans)", padding: "2px 6px",
@@ -782,14 +827,14 @@ export default function MyProjectsPage() {
                         {/* Enable/Disable toggle */}
                         <button
                           onClick={() => toggleEnabled(p)}
-                          disabled={togglingId === p.id}
+                          disabled={!!busyAction}
                           title={p.enabled ? "Visible on homepage — click to hide" : "Hidden from homepage — click to show"}
                           style={{
                             position: "relative", width: 36, height: 20, borderRadius: 10,
-                            border: "none", cursor: togglingId === p.id ? "default" : "pointer",
+                            border: "none", cursor: busyAction ? "default" : "pointer",
                             background: p.enabled ? C.green : C.borderLight,
                             transition: "background 0.2s", flexShrink: 0, padding: 0,
-                            opacity: togglingId === p.id ? 0.6 : 1,
+                            opacity: busyAction?.id === p.id && busyAction.type === "toggle" ? 0.6 : 1,
                           }}
                         >
                           <span style={{
@@ -799,15 +844,35 @@ export default function MyProjectsPage() {
                             boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
                           }} />
                         </button>
-                        <button onClick={() => startEdit(p)} style={{
+                        {p.isDraft && (
+                          <button
+                            onClick={() => publishProject(p)}
+                            disabled={!!busyAction}
+                            style={{
+                              padding: "7px 16px", borderRadius: 8,
+                              border: "none", background: C.green,
+                              cursor: busyAction ? "default" : "pointer",
+                              fontSize: T.bodySm, fontWeight: 600,
+                              color: "#fff", fontFamily: "var(--sans)",
+                              transition: "opacity 0.12s",
+                              opacity: busyAction?.id === p.id && busyAction.type === "publish" ? 0.6 : 1,
+                            }}
+                            onMouseEnter={e => { if (!busyAction) e.currentTarget.style.opacity = "0.85"; }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+                          >
+                            {busyAction?.id === p.id && busyAction.type === "publish" ? "Publishing..." : "Publish"}
+                          </button>
+                        )}
+                        <button onClick={() => startEdit(p)} disabled={!!busyAction} style={{
                           padding: "7px 16px", borderRadius: 8,
                           border: `1px solid ${C.border}`, background: C.surface,
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 600,
+                          cursor: busyAction ? "default" : "pointer", fontSize: T.bodySm, fontWeight: 600,
                           color: C.text, fontFamily: "var(--sans)",
                           transition: "all 0.12s",
+                          opacity: busyAction ? 0.5 : 1,
                         }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = C.accent}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+                        onMouseEnter={e => { if (!busyAction) e.currentTarget.style.borderColor = C.accent; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}
                         >
                           Edit
                         </button>
