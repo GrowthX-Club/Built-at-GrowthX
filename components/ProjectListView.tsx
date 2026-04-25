@@ -114,6 +114,13 @@ export interface ProjectListViewProps {
   defaultSort?: "trending" | "new" | "top";
   /** Bump this counter to force a reload (e.g. after a successful submit). */
   refreshKey?: number;
+  /**
+   * Whether to render the "Host pick this week" card for featured projects.
+   * Defaults to true (main feed). Filtered showcase routes (e.g. /ai-weekender)
+   * pass false — "this week" copy doesn't fit a dedicated buildathon view, and
+   * featured projects then render in the regular list instead of vanishing.
+   */
+  featuredEnabled?: boolean;
 }
 
 const PAGE_SIZE = 20;
@@ -131,6 +138,7 @@ export default function ProjectListView({
   emptyState,
   defaultSort = "trending",
   refreshKey = 0,
+  featuredEnabled = true,
 }: ProjectListViewProps) {
   const navigate = useNavigate();
   const { openLoginDialog } = useLoginDialog();
@@ -295,7 +303,7 @@ export default function ProjectListView({
     });
   };
 
-  const regularProjects = projects.filter(p => !p.featured);
+  const regularProjects = featuredEnabled ? projects.filter(p => !p.featured) : projects;
   const empty = emptyState ?? DEFAULT_EMPTY;
 
   return (
@@ -399,7 +407,7 @@ export default function ProjectListView({
       ) : (
         <>
           {/* Host picks */}
-          {projects.filter(p => p.featured).map(fp => (
+          {featuredEnabled && projects.filter(p => p.featured).map(fp => (
             <div key={fp.id} className="fade-up stagger-2 list-item-hover" style={{
               padding: "20px 24px", marginBottom: 24,
               background: C.surface, border: `1px solid ${C.goldBorder}`,
