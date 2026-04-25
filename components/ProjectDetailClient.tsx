@@ -23,6 +23,8 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
+import TrackChip from "@/components/TrackChip";
+import AccoladeBadge from "@/components/AccoladeBadge";
 import MediaGallery from "@/components/MediaGallery";
 import ProjectIcon from "@/components/ProjectIcon";
 
@@ -688,6 +690,12 @@ export default function ProjectDetailPage() {
                   )}
                 </div>
                 <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 6px" }}>{p.tagline}</p>
+                {(p.accolade || p.track) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                    {p.accolade && <AccoladeBadge accolade={p.accolade} />}
+                    {p.track && <TrackChip track={p.track} />}
+                  </div>
+                )}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
                   <span>{p.date}</span>
                   {p.buildathon && (
