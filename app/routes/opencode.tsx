@@ -4,25 +4,25 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 import ProjectListView from "@/components/ProjectListView";
 
 export const meta: MetaFunction = () => [
-  { title: "India's First OpenCode Buildathon · Built at GrowthX" },
+  { title: "OpenCode Buildathon · Built at GrowthX" },
   {
     name: "description",
     content:
-      "Projects shipped at India's First OpenCode Buildathon by GrowthX — open source, in a weekend.",
+      "India's first OpenCode Buildathon, powered by GrowthX. Projects shipped during the event.",
   },
   { property: "og:type", content: "website" },
-  { property: "og:title", content: "India's First OpenCode Buildathon · Built at GrowthX" },
+  { property: "og:title", content: "OpenCode Buildathon · Built at GrowthX" },
   {
     property: "og:description",
     content:
-      "Projects shipped at India's First OpenCode Buildathon by GrowthX — open source, in a weekend.",
+      "India's first OpenCode Buildathon, powered by GrowthX. Projects shipped during the event.",
   },
   { name: "twitter:card", content: "summary" },
-  { name: "twitter:title", content: "India's First OpenCode Buildathon · Built at GrowthX" },
+  { name: "twitter:title", content: "OpenCode Buildathon · Built at GrowthX" },
   {
     name: "twitter:description",
     content:
-      "Projects shipped at India's First OpenCode Buildathon by GrowthX — open source, in a weekend.",
+      "India's first OpenCode Buildathon, powered by GrowthX. Projects shipped during the event.",
   },
   { tagName: "link", rel: "canonical", href: "https://built.growthx.club/opencode" },
 ];
@@ -39,8 +39,8 @@ export default function OpenCodePage() {
       }}>
         <main className="responsive-main" style={{ padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
           <ProjectListView
-            headerTitle="India's First OpenCode Buildathon"
-            headerSubtitle="Open source, shipped in a weekend. By GrowthX."
+            headerTitle="OpenCode Buildathon"
+            headerSubtitle="India's first OpenCode Buildathon, powered by GrowthX."
             buildathonFilter="opencode"
             emptyState={{
               icon: "🛠️",
