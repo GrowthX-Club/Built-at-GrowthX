@@ -51,6 +51,7 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
 
 const NAV_TABS = [
   { href: "/", label: "Projects" },
+  { href: "/events", label: "Events" },
   { href: "/builders", label: "Builders" },
 ];
 
