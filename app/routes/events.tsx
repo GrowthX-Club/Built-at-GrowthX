@@ -36,6 +36,14 @@ const EVENTS: EventCardProps[] = [
     status: "live",
     href: "/ai-weekender",
   },
+  {
+    slug: "opencode",
+    title: "India's First OpenCode Buildathon by GrowthX",
+    tagline: "open source, shipped in a weekend.",
+    dateRange: "April 2026",
+    status: "archived",
+    href: "/opencode",
+  },
 ];
 
 export default function EventsPage() {
