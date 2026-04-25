@@ -319,6 +319,9 @@ body {
   background: var(--c-scrollHover);
 }
 
+/* Hide horizontal scrollbar on the filter-pill row — looks cleaner */
+.filter-pills-row::-webkit-scrollbar { display: none; height: 0; }
+
 /* Nav spacer — matches nav height per breakpoint */
 .nav-spacer { height: 65px; background: var(--c-bg); }
 
