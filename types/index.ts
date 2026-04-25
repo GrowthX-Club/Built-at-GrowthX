@@ -104,6 +104,9 @@ export interface MediaItem {
   url: string;
 }
 
+export type ProjectTrack = 'virality' | 'revenue' | 'maas' | null;
+export type ProjectAccolade = 'rank-1' | 'rank-2' | 'rank-3' | 'top-5' | 'top-15' | null;
+
 export interface Project {
   id: string | number;
   _id?: string;
@@ -129,6 +132,10 @@ export interface Project {
   buildProcess?: string;
   isDraft?: boolean;
   enabled: boolean;
+  /** Project track classification (nullable — server may not populate). */
+  track?: ProjectTrack;
+  /** Project accolade / ranking (nullable — server may not populate). */
+  accolade?: ProjectAccolade;
 }
 
 export interface BuildingProject {
@@ -392,7 +399,26 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     buildProcess: (p.buildProcess ?? p.build_process ?? undefined) as string | undefined,
     isDraft: (p.isDraft ?? p.is_draft ?? false) as boolean,
     enabled: (p.enabled !== undefined ? p.enabled : true) as boolean,
+    track: normalizeTrack(p.track),
+    accolade: normalizeAccolade(p.accolade),
   };
+}
+
+const VALID_TRACKS = new Set<NonNullable<ProjectTrack>>(['virality', 'revenue', 'maas']);
+const VALID_ACCOLADES = new Set<NonNullable<ProjectAccolade>>([
+  'rank-1', 'rank-2', 'rank-3', 'top-5', 'top-15',
+]);
+
+function normalizeTrack(raw: unknown): ProjectTrack {
+  if (typeof raw !== 'string') return null;
+  const v = raw.toLowerCase();
+  return VALID_TRACKS.has(v as NonNullable<ProjectTrack>) ? (v as NonNullable<ProjectTrack>) : null;
+}
+
+function normalizeAccolade(raw: unknown): ProjectAccolade {
+  if (typeof raw !== 'string') return null;
+  const v = raw.toLowerCase();
+  return VALID_ACCOLADES.has(v as NonNullable<ProjectAccolade>) ? (v as NonNullable<ProjectAccolade>) : null;
 }
 
 /** Normalize backend /me response to BuilderProfile */

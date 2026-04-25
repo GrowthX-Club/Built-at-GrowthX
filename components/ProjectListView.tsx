@@ -13,6 +13,22 @@ import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import ProjectIcon from "@/components/ProjectIcon";
+import TrackChip from "@/components/TrackChip";
+import AccoladeBadge from "@/components/AccoladeBadge";
+
+// Renders the accolade + track meta row when either field is set.
+// Returns null when neither is set, so the caller doesn't have to add an empty container.
+function ProjectMetaRow({ project }: { project: Project }) {
+  const accolade = project.accolade;
+  const track = project.track;
+  if (!accolade && !track) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+      {accolade && <AccoladeBadge accolade={accolade} />}
+      {track && <TrackChip track={track} />}
+    </div>
+  );
+}
 
 // ---- Builder cycler (extracted from _index to share between feeds) ----
 
@@ -428,6 +444,11 @@ export default function ProjectListView({
                   <div style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
                     {fp.tagline}
                   </div>
+                  {fp.accolade && (
+                    <div style={{ marginTop: 8 }}>
+                      <AccoladeBadge accolade={fp.accolade} />
+                    </div>
+                  )}
                 </div>
                 <div style={{
                   fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
@@ -468,6 +489,7 @@ export default function ProjectListView({
                     }}>
                       {p.tagline}
                     </div>
+                    <ProjectMetaRow project={p} />
                   </div>
                 </div>
 
@@ -488,6 +510,7 @@ export default function ProjectListView({
                       }}>
                         {p.tagline}
                       </div>
+                      <ProjectMetaRow project={p} />
                     </div>
                   </div>
                   <div
