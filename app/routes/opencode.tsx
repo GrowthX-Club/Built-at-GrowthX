@@ -1,7 +1,16 @@
 import type { MetaFunction } from "react-router";
-import { C } from "@/types";
+import { C, type Project } from "@/types";
 import { useResponsive } from "@/hooks/useMediaQuery";
-import ProjectListView from "@/components/ProjectListView";
+import ProjectListView, { type FilterTab } from "@/components/ProjectListView";
+
+const OPENCODE_FILTERS: FilterTab[] = [
+  { key: "all", label: "All projects", predicate: () => true },
+  { key: "top-15", label: "Top 15", predicate: (p: Project) => !!p.accolade },
+  { key: "top-5", label: "Top 5", predicate: (p: Project) => !!p.accolade && p.accolade !== "top-15" },
+  { key: "virality", label: "Virality", predicate: (p: Project) => p.track === "virality" },
+  { key: "revenue", label: "Revenue", predicate: (p: Project) => p.track === "revenue" },
+  { key: "maas", label: "MaaS", predicate: (p: Project) => p.track === "maas" },
+];
 
 export const meta: MetaFunction = () => [
   { title: "OpenCode Buildathon · Built at GrowthX" },
@@ -42,10 +51,12 @@ export default function OpenCodePage() {
             headerTitle="OpenCode Buildathon"
             headerSubtitle="India's first OpenCode Buildathon, powered by GrowthX."
             buildathonFilter="opencode"
+            featuredEnabled={false}
+            customFilters={OPENCODE_FILTERS}
             emptyState={{
               icon: "🛠️",
-              title: "No OpenCode projects yet",
-              description: "Backfill in progress — check back soon.",
+              title: "No projects in this filter",
+              description: "Pick another tab above to see more.",
             }}
           />
         </main>

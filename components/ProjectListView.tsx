@@ -137,6 +137,31 @@ export interface ProjectListViewProps {
    * featured projects then render in the regular list instead of vanishing.
    */
   featuredEnabled?: boolean;
+  /**
+   * Replace the default Trending/New/Top sort tabs with custom client-side
+   * filter pills. When provided, the component fetches all matching projects
+   * in one request (limit 200), hides the sort tabs, and filters in-memory
+   * via the selected tab's predicate. Used by /opencode for All / Top 15 /
+   * Top 5 / Virality / Revenue / MaaS.
+   */
+  customFilters?: FilterTab[];
+}
+
+export interface FilterTab {
+  key: string;
+  label: string;
+  predicate: (project: Project) => boolean;
+}
+
+const ACCOLADE_PRIORITY: Record<string, number> = {
+  "rank-1": 1,
+  "rank-2": 2,
+  "rank-3": 3,
+  "top-5": 4,
+  "top-15": 5,
+};
+function rankWeight(p: Project): number {
+  return p.accolade ? (ACCOLADE_PRIORITY[p.accolade] ?? 99) : 99;
 }
 
 const PAGE_SIZE = 20;
@@ -155,6 +180,7 @@ export default function ProjectListView({
   defaultSort = "trending",
   refreshKey = 0,
   featuredEnabled = true,
+  customFilters,
 }: ProjectListViewProps) {
   const navigate = useNavigate();
   const { openLoginDialog } = useLoginDialog();
@@ -168,10 +194,12 @@ export default function ProjectListView({
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
   const [sortMode, setSortMode] = useState<"trending" | "new" | "top">(defaultSort);
+  const [selectedFilterKey, setSelectedFilterKey] = useState<string>(customFilters?.[0]?.key ?? "");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
   const sortModeRef = useRef(sortMode);
   sortModeRef.current = sortMode;
+  const usingCustomFilters = !!customFilters && customFilters.length > 0;
 
   const filterSuffix = buildathonFilter ? `&buildathon=${encodeURIComponent(buildathonFilter)}` : "";
 
@@ -181,19 +209,23 @@ export default function ProjectListView({
     setProjects([]);
     setHasMore(false);
     loadingMoreRef.current = false;
-    bxApi(`/projects?limit=${PAGE_SIZE}&offset=0&sort=${sortMode}${filterSuffix}`)
+    // In custom-filter mode we fetch the full set in one request and skip
+    // server sort + infinite scroll; the predicates run client-side.
+    const limit = usingCustomFilters ? 200 : PAGE_SIZE;
+    const sortParam = usingCustomFilters ? "" : `&sort=${sortMode}`;
+    bxApi(`/projects?limit=${limit}&offset=0${sortParam}${filterSuffix}`)
       .then((r) => r.json())
       .then((d) => {
         if (sortModeRef.current !== requestedSort) return;
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
         setProjects(list);
         setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
-        setHasMore(PAGE_SIZE < (d.totalCount || 0));
+        setHasMore(usingCustomFilters ? false : limit < (d.totalCount || 0));
       })
       .finally(() => {
         if (sortModeRef.current === requestedSort) setLoading(false);
       });
-  }, [sortMode, filterSuffix]);
+  }, [sortMode, filterSuffix, usingCustomFilters]);
 
   const loadMore = useCallback(() => {
     if (loadingMoreRef.current || !hasMore) return;
@@ -319,7 +351,21 @@ export default function ProjectListView({
     });
   };
 
-  const regularProjects = featuredEnabled ? projects.filter(p => !p.featured) : projects;
+  const baseProjects = featuredEnabled ? projects.filter(p => !p.featured) : projects;
+  const activeFilter = usingCustomFilters
+    ? customFilters!.find(f => f.key === selectedFilterKey)
+    : null;
+  const regularProjects = (() => {
+    if (!usingCustomFilters) return baseProjects;
+    const filtered = activeFilter ? baseProjects.filter(activeFilter.predicate) : baseProjects;
+    // Sort by rank (rank-1 → rank-2 → rank-3 → top-5 → top-15 → unranked),
+    // then by weighted votes desc within each tier.
+    return [...filtered].sort((a, b) => {
+      const r = rankWeight(a) - rankWeight(b);
+      if (r !== 0) return r;
+      return (b.weighted ?? 0) - (a.weighted ?? 0);
+    });
+  })();
   const empty = emptyState ?? DEFAULT_EMPTY;
 
   return (
@@ -337,33 +383,54 @@ export default function ProjectListView({
         </p>
       </div>
 
-      {/* Sort Tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-        {([
-          { key: "trending" as const, label: "Trending" },
-          { key: "new" as const, label: "New" },
-          { key: "top" as const, label: "Top" },
-        ]).map(tab => {
-          const active = sortMode === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setSortMode(tab.key)}
-              style={{
-                padding: isMobile ? "6px 14px" : "6px 18px",
-                borderRadius: 20,
-                border: active ? "none" : `1px solid ${C.border}`,
-                background: active ? C.accent : "transparent",
-                color: active ? C.accentFg : C.textSec,
-                fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
-                cursor: "pointer", transition: "all 0.2s",
-                ...(isMobile ? { flex: 1 } : {}),
-              }}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* Sort / filter tabs */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
+        {usingCustomFilters
+          ? customFilters!.map(tab => {
+              const active = selectedFilterKey === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedFilterKey(tab.key)}
+                  style={{
+                    padding: isMobile ? "6px 14px" : "6px 18px",
+                    borderRadius: 20,
+                    border: active ? "none" : `1px solid ${C.border}`,
+                    background: active ? C.accent : "transparent",
+                    color: active ? C.accentFg : C.textSec,
+                    fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
+                    cursor: "pointer", transition: "all 0.2s",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })
+          : ([
+              { key: "trending" as const, label: "Trending" },
+              { key: "new" as const, label: "New" },
+              { key: "top" as const, label: "Top" },
+            ]).map(tab => {
+              const active = sortMode === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setSortMode(tab.key)}
+                  style={{
+                    padding: isMobile ? "6px 14px" : "6px 18px",
+                    borderRadius: 20,
+                    border: active ? "none" : `1px solid ${C.border}`,
+                    background: active ? C.accent : "transparent",
+                    color: active ? C.accentFg : C.textSec,
+                    fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
+                    cursor: "pointer", transition: "all 0.2s",
+                    ...(isMobile ? { flex: 1 } : {}),
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
       </div>
 
       {loading && projects.length === 0 ? (
