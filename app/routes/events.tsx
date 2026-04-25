@@ -38,8 +38,8 @@ const EVENTS: EventCardProps[] = [
   },
   {
     slug: "opencode",
-    title: "India's First OpenCode Buildathon by GrowthX",
-    tagline: "open source, shipped in a weekend.",
+    title: "OpenCode Buildathon",
+    tagline: "India's first OpenCode Buildathon, powered by GrowthX.",
     dateRange: "April 2026",
     status: "archived",
     href: "/opencode",
