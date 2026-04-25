@@ -211,7 +211,8 @@ export default function ProjectListView({
     loadingMoreRef.current = false;
     // In custom-filter mode we fetch the full set in one request and skip
     // server sort + infinite scroll; the predicates run client-side.
-    const limit = usingCustomFilters ? 200 : PAGE_SIZE;
+    // Backend Joi caps `limit` at 100 — that's enough for OpenCode (~84 docs).
+    const limit = usingCustomFilters ? 100 : PAGE_SIZE;
     const sortParam = usingCustomFilters ? "" : `&sort=${sortMode}`;
     bxApi(`/projects?limit=${limit}&offset=0${sortParam}${filterSuffix}`)
       .then((r) => r.json())
@@ -384,7 +385,25 @@ export default function ProjectListView({
       </div>
 
       {/* Sort / filter tabs */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
+      <div
+        style={
+          usingCustomFilters
+            ? {
+                display: "flex",
+                gap: 6,
+                marginBottom: 24,
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                paddingBottom: 4,
+                margin: isMobile ? "0 -16px 24px" : "0 0 24px",
+                paddingInline: isMobile ? 16 : 0,
+              }
+            : { display: "flex", gap: 6, marginBottom: 24 }
+        }
+        className={usingCustomFilters ? "filter-pills-row" : undefined}
+      >
         {usingCustomFilters
           ? customFilters!.map(tab => {
               const active = selectedFilterKey === tab.key;
@@ -400,6 +419,8 @@ export default function ProjectListView({
                     color: active ? C.accentFg : C.textSec,
                     fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
                     cursor: "pointer", transition: "all 0.2s",
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {tab.label}
