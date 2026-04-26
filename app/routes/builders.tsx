@@ -129,19 +129,13 @@ export default function BuildersPage() {
   const openBuilderDialog = (b: BuilderProfile) => {
     setSelectedBuilder(b);
     setBuilderProjects([]);
+    if (!b._id) return;
     setLoadingProjects(true);
-    bxApi("/projects?limit=100")
+    bxApi(`/projects?creator=${encodeURIComponent(b._id)}&limit=100`)
       .then(r => r.json())
       .then(d => {
-        const all = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p))
-          .filter((p: Project) => p.enabled !== false);
-        const matched = all.filter((p: Project) => {
-          if (p.builder?.name === b.name) return true;
-          if ((p.creators || []).some(c => c.name === b.name)) return true;
-          if (p.collabs?.some(c => c.name === b.name)) return true;
-          return false;
-        });
-        setBuilderProjects(matched);
+        const all = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
+        setBuilderProjects(all);
       })
       .finally(() => setLoadingProjects(false));
   };
@@ -302,7 +296,7 @@ export default function BuildersPage() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {builderProjects.map(p => {
-                    const isCreator = p.builder?.name === selectedBuilder.name || (p.creators || []).some(c => c.name === selectedBuilder.name);
+                    const isCreator = p.builder?._id === selectedBuilder._id || (p.creators || []).some(c => c._id === selectedBuilder._id);
                     return (
                       <div
                         key={p.id}
