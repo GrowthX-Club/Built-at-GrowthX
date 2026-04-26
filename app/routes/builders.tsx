@@ -129,8 +129,9 @@ export default function BuildersPage() {
   const openBuilderDialog = (b: BuilderProfile) => {
     setSelectedBuilder(b);
     setBuilderProjects([]);
+    if (!b._id) return;
     setLoadingProjects(true);
-    bxApi(`/projects?creator=${encodeURIComponent(b._id || "")}&limit=100`)
+    bxApi(`/projects?creator=${encodeURIComponent(b._id)}&limit=100`)
       .then(r => r.json())
       .then(d => {
         const all = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
