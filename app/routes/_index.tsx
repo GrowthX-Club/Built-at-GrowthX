@@ -219,6 +219,7 @@ export default function HomePage() {
           headerTitle="What the community shipped"
           headerSubtitle="Products built by the GrowthX community. Ranked by the people who build."
           refreshKey={listRefreshKey}
+          excludeBuildathon="sarvam"
         />
       </main>
 
