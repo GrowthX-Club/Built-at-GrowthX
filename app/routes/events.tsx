@@ -29,6 +29,14 @@ export const meta: MetaFunction = () => [
 
 const EVENTS: EventCardProps[] = [
   {
+    slug: "sarvam",
+    title: "Sarvam Epoch Buildathon",
+    tagline: "~600 builders shipping with Sarvam AI in a single day.",
+    dateRange: "July 2026",
+    status: "live",
+    href: "/sarvam",
+  },
+  {
     slug: "ai-weekender",
     title: "AI Weekender Buildathon",
     tagline: "Ship an AI product over the weekend. Build, prove, win.",
