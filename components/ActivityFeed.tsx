@@ -38,14 +38,15 @@ function activityText(item: ActivityItem): string {
   }
 }
 
-export default function ActivityFeed() {
+export default function ActivityFeed({ excludeBuildathon }: { excludeBuildathon?: string } = {}) {
   const router = useRouter();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [available, setAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const fetchActivity = useCallback(() => {
-    bxApi("/activity")
+    const suffix = excludeBuildathon ? `?exclude_buildathon=${encodeURIComponent(excludeBuildathon)}` : "";
+    bxApi(`/activity${suffix}`)
       .then(r => {
         if (!r.ok) { if (r.status === 404) setAvailable(false); return null; }
         return r.json();
@@ -53,7 +54,7 @@ export default function ActivityFeed() {
       .then(d => { if (d) setItems(d.activity || d.items || []); })
       .catch(() => setAvailable(false))
       .finally(() => setLoading(false));
-  }, []);
+  }, [excludeBuildathon]);
 
   useEffect(() => {
     fetchActivity();
