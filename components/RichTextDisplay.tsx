@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import React from "react";
 import { C } from "@/types";
 import { isLexicalJson } from "@/lib/editor-utils";
 
@@ -16,11 +17,99 @@ interface RichTextDisplayProps {
   description: string;
 }
 
+// ---- Markdown-lite rendering for legacy plain-text descriptions ----
+// Supports **bold**, `---` horizontal rules, and bare http(s) links.
+// Builds React nodes only — never raw HTML (descriptions are builder-authored).
+
+const INLINE_TOKEN = /(\*\*[^*\n]+\*\*|https?:\/\/[^\s]+)/g;
+
+function renderInline(line: string, lineKey: number): React.ReactNode[] {
+  return line.split(INLINE_TOKEN).map((part, i) => {
+    if (/^\*\*[^*\n]+\*\*$/.test(part)) {
+      return (
+        <strong key={`${lineKey}-${i}`} style={{ fontWeight: 600 }}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (/^https?:\/\//.test(part)) {
+      // Keep trailing punctuation out of the link. A trailing ")" stays part
+      // of the URL while it has an unmatched "(" (Wikipedia-style paths).
+      let url = part;
+      let trailing = "";
+      while (url.length > 0) {
+        const ch = url[url.length - 1];
+        if (/[,.;:!?]/.test(ch)) {
+          trailing = ch + trailing;
+          url = url.slice(0, -1);
+          continue;
+        }
+        if (ch === ")") {
+          const opens = (url.match(/\(/g) || []).length;
+          const closes = (url.match(/\)/g) || []).length;
+          if (closes > opens) {
+            trailing = ch + trailing;
+            url = url.slice(0, -1);
+            continue;
+          }
+        }
+        break;
+      }
+      return (
+        <React.Fragment key={`${lineKey}-${i}`}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: C.blue,
+              textDecoration: "underline",
+              textUnderlineOffset: 2,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {url}
+          </a>
+          {trailing}
+        </React.Fragment>
+      );
+    }
+    return part;
+  });
+}
+
+function renderMarkdownLite(text: string): React.ReactNode[] {
+  const lines = text.split("\n");
+  return lines.map((line, i) => {
+    if (line.trim() === "---") {
+      return (
+        <hr
+          key={i}
+          style={{
+            border: "none",
+            borderTop: `1px solid ${C.borderLight}`,
+            margin: "16px 0",
+          }}
+        />
+      );
+    }
+    const next = lines[i + 1];
+    const needsNewline = i < lines.length - 1 && (next === undefined || next.trim() !== "---");
+    return (
+      <React.Fragment key={i}>
+        {renderInline(line, i)}
+        {needsNewline ? "\n" : null}
+      </React.Fragment>
+    );
+  });
+}
+
 export default function RichTextDisplay({ description }: RichTextDisplayProps) {
-  // Legacy plain text — render as <p> tag (zero JS overhead, identical to current)
+  // Legacy plain text — render markdown-lite as React nodes (zero editor JS overhead).
+  // A <div> (not <p>) so <hr> rules are valid HTML and SSR hydration stays clean.
   if (!isLexicalJson(description)) {
     return (
-      <p
+      <div
         style={{
           fontSize: 16, lineHeight: 1.7, color: C.text,
           fontFamily: "var(--sans)", fontWeight: 400,
@@ -28,8 +117,8 @@ export default function RichTextDisplay({ description }: RichTextDisplayProps) {
           whiteSpace: "pre-wrap",
         }}
       >
-        {description}
-      </p>
+        {renderMarkdownLite(description)}
+      </div>
     );
   }
 

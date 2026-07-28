@@ -14,7 +14,7 @@ import {
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
-import { extractPlainText, descriptionCharCount } from "@/lib/editor-utils";
+import { extractPlainText, stripMarkdownLite, descriptionCharCount } from "@/lib/editor-utils";
 import RichTextEditor from "@/components/RichTextEditor";
 import MediaUpload from "@/components/MediaUpload";
 
@@ -68,7 +68,7 @@ interface EditState {
   stackInput: string;
   team: CollabEntry[];
   teamInput: string;
-  mediaFiles: { url: string; type: "image" | "loom"; uploading?: boolean; progress?: string }[];
+  mediaFiles: { url: string; type: "image" | "loom" | "youtube"; uploading?: boolean; progress?: string }[];
 }
 
 export default function MyProjectsPage() {
@@ -174,7 +174,7 @@ export default function MyProjectsPage() {
       teamInput: "",
       mediaFiles: (p.media || []).map((m: { url: string; type?: string }) => ({
         url: m.url,
-        type: (m.type === "loom" ? "loom" : "image") as "image" | "loom",
+        type: (m.type === "loom" || m.type === "youtube" ? m.type : "image") as "image" | "loom" | "youtube",
       })),
     });
   };
@@ -814,7 +814,7 @@ export default function MyProjectsPage() {
                       </div>
                     </div>
                     {p.description && (() => {
-                      const plain = extractPlainText(p.description);
+                      const plain = stripMarkdownLite(extractPlainText(p.description));
                       return plain ? (
                         <p style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
                           {plain.length > 150 ? plain.slice(0, 150) + "..." : plain}

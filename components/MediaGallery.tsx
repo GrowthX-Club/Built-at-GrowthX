@@ -1,11 +1,21 @@
 import { useState } from "react";
-import { C, T, type MediaItem } from "@/types";
+import { C, T, getLoomVideoId, getYouTubeVideoId, type MediaItem } from "@/types";
 
-/** Convert a loom.com/share URL to an embeddable URL */
-function toLoomEmbed(url: string): string {
-  const match = url.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/);
-  if (!match) return url;
-  return `https://www.loom.com/embed/${match[1]}`;
+/**
+ * Build a safe embed URL for a video media item.
+ * Returns null when no video id can be extracted — callers must then fall
+ * back to image rendering, never iframe the raw URL.
+ */
+function getEmbedSrc(item: MediaItem): string | null {
+  if (item.type === "loom") {
+    const id = getLoomVideoId(item.url);
+    return id ? `https://www.loom.com/embed/${id}` : null;
+  }
+  if (item.type === "youtube") {
+    const id = getYouTubeVideoId(item.url);
+    return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+  }
+  return null;
 }
 
 interface MediaGalleryProps {
@@ -19,24 +29,25 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
 
   const current = media[active];
   const hasMultiple = media.length > 1;
+  const currentEmbedSrc = getEmbedSrc(current);
 
   return (
     <div style={{ marginBottom: 28 }}>
-      {/* Main display — 5:3 aspect ratio (Product Hunt style) */}
+      {/* Main display — 16:9 for video embeds, 5:3 for images (Product Hunt style) */}
       <div
         style={{
           position: "relative",
           width: "100%",
-          paddingBottom: "60%", // 3/5 = 60% -> 5:3 aspect
+          paddingBottom: currentEmbedSrc ? "56.25%" : "60%", // 9/16 for video, 3/5 for images
           borderRadius: 12,
           overflow: "hidden",
           background: C.surfaceWarm,
           border: `1px solid ${C.border}`,
         }}
       >
-        {current.type === "loom" ? (
+        {currentEmbedSrc ? (
           <iframe
-            src={toLoomEmbed(current.url)}
+            src={currentEmbedSrc}
             style={{
               position: "absolute",
               inset: 0,
@@ -44,9 +55,10 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
               height: "100%",
               border: "none",
             }}
+            loading="lazy"
             allowFullScreen
             allow="autoplay; fullscreen; picture-in-picture"
-            title="Loom video"
+            title={current.type === "loom" ? "Loom video" : "YouTube video"}
           />
         ) : (
           <img
@@ -175,7 +187,7 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
                 transition: "opacity 0.15s, border-color 0.15s",
               }}
             >
-              {item.type === "loom" ? (
+              {getEmbedSrc(item) ? (
                 <div
                   style={{
                     width: "100%",
