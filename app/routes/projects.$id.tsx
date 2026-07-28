@@ -1,6 +1,13 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect } from "react-router";
 import ProjectDetailClient from "@/components/ProjectDetailClient";
+import { extractPlainText, stripMarkdownLite } from "@/lib/editor-utils";
+
+/** Plain, marker-free, single-line text for meta/JSON-LD descriptions */
+function cleanDescription(raw: unknown): string {
+  if (typeof raw !== "string" || !raw) return "";
+  return stripMarkdownLite(extractPlainText(raw)).replace(/\s+/g, " ").trim();
+}
 
 const API_BASE =
   typeof process !== "undefined" && process.env?.VITE_API_URL
@@ -39,7 +46,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const project = data.project;
   const title = project.name || "Project";
   const description =
-    project.tagline || project.description || "A project built at GrowthX";
+    project.tagline || cleanDescription(project.description) || "A project built at GrowthX";
   const builderName = project.builderName || project.builder?.name || "";
   const fullDescription = builderName
     ? `${description} — by ${builderName}`
@@ -52,7 +59,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: title,
-    description: project.description || project.tagline || "",
+    description: cleanDescription(project.description) || project.tagline || "",
     url: `https://built.growthx.club/projects/${canonicalSlug}`,
     applicationCategory: project.category || "WebApplication",
     ...(project.icon ? { image: project.icon } : {}),

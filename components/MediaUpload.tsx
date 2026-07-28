@@ -4,7 +4,7 @@ import { gxApi } from "@/lib/api";
 
 interface MediaFile {
   url: string;
-  type: "image" | "loom";
+  type: "image" | "loom" | "youtube";
   uploading?: boolean;
   progress?: string;
 }
@@ -158,7 +158,7 @@ export default function MediaUpload({ value, onChange, maxFiles = 5 }: MediaUplo
                   background: "#1a1a2e", color: "#fff",
                   fontSize: T.caption, fontFamily: "var(--sans)", fontWeight: 500,
                 }}>
-                  Loom
+                  {m.type === "loom" ? "Loom" : "Video"}
                 </div>
               )}
               {m.uploading && (

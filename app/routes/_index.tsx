@@ -29,7 +29,7 @@ export default function HomePage() {
     name: "", tagline: "", description: "", buildProcess: "",
     stack: [] as string[], stackInput: "",
     team: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string; role: 'creator' | 'collaborator' }[], teamInput: "",
-    url: "", isDraft: false, mediaFiles: [] as { url: string; type: "image" | "loom"; uploading?: boolean; progress?: string }[],
+    url: "", isDraft: false, mediaFiles: [] as { url: string; type: "image" | "loom" | "youtube"; uploading?: boolean; progress?: string }[],
   });
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);

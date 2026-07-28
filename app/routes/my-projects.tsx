@@ -68,7 +68,7 @@ interface EditState {
   stackInput: string;
   team: CollabEntry[];
   teamInput: string;
-  mediaFiles: { url: string; type: "image" | "loom"; uploading?: boolean; progress?: string }[];
+  mediaFiles: { url: string; type: "image" | "loom" | "youtube"; uploading?: boolean; progress?: string }[];
 }
 
 export default function MyProjectsPage() {
@@ -174,7 +174,7 @@ export default function MyProjectsPage() {
       teamInput: "",
       mediaFiles: (p.media || []).map((m: { url: string; type?: string }) => ({
         url: m.url,
-        type: (m.type === "loom" ? "loom" : "image") as "image" | "loom",
+        type: (m.type === "loom" || m.type === "youtube" ? m.type : "image") as "image" | "loom" | "youtube",
       })),
     });
   };

@@ -100,7 +100,7 @@ export interface GalleryItem {
 }
 
 export interface MediaItem {
-  type: "image" | "loom";
+  type: "image" | "loom" | "youtube";
   url: string;
 }
 
@@ -306,6 +306,26 @@ function isLoomUrl(url: string): boolean {
   return /^https?:\/\/(www\.)?loom\.com\/(share|embed)\//.test(url);
 }
 
+/** Extract a YouTube video id from watch / youtu.be / embed / shorts URLs (null if not YouTube) */
+export function getYouTubeVideoId(url: string): string | null {
+  const m = url.match(
+    /^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^#]*?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
+  );
+  return m ? m[1] : null;
+}
+
+/** Classify a media URL as loom, youtube, or image */
+export function detectMediaType(url: string): MediaItem["type"] {
+  if (isLoomUrl(url)) return "loom";
+  if (getYouTubeVideoId(url)) return "youtube";
+  return "image";
+}
+
+/** True if a media item is a video embed (not an image) */
+export function isVideoMedia(item: MediaItem): boolean {
+  return item.type === "loom" || item.type === "youtube";
+}
+
 /** Parse raw media array (strings or objects) into typed MediaItem[] */
 function normalizeMedia(raw: unknown): MediaItem[] {
   if (!Array.isArray(raw)) return [];
@@ -314,18 +334,42 @@ function normalizeMedia(raw: unknown): MediaItem[] {
       if (typeof item === "string") {
         const url = item.trim();
         if (!url) return null;
-        return { type: isLoomUrl(url) ? "loom" : "image", url } as MediaItem;
+        return { type: detectMediaType(url), url } as MediaItem;
       }
       if (item && typeof item === "object") {
         const obj = item as Record<string, unknown>;
         const url = ((obj.url ?? "") as string).trim();
         if (!url) return null;
-        const type = obj.type === "loom" || isLoomUrl(url) ? "loom" : "image";
+        const type = obj.type === "loom" || obj.type === "youtube" ? obj.type : detectMediaType(url);
         return { type, url } as MediaItem;
       }
       return null;
     })
     .filter(Boolean) as MediaItem[];
+}
+
+// ---- Buildathon display labels ----
+
+/** Map of raw buildathon tags to human-readable display labels. Unknown tags fall back to the raw value. */
+export const BUILDATHON_LABELS: Record<string, string> = {
+  sarvam: "Sarvam Epoch Buildathon by GrowthX",
+  opencode: "OpenCode Buildathon",
+  "ai-weekender": "AI Weekender Buildathon",
+};
+
+export function getBuildathonLabel(tag: string): string {
+  return BUILDATHON_LABELS[tag] ?? tag;
+}
+
+/**
+ * Format a project date for display (e.g. "26 Jul 2026").
+ * Returns "" when the value doesn't parse as a date so callers can hide it.
+ */
+export function formatProjectDate(raw: string): string {
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 /** Normalize a backend project (with populated creator/collabs) to frontend Project shape */

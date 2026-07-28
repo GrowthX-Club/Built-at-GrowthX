@@ -82,3 +82,16 @@ export function getEditorState(description: string): string {
 export function descriptionCharCount(description: string): number {
   return extractPlainText(description).length;
 }
+
+/**
+ * Strip markdown-lite markers (**bold**, `---` rule lines) from plain text.
+ * Use for truncated previews and meta descriptions where markers must not show.
+ */
+export function stripMarkdownLite(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .split('\n')
+    .filter(line => line.trim() !== '---')
+    .join('\n');
+}

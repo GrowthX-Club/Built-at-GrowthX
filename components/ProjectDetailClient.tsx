@@ -16,6 +16,8 @@ import {
   normalizeThread,
   getCompanyLogoUrl,
   getStackLogoUrl,
+  getBuildathonLabel,
+  formatProjectDate,
   STACK_META,
 } from "@/types";
 import { bxApi } from "@/lib/api";
@@ -696,15 +698,13 @@ export default function ProjectDetailPage() {
                     {p.track && <TrackChip track={p.track} />}
                   </div>
                 )}
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450 }}>
-                  <span>{p.date}</span>
-                  {p.buildathon && (
-                    <>
-                      <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>
-                      <span>{p.buildathon}</span>
-                    </>
-                  )}
-                </div>
+                {(formatProjectDate(p.date) || p.buildathon) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, flexWrap: "wrap" }}>
+                    {formatProjectDate(p.date) && <span>{formatProjectDate(p.date)}</span>}
+                    {formatProjectDate(p.date) && p.buildathon && <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>}
+                    {p.buildathon && <span>{getBuildathonLabel(p.buildathon)}</span>}
+                  </div>
+                )}
               </div>
             </div>
             <div ref={voteBtnRef} style={{ flexShrink: 0, display: isMobile ? "none" : "flex", gap: 10, alignItems: "center" }}>
