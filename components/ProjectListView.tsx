@@ -121,6 +121,13 @@ export interface ProjectListViewProps {
   headerSubtitle: string;
   /** Optional buildathon tag (e.g. 'ai-weekender') passed as ?buildathon= filter */
   buildathonFilter?: string;
+  /**
+   * Optional buildathon tag to EXCLUDE (passed as ?exclude_buildathon=).
+   * Ignored when buildathonFilter is set — the backend applies the same
+   * precedence. Used to keep a freshly backfilled batch off the home feed
+   * while its dedicated route stays live.
+   */
+  excludeBuildathon?: string;
   /** Custom empty-state content shown when API returns no projects */
   emptyState?: {
     icon?: string;
@@ -176,6 +183,7 @@ export default function ProjectListView({
   headerTitle,
   headerSubtitle,
   buildathonFilter,
+  excludeBuildathon,
   emptyState,
   defaultSort = "trending",
   refreshKey = 0,
@@ -201,7 +209,11 @@ export default function ProjectListView({
   sortModeRef.current = sortMode;
   const usingCustomFilters = !!customFilters && customFilters.length > 0;
 
-  const filterSuffix = buildathonFilter ? `&buildathon=${encodeURIComponent(buildathonFilter)}` : "";
+  const filterSuffix = buildathonFilter
+    ? `&buildathon=${encodeURIComponent(buildathonFilter)}`
+    : excludeBuildathon
+      ? `&exclude_buildathon=${encodeURIComponent(excludeBuildathon)}`
+      : "";
 
   const loadProjects = useCallback(() => {
     const requestedSort = sortMode;
