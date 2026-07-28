@@ -227,7 +227,7 @@ export default function HomePage() {
       {!isMobile && !isTablet && (
         <aside style={{ width: 280, flexShrink: 0 }}>
           <div style={{ paddingTop: 32 }}>
-            <ActivityFeed />
+            <ActivityFeed excludeBuildathon="sarvam" />
           </div>
         </aside>
       )}
