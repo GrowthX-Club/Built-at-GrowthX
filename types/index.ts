@@ -301,22 +301,24 @@ function normalizeReactions(raw: unknown[]): Reaction[] {
   });
 }
 
-/** Detect if a URL is a Loom video */
-function isLoomUrl(url: string): boolean {
-  return /^https?:\/\/(www\.)?loom\.com\/(share|embed)\//.test(url);
-}
-
 /** Extract a YouTube video id from watch / youtu.be / embed / shorts URLs (null if not YouTube) */
 export function getYouTubeVideoId(url: string): string | null {
   const m = url.match(
-    /^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^#]*?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
+    /^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/
   );
   return m ? m[1] : null;
 }
 
-/** Classify a media URL as loom, youtube, or image */
+/** Extract a Loom video id from share/embed URLs (null if not Loom) */
+export function getLoomVideoId(url: string): string | null {
+  const m = url.match(/^https?:\/\/(?:www\.)?loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/);
+  return m ? m[1] : null;
+}
+
+/** Classify a media URL as loom, youtube, or image. Only classifies as video
+ * when a video id is actually extractable, so consumers can safely embed. */
 export function detectMediaType(url: string): MediaItem["type"] {
-  if (isLoomUrl(url)) return "loom";
+  if (getLoomVideoId(url)) return "loom";
   if (getYouTubeVideoId(url)) return "youtube";
   return "image";
 }
@@ -340,8 +342,9 @@ function normalizeMedia(raw: unknown): MediaItem[] {
         const obj = item as Record<string, unknown>;
         const url = ((obj.url ?? "") as string).trim();
         if (!url) return null;
-        const type = obj.type === "loom" || obj.type === "youtube" ? obj.type : detectMediaType(url);
-        return { type, url } as MediaItem;
+        // Never trust a claimed type — re-derive from the URL so a mislabeled
+        // entry can't reach an <iframe src> without a valid video id.
+        return { type: detectMediaType(url), url } as MediaItem;
       }
       return null;
     })

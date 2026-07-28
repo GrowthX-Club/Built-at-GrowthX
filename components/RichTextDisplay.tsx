@@ -33,9 +33,28 @@ function renderInline(line: string, lineKey: number): React.ReactNode[] {
       );
     }
     if (/^https?:\/\//.test(part)) {
-      // Keep trailing punctuation out of the link
-      const trailing = part.match(/[),.;:!?]+$/)?.[0] ?? "";
-      const url = trailing ? part.slice(0, part.length - trailing.length) : part;
+      // Keep trailing punctuation out of the link. A trailing ")" stays part
+      // of the URL while it has an unmatched "(" (Wikipedia-style paths).
+      let url = part;
+      let trailing = "";
+      while (url.length > 0) {
+        const ch = url[url.length - 1];
+        if (/[,.;:!?]/.test(ch)) {
+          trailing = ch + trailing;
+          url = url.slice(0, -1);
+          continue;
+        }
+        if (ch === ")") {
+          const opens = (url.match(/\(/g) || []).length;
+          const closes = (url.match(/\)/g) || []).length;
+          if (closes > opens) {
+            trailing = ch + trailing;
+            url = url.slice(0, -1);
+            continue;
+          }
+        }
+        break;
+      }
       return (
         <React.Fragment key={`${lineKey}-${i}`}>
           <a

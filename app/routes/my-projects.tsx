@@ -14,7 +14,7 @@ import {
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useNavOverride } from "@/context/NavContext";
-import { extractPlainText, descriptionCharCount } from "@/lib/editor-utils";
+import { extractPlainText, stripMarkdownLite, descriptionCharCount } from "@/lib/editor-utils";
 import RichTextEditor from "@/components/RichTextEditor";
 import MediaUpload from "@/components/MediaUpload";
 
@@ -814,7 +814,7 @@ export default function MyProjectsPage() {
                       </div>
                     </div>
                     {p.description && (() => {
-                      const plain = extractPlainText(p.description);
+                      const plain = stripMarkdownLite(extractPlainText(p.description));
                       return plain ? (
                         <p style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", margin: "8px 0 0", lineHeight: 1.5 }}>
                           {plain.length > 150 ? plain.slice(0, 150) + "..." : plain}
