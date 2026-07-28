@@ -4,25 +4,25 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 import ProjectListView from "@/components/ProjectListView";
 
 export const meta: MetaFunction = () => [
-  { title: "Sarvam Epoch Buildathon · Built at GrowthX" },
+  { title: "Sarvam Epoch Buildathon by GrowthX" },
   {
     name: "description",
     content:
-      "Sarvam Epoch Buildathon, powered by GrowthX — ~600 builders, one day, built with Sarvam AI. Projects shipped during the event.",
+      "One-day buildathon on 26 July 2026 — ~600 builders shipping with Sarvam AI. Powered by Lightspeed, Bessemer & Supported by Razorpay.",
   },
   { property: "og:type", content: "website" },
-  { property: "og:title", content: "Sarvam Epoch Buildathon · Built at GrowthX" },
+  { property: "og:title", content: "Sarvam Epoch Buildathon by GrowthX" },
   {
     property: "og:description",
     content:
-      "Sarvam Epoch Buildathon, powered by GrowthX — ~600 builders, one day, built with Sarvam AI. Projects shipped during the event.",
+      "One-day buildathon on 26 July 2026 — ~600 builders shipping with Sarvam AI. Powered by Lightspeed, Bessemer & Supported by Razorpay.",
   },
   { name: "twitter:card", content: "summary" },
-  { name: "twitter:title", content: "Sarvam Epoch Buildathon · Built at GrowthX" },
+  { name: "twitter:title", content: "Sarvam Epoch Buildathon by GrowthX" },
   {
     name: "twitter:description",
     content:
-      "Sarvam Epoch Buildathon, powered by GrowthX — ~600 builders, one day, built with Sarvam AI. Projects shipped during the event.",
+      "One-day buildathon on 26 July 2026 — ~600 builders shipping with Sarvam AI. Powered by Lightspeed, Bessemer & Supported by Razorpay.",
   },
   { tagName: "link", rel: "canonical", href: "https://built.growthx.club/sarvam" },
 ];
@@ -39,8 +39,8 @@ export default function SarvamPage() {
       }}>
         <main className="responsive-main" style={{ padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
           <ProjectListView
-            headerTitle="Sarvam Epoch Buildathon"
-            headerSubtitle="One-day buildathon on 26 July 2026 — ~600 builders shipping with Sarvam AI."
+            headerTitle="Sarvam Epoch Buildathon by GrowthX"
+            headerSubtitle="One-day buildathon on 26 July 2026 — ~600 builders shipping with Sarvam AI. Powered by Lightspeed, Bessemer & Supported by Razorpay."
             buildathonFilter="sarvam"
             featuredEnabled={false}
             emptyState={{

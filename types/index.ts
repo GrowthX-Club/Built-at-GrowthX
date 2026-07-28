@@ -713,7 +713,7 @@ export const STACK_META: Record<string, { icon: string; bg: string; color: strin
 // Stack name → logo.dev domain mapping
 const STACK_DOMAINS: Record<string, string> = {
   "Next.js": "nextjs.org",
-  "Claude API": "anthropic.com",
+  "Claude API": "claude.com",
   "Supabase": "supabase.com",
   "Vercel": "vercel.com",
   "React": "react.dev",
@@ -760,11 +760,57 @@ const STACK_DOMAINS: Record<string, string> = {
   "Linear": "linear.app",
   "Framer": "framer.com",
   "OpenClaw": "openclaw.com",
+  // AI models & coding agents — product marks, not vendor-company logos
+  "Claude": "claude.com",
+  "Claude Code": "claude.com",
+  "Cursor": "cursor.com",
+  "GPT-4o": "openai.com",
+  // Sarvam model family
+  "Samvaad": "sarvam.ai",
+  "Saaras": "sarvam.ai",
+  "Bulbul": "sarvam.ai",
+  "Sarvam Vision": "sarvam.ai",
+  "Sarvam Translate": "sarvam.ai",
+  "Sarvam-30B": "sarvam.ai",
+  "Sarvam-105B": "sarvam.ai",
+  "Sarvam AI": "sarvam.ai",
+  // Non-.com brands the domain guess gets wrong
+  "LiveKit": "livekit.io",
+  "Streamlit": "streamlit.io",
+  "Pipecat": "pipecat.ai",
+  "Hono": "hono.dev",
+  "Qdrant": "qdrant.tech",
+  "KiCad": "kicad.org",
+  "ffmpeg": "ffmpeg.org",
+  "FFmpeg": "ffmpeg.org",
+  "MCP": "modelcontextprotocol.io",
+  "LangGraph": "langchain.com",
+  "LangChain": "langchain.com",
+  "Fastify": "fastify.dev",
+  "Zod": "zod.dev",
+  "Vite": "vitejs.dev",
+  "SQLite": "sqlite.org",
+  "Railway": "railway.app",
+  "Telegram": "telegram.org",
+  "Android": "android.com",
+  "WebRTC": "webrtc.org",
+  "npm": "npmjs.com",
+  "Flask": "flask.palletsprojects.com",
+  "Framer Motion": "framer.com",
+  "Vercel AI SDK": "vercel.com",
+  "Tailwind": "tailwindcss.com",
+  "Postgres": "postgresql.org",
+  "n8n": "n8n.io",
+  "Exotel": "exotel.com",
+  "WhatsApp": "whatsapp.com",
 };
 
 // Hardcoded logo URLs for stacks where logo.dev doesn't have a good match
 const STACK_LOGO_OVERRIDES: Record<string, string> = {
   "OpenClaw": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/openclaw.png",
+  // Codex has no own domain on logo.dev — openai.com would render the OpenAI
+  // company logo, which misrepresents the agent. Use the Codex product mark.
+  "Codex": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/codex.png",
 };
 
 /** Generate a logo.dev URL for a tech stack item */
