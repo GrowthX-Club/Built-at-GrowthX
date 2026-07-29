@@ -10,7 +10,7 @@ Built at GrowthX is where members of GrowthX share, vote on, and discuss the pro
 ## Sections
 
 - [Projects](https://built.growthx.club/projects) — Browse all shipped projects, sorted by votes or recency
-- [Builders](https://built.growthx.club/builders) — Leaderboard of top builders ranked by reputation and projects shipped
+- [Builders](https://built.growthx.club/builders) — Leaderboard of top builders ranked by projects shipped, with community upvotes breaking ties
 - [Building](https://built.growthx.club/building) — Projects currently in progress (ideas, prototyping, beta)
 - [Cities](https://built.growthx.club/cities) — City-wise breakdown of builders and projects shipped across India
 
