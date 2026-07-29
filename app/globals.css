@@ -136,6 +136,342 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Sarvam projects — event-only first fold */
+.sarvam-hero {
+  --sarvam-paper: #f4f2ec;
+  --sarvam-ink: #11110f;
+  --sarvam-blue-grey: #68788c;
+  --sarvam-muted: #6d6c65;
+  height: 100svh;
+  min-height: 700px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 76px;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  background: var(--sarvam-paper);
+  color: var(--sarvam-ink);
+}
+.sarvam-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.075;
+  background-image: radial-gradient(rgba(17,17,15,.16) .55px, transparent .55px);
+  background-size: 5px 5px;
+  mix-blend-mode: multiply;
+}
+.sarvam-hero-grid {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(500px, 30%) minmax(0, 70%);
+  align-items: stretch;
+  overflow: hidden;
+  padding-left: 0;
+}
+.sarvam-hero-copy {
+  width: min(100%, 720px);
+  align-self: center;
+  padding: clamp(44px, 4vw, 76px) clamp(24px, 2.6vw, 46px) clamp(42px, 4vw, 70px) clamp(24px, 4.15vw, 80px);
+}
+.sarvam-hero-brandline {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-bottom: clamp(23px, 2vw, 31px);
+}
+.sarvam-built-logo {
+  flex: 0 0 auto;
+  padding-right: 17px;
+  border-right: 1px solid rgba(17,17,15,.16);
+}
+.sarvam-built-logo .built-logo {
+  width: auto;
+  height: 44px;
+}
+.sarvam-hero-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--sarvam-ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.sarvam-live-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--sarvam-blue-grey);
+  box-shadow: 0 0 0 5px rgba(104,120,140,.13);
+}
+.sarvam-hero-copy h1 {
+  max-width: 710px;
+  margin: 0 0 clamp(24px, 2.1vw, 34px);
+  color: var(--sarvam-ink);
+  font-family: "Instrument Sans", var(--sans);
+  font-size: clamp(54px, 4.55vw, 84px);
+  font-stretch: 82%;
+  font-weight: 670;
+  line-height: .94;
+  letter-spacing: -.067em;
+}
+.sarvam-hero-copy h1 em {
+  color: var(--sarvam-blue-grey);
+  font-family: "Instrument Serif", var(--serif);
+  font-weight: 400;
+  letter-spacing: -.055em;
+}
+.sarvam-hero-description {
+  max-width: 690px;
+  margin: 0;
+  color: #30322f;
+  font-family: "Instrument Sans", var(--sans);
+  font-size: clamp(16px, 1.12vw, 19px);
+  line-height: 1.5;
+  letter-spacing: -.019em;
+}
+.sarvam-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 29px;
+  margin-top: 31px;
+}
+.sarvam-primary-cta {
+  min-height: 50px;
+  padding: 0 19px 0 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 27px;
+  background: var(--sarvam-ink);
+  color: white;
+  font-family: "Instrument Sans", var(--sans);
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: transform .25s cubic-bezier(.2,.8,.2,1), background .25s;
+}
+.sarvam-primary-cta:hover { transform: translateY(-2px); background: #292925; }
+.sarvam-trend-cta {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--sarvam-ink);
+  color: var(--sarvam-ink);
+  font-family: "Instrument Sans", var(--sans);
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.sarvam-partners {
+  max-width: 650px;
+  margin-top: clamp(27px, 2.4vw, 38px);
+  padding-top: 17px;
+  border-top: 1px solid rgba(17,17,15,.13);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(20px, 2.2vw, 36px);
+}
+.sarvam-partner-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  white-space: nowrap;
+}
+.sarvam-partner-brands {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.sarvam-partners span {
+  color: rgba(17,17,15,.38);
+  font-family: var(--mono);
+  font-size: clamp(10px, .58vw, 12px);
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+.sarvam-partners strong {
+  color: rgba(17,17,15,.62);
+  font-family: "Instrument Sans", var(--sans);
+  font-size: clamp(13px, .75vw, 16px);
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+.sarvam-partners i {
+  color: rgba(17,17,15,.26);
+  font-family: var(--mono);
+  font-size: clamp(11px, .64vw, 13px);
+  font-style: normal;
+}
+.sarvam-photo-wall {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0 16px 0 clamp(18px, 1.5vw, 30px);
+  isolation: isolate;
+}
+.sarvam-photo-wall::before,
+.sarvam-photo-wall::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  height: clamp(34px, 4vw, 68px);
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.sarvam-photo-wall::before {
+  top: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.72) 42%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.72) 42%, transparent 100%);
+}
+.sarvam-photo-wall::after {
+  bottom: 0;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.72) 42%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.72) 42%, transparent 100%);
+}
+.sarvam-photo-drift {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  animation: sarvamPhotoFlow 76s linear infinite;
+  animation-delay: -29s;
+}
+.sarvam-photo-mosaic-set {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+.sarvam-photo-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+.sarvam-photo-tile {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #dedbd3;
+  box-shadow: 0 1px 0 rgba(17,17,15,.08);
+}
+.sarvam-photo-tile img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  filter: saturate(.88) contrast(1.03);
+  transition: filter .3s ease, transform .55s cubic-bezier(.2,.8,.2,1);
+}
+.sarvam-photo-tile:hover img { filter: saturate(1) contrast(1); transform: scale(1.025); }
+.sarvam-company-rail {
+  min-height: 76px;
+  padding: 0 clamp(24px, 4.15vw, 80px);
+  border-top: 1px solid rgba(17,17,15,.13);
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+}
+.sarvam-company-label {
+  color: var(--sarvam-muted);
+  font-family: var(--mono);
+  font-size: clamp(10px, .55vw, 12px);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sarvam-company-list {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(8px, .7vw, 16px);
+}
+.sarvam-company-list span {
+  position: relative;
+  color: rgba(17,17,15,.38);
+  font-family: "Instrument Sans", var(--sans);
+  font-size: clamp(11px, .72vw, 15px);
+  font-weight: 550;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+}
+.sarvam-company-list span::after {
+  content: "";
+  position: absolute;
+  right: -9px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(17,17,15,.18);
+}
+.sarvam-company-list span:last-child::after { display: none; }
+@keyframes sarvamPhotoFlow {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -50%, 0); }
+}
+@media (max-width: 1180px) {
+  .sarvam-hero-grid { grid-template-columns: minmax(410px, 35%) minmax(0, 65%); }
+  .sarvam-hero-copy h1 { font-size: clamp(52px, 6.5vw, 72px); }
+  .sarvam-photo-wall { padding-left: 22px; }
+}
+@media (max-width: 920px) {
+  .sarvam-hero { height: auto; min-height: 0; grid-template-rows: auto auto; }
+  .sarvam-hero-grid { height: auto; grid-template-columns: minmax(0, 1fr); overflow: visible; padding-left: 0; }
+  .sarvam-hero-copy { width: 100%; max-width: 780px; padding: 54px 24px 48px; margin: 0 auto; }
+  .sarvam-hero-copy h1 { max-width: 760px; font-size: clamp(56px, 10vw, 84px); }
+  .sarvam-hero-description { max-width: 760px; }
+  .sarvam-photo-wall { width: 100%; height: 700px; padding: 0; }
+  .sarvam-photo-mosaic-set { gap: 9px; padding-bottom: 9px; }
+  .sarvam-photo-row { gap: 9px; }
+  .sarvam-company-rail { min-height: 0; padding-top: 18px; padding-bottom: 18px; align-items: start; }
+  .sarvam-company-list { flex-wrap: wrap; justify-content: flex-start; gap: 10px 18px; }
+  .sarvam-company-list span { font-size: 12px; }
+}
+@media (max-width: 580px) {
+  .sarvam-hero-copy { padding: 38px 20px 42px; }
+  .sarvam-hero-brandline { gap: 12px; }
+  .sarvam-built-logo { padding-right: 12px; }
+  .sarvam-built-logo .built-logo { height: 38px; }
+  .sarvam-hero-kicker { font-size: 12px; letter-spacing: .035em; }
+  .sarvam-hero-copy h1 { font-size: clamp(48px, 14vw, 66px); }
+  .sarvam-hero-description { font-size: 15px; }
+  .sarvam-hero-actions { align-items: flex-start; gap: 14px; }
+  .sarvam-primary-cta { min-height: 48px; padding: 0 16px; gap: 12px; font-size: 12px; }
+  .sarvam-trend-cta { font-size: 12px; }
+  .sarvam-partners { width: 100%; align-items: flex-start; flex-direction: row; justify-content: flex-start; gap: clamp(24px, 8vw, 48px); }
+  .sarvam-photo-wall { height: 620px; }
+  .sarvam-photo-mosaic-set { gap: 7px; padding-bottom: 7px; }
+  .sarvam-photo-row { gap: 7px; }
+  .sarvam-photo-tile { border-radius: 5px; }
+  .sarvam-company-rail { grid-template-columns: 1fr; gap: 10px; }
+}
+@media (max-width: 360px) {
+  .sarvam-hero-actions { flex-direction: column; gap: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sarvam-photo-drift { animation: none !important; transform: translateY(-12%); }
+  .sarvam-photo-tile img, .sarvam-primary-cta { transition: none; }
+}
+
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

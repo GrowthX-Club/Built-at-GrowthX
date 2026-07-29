@@ -142,6 +142,8 @@ export default function AppNav() {
     return pathname === href;
   };
 
+  if (pathname.replace(/\/+$/, "") === "/sarvam") return null;
+
   return (
     <>
       <nav className="responsive-nav" style={{
