@@ -28,6 +28,7 @@ function PhosphorTile({ name, seed, size }: { name: string; seed: number; size: 
   const maskUrl = `url(/ph/${name}.svg)`;
   return (
     <div
+      className="project-icon"
       style={{
         width: size,
         height: size,
