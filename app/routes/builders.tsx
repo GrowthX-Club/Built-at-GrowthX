@@ -16,13 +16,13 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 
 export const meta: MetaFunction = () => [
   { title: "Top Builders — Built at GrowthX" },
-  { name: "description", content: "Leaderboard of top builders in the GrowthX community, ranked by reputation and projects shipped." },
+  { name: "description", content: "Leaderboard of top builders in the GrowthX community, ranked by projects shipped." },
   { property: "og:title", content: "Top Builders — Built at GrowthX" },
-  { property: "og:description", content: "Leaderboard of top builders in the GrowthX community, ranked by reputation and projects shipped." },
+  { property: "og:description", content: "Leaderboard of top builders in the GrowthX community, ranked by projects shipped." },
   { property: "og:type", content: "website" },
   { name: "twitter:card", content: "summary" },
   { name: "twitter:title", content: "Top Builders — Built at GrowthX" },
-  { name: "twitter:description", content: "Leaderboard of top builders in the GrowthX community, ranked by reputation and projects shipped." },
+  { name: "twitter:description", content: "Leaderboard of top builders in the GrowthX community, ranked by projects shipped." },
   { tagName: "link", rel: "canonical", href: "https://built.growthx.club/builders" },
 ];
 
@@ -148,7 +148,7 @@ export default function BuildersPage() {
             The people who build
           </h1>
           <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
-            Reputation is earned by shipping. Ranked by cumulative score across projects, buildathons, and collaborations.
+            Reputation is earned by shipping. Ranked by projects shipped across buildathons and collaborations, with community upvotes breaking ties.
           </p>
         </div>
 
