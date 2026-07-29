@@ -1,0 +1,66 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Instrument+Sans:wdth,wght@75..100,500..700&amp;family=Instrument+Serif:ital@1&amp;display=swap');
+      .sans { font-family: 'Instrument Sans', sans-serif; }
+      .serif { font-family: 'Instrument Serif', serif; }
+      .mono { font-family: 'DM Mono', monospace; }
+    </style>
+    <pattern id="paper" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.5" fill="#11110F" fill-opacity="0.055"/>
+    </pattern>
+    <filter id="soft-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#0D2138" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="#F4F2EC"/>
+  <rect width="1200" height="630" fill="url(#paper)"/>
+
+  <g aria-label="Sarvam Epoch Buildathon by GrowthX">
+    <circle cx="80" cy="79" r="5" fill="#68788C"/>
+    <circle cx="80" cy="79" r="10" stroke="#68788C" stroke-opacity="0.16" stroke-width="5"/>
+    <text x="101" y="84" class="mono" fill="#252724" font-size="18" letter-spacing="1.35">SARVAM EPOCH BUILDATHON BY GROWTHX</text>
+  </g>
+
+  <g class="sans" fill="#11110F" font-size="86" font-weight="670" letter-spacing="-5.5">
+    <text x="70" y="225">The buildathon</text>
+    <text x="70" y="310">that broke</text>
+  </g>
+  <text x="68" y="412" class="serif" fill="#68788C" font-size="103" font-style="italic" letter-spacing="-4.2">the internet.</text>
+
+  <g transform="translate(875 310)">
+    <circle r="190" fill="#EFF0EC" stroke="#68788C" stroke-opacity="0.18" stroke-width="2"/>
+    <circle r="144" stroke="#68788C" stroke-opacity="0.17" stroke-width="2"/>
+    <circle r="98" stroke="#68788C" stroke-opacity="0.15" stroke-width="2"/>
+    <g transform="translate(-111 -111)">
+      <g fill="#5AB7DD" filter="url(#soft-shadow)">
+        <circle cx="14" cy="14" r="9"/><circle cx="46" cy="14" r="9"/><circle cx="78" cy="14" r="9"/><circle cx="110" cy="14" r="9"/><circle cx="142" cy="14" r="9"/><circle cx="174" cy="14" r="9"/><circle cx="206" cy="14" r="9"/>
+        <circle cx="14" cy="46" r="9"/><circle cx="46" cy="46" r="9"/><circle cx="78" cy="46" r="9"/><circle cx="110" cy="46" r="9"/><circle cx="142" cy="46" r="9"/><circle cx="174" cy="46" r="9"/><circle cx="206" cy="46" r="9"/>
+        <circle cx="14" cy="78" r="9"/><circle cx="46" cy="78" r="9"/><circle cx="78" cy="78" r="9"/><circle cx="110" cy="78" r="9"/>
+      </g>
+      <g fill="#68788C" fill-opacity="0.27">
+        <circle cx="142" cy="78" r="9"/><circle cx="174" cy="78" r="9"/><circle cx="206" cy="78" r="9"/>
+        <circle cx="14" cy="110" r="9"/><circle cx="46" cy="110" r="9"/><circle cx="78" cy="110" r="9"/><circle cx="110" cy="110" r="9"/><circle cx="142" cy="110" r="9"/><circle cx="174" cy="110" r="9"/><circle cx="206" cy="110" r="9"/>
+        <circle cx="14" cy="142" r="9"/><circle cx="46" cy="142" r="9"/><circle cx="78" cy="142" r="9"/><circle cx="110" cy="142" r="9"/><circle cx="142" cy="142" r="9"/><circle cx="174" cy="142" r="9"/><circle cx="206" cy="142" r="9"/>
+        <circle cx="14" cy="174" r="9"/><circle cx="46" cy="174" r="9"/><circle cx="78" cy="174" r="9"/><circle cx="110" cy="174" r="9"/><circle cx="142" cy="174" r="9"/><circle cx="174" cy="174" r="9"/><circle cx="206" cy="174" r="9"/>
+        <circle cx="14" cy="206" r="9"/><circle cx="46" cy="206" r="9"/><circle cx="78" cy="206" r="9"/><circle cx="110" cy="206" r="9"/><circle cx="142" cy="206" r="9"/><circle cx="174" cy="206" r="9"/><circle cx="206" cy="206" r="9"/>
+      </g>
+    </g>
+  </g>
+
+  <rect x="70" y="492" width="1060" height="1" fill="#11110F" fill-opacity="0.14"/>
+  <g class="mono" font-size="11" letter-spacing="1.4">
+    <text x="70" y="531" fill="#11110F" fill-opacity="0.38">POWERED BY</text>
+    <text x="327" y="531" fill="#11110F" fill-opacity="0.38">SUPPORTED BY</text>
+  </g>
+  <g class="sans" fill="#353733" font-size="17" font-weight="600">
+    <text x="70" y="562">Bessemer</text>
+    <text x="158" y="562" fill="#11110F" fill-opacity="0.28">+</text>
+    <text x="181" y="562">Lightspeed</text>
+    <text x="327" y="562">Razorpay</text>
+  </g>
+  <text x="897" y="558" class="mono" fill="#11110F" fill-opacity="0.46" font-size="13" letter-spacing="0.8">built.growthx.club/sarvam</text>
+
+  <image href="/built-logo.svg" x="1050" y="55" width="80" height="58" preserveAspectRatio="xMidYMid meet"/>
+</svg>

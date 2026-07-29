@@ -147,9 +147,8 @@ export interface ProjectListViewProps {
   /**
    * Replace the default Trending/New/Top sort tabs with custom client-side
    * filter pills. When provided, the component fetches all matching projects
-   * in one request (limit 200), hides the sort tabs, and filters in-memory
-   * via the selected tab's predicate. Used by /opencode for All / Top 15 /
-   * Top 5 / Virality / Revenue / MaaS.
+   * in 100-project pages, hides the sort tabs, and filters in-memory via the
+   * selected tab's predicate. Used by /opencode and /sarvam.
    */
   customFilters?: FilterTab[];
 }
@@ -221,13 +220,31 @@ export default function ProjectListView({
     setProjects([]);
     setHasMore(false);
     loadingMoreRef.current = false;
-    // In custom-filter mode we fetch the full set in one request and skip
-    // server sort + infinite scroll; the predicates run client-side.
-    // Backend Joi caps `limit` at 100 — that's enough for OpenCode (~84 docs).
+    // In custom-filter mode we fetch the full set in 100-project pages and
+    // skip server sort + infinite scroll; the predicates run client-side.
+    // This matters for showcases such as Sarvam, which has more than 100 docs.
     const limit = usingCustomFilters ? 100 : PAGE_SIZE;
     const sortParam = usingCustomFilters ? "" : `&sort=${sortMode}`;
-    bxApi(`/projects?limit=${limit}&offset=0${sortParam}${filterSuffix}`)
-      .then((r) => r.json())
+    const fetchProjects = async () => {
+      const firstResponse = await bxApi(`/projects?limit=${limit}&offset=0${sortParam}${filterSuffix}`);
+      const firstPage = await firstResponse.json();
+      const allProjects = [...(firstPage.projects || [])];
+
+      if (usingCustomFilters) {
+        const totalCount = firstPage.totalCount || allProjects.length;
+        for (let offset = limit; offset < totalCount; offset += limit) {
+          const response = await bxApi(`/projects?limit=${limit}&offset=${offset}${filterSuffix}`);
+          const page = await response.json();
+          const nextProjects = page.projects || [];
+          if (nextProjects.length === 0) break;
+          allProjects.push(...nextProjects);
+        }
+      }
+
+      return { ...firstPage, projects: allProjects };
+    };
+
+    fetchProjects()
       .then((d) => {
         if (sortModeRef.current !== requestedSort) return;
         const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
