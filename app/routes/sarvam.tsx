@@ -40,7 +40,7 @@ export default function SarvamPage() {
         <main className="responsive-main" style={{ padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
           <ProjectListView
             headerTitle="Sarvam Epoch Buildathon by GrowthX"
-            headerSubtitle="One-day buildathon on 26 July 2026 — ~600 builders shipping with Sarvam AI. Powered by Lightspeed, Bessemer & Supported by Razorpay."
+            headerSubtitle="Powered by Lightspeed, Bessemer & Supported by Razorpay."
             buildathonFilter="sarvam"
             featuredEnabled={false}
             emptyState={{
