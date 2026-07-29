@@ -14,6 +14,7 @@ import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextEditor from "@/components/RichTextEditor";
 import ActivityFeed from "@/components/ActivityFeed";
+import SarvamBanner from "@/components/SarvamBanner";
 import ProjectListView from "@/components/ProjectListView";
 import { descriptionCharCount } from "@/lib/editor-utils";
 import MediaUpload from "@/components/MediaUpload";
@@ -215,6 +216,7 @@ export default function HomePage() {
         padding: isMobile ? "0" : isTablet ? "0" : "0 32px",
       }}>
       <main className="responsive-main" style={{ flex: 1, maxWidth: 960, padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
+        <SarvamBanner isMobile={isMobile} />
         <ProjectListView
           headerTitle="What the community shipped"
           headerSubtitle="Products built by the GrowthX community. Ranked by the people who build."
