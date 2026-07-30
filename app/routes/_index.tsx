@@ -221,7 +221,6 @@ export default function HomePage() {
           headerTitle="What the community shipped"
           headerSubtitle="Products built by the GrowthX community. Ranked by the people who build."
           refreshKey={listRefreshKey}
-          excludeBuildathon="sarvam"
         />
       </main>
 
@@ -229,7 +228,7 @@ export default function HomePage() {
       {!isMobile && !isTablet && (
         <aside style={{ width: 280, flexShrink: 0 }}>
           <div style={{ paddingTop: 32 }}>
-            <ActivityFeed excludeBuildathon="sarvam" />
+            <ActivityFeed />
           </div>
         </aside>
       )}
