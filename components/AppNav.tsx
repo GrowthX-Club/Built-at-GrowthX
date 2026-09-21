@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -95,9 +95,10 @@ export default function AppNav() {
       .finally(() => setUserLoading(false));
   }, []);
 
-  const NAV_TABS = skillsEnabled
-    ? [...BASE_NAV_TABS, { href: "/skills", label: "Skills" }]
-    : BASE_NAV_TABS;
+  const NAV_TABS = useMemo(
+    () => (skillsEnabled ? [...BASE_NAV_TABS, { href: "/skills", label: "Skills" }] : BASE_NAV_TABS),
+    [skillsEnabled]
+  );
 
   useEffect(() => { reloadUser(); }, [reloadUser]);
 
@@ -127,7 +128,7 @@ export default function AppNav() {
         setUnderlineStyle({ left: el.offsetLeft, width: el.offsetWidth });
       }
     }
-  }, [pathname, skillsEnabled]);
+  }, [pathname, NAV_TABS]);
 
   useLayoutEffect(() => {
     updateUnderline();

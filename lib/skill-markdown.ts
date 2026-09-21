@@ -24,6 +24,23 @@ export interface ParsedSkillMarkdown {
 
 const INLINE = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\[[^\]]+\]\([^)\s]+\))/;
 
+const ALLOWED_LINK_SCHEMES = new Set(["http:", "https:", "mailto:"]);
+
+/**
+ * SKILL.md is unreviewed member content, so a link only survives if the URL parser — not a
+ * regex — agrees its scheme is safe. Returns the normalised href, or null to render as text.
+ */
+export function safeLinkHref(href: string): string | null {
+  const raw = href.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return ALLOWED_LINK_SCHEMES.has(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export function parseInline(raw: string): InlineToken[] {
   const tokens: InlineToken[] = [];
   let rest = raw;
@@ -38,11 +55,9 @@ export function parseInline(raw: string): InlineToken[] {
       tokens.push({ type: "strong", value: piece.slice(2, -2) });
     } else {
       const split = piece.indexOf("](");
-      tokens.push({
-        type: "link",
-        value: piece.slice(1, split),
-        href: piece.slice(split + 2, -1),
-      });
+      const label = piece.slice(1, split);
+      const href = safeLinkHref(piece.slice(split + 2, -1));
+      tokens.push(href ? { type: "link", value: label, href } : { type: "text", value: label });
     }
     rest = rest.slice(match.index + piece.length);
   }

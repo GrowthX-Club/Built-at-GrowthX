@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, T } from "@/types";
+import { T } from "@/types";
 
 export default function SkillInstallCommand({ command }: { command: string }) {
   const [copied, setCopied] = useState(false);

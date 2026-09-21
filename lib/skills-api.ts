@@ -2,7 +2,7 @@ import { mockBxApi } from "./mock-api/index";
 import type { Skill, SkillDetail, SkillsFlags } from "@/types";
 import { skillLatestVersion } from "@/types";
 
-const API_BASE =
+export const API_BASE =
   (typeof import.meta !== "undefined" ? import.meta.env?.VITE_API_URL : undefined) ||
   (typeof process !== "undefined" ? process.env?.VITE_API_URL : undefined) ||
   "http://localhost:8000/api/v1";
@@ -58,15 +58,44 @@ export function skillsQueryString({ q, tag, sort, limit, offset }: SkillsQuery):
   return qs ? `?${qs}` : "";
 }
 
-export async function fetchSkills(query: SkillsQuery = {}): Promise<Skill[]> {
+/** The backend validator caps `limit` at 100; anything higher is a 400. */
+export const SKILLS_PAGE_LIMIT = 100;
+
+const MAX_REGISTRY_PAGES = 20;
+
+/** `ok: false` is an upstream failure, which callers must not show as an empty registry. */
+export interface SkillsResult {
+  ok: boolean;
+  skills: Skill[];
+}
+
+export async function fetchSkills(query: SkillsQuery = {}): Promise<SkillsResult> {
   const res = await bxRead(`/skills${skillsQueryString(query)}`);
-  if (!res || !res.ok) return [];
+  if (!res || !res.ok) return { ok: false, skills: [] };
   try {
     const data = await res.json();
-    return Array.isArray(data?.skills) ? data.skills : [];
+    return { ok: true, skills: Array.isArray(data?.skills) ? data.skills : [] };
   } catch {
-    return [];
+    return { ok: false, skills: [] };
   }
+}
+
+/** Walks the registry a page at a time, stopping at MAX_REGISTRY_PAGES so it can never hang. */
+export async function fetchAllSkills(
+  query: Omit<SkillsQuery, "limit" | "offset"> = {}
+): Promise<SkillsResult> {
+  const skills: Skill[] = [];
+  for (let page = 0; page < MAX_REGISTRY_PAGES; page++) {
+    const result = await fetchSkills({
+      ...query,
+      limit: SKILLS_PAGE_LIMIT,
+      offset: page * SKILLS_PAGE_LIMIT,
+    });
+    if (!result.ok) return { ok: false, skills: [] };
+    skills.push(...result.skills);
+    if (result.skills.length < SKILLS_PAGE_LIMIT) break;
+  }
+  return { ok: true, skills };
 }
 
 export async function fetchSkillDetail(slug: string): Promise<SkillDetail | null> {
@@ -96,8 +125,15 @@ export interface DiscoveryEntry {
   digest: string;
 }
 
-/** The well-known index the `npx skills` CLI reads. Skills with no installable version are skipped. */
-export function buildDiscoveryIndex(skills: Skill[]): { $schema: string; skills: DiscoveryEntry[] } {
+/**
+ * The well-known index the `npx skills` CLI reads. Skills with no installable version are skipped.
+ * `url` must be absolute: the CLI resolves it against this origin, which does not serve `/api/v1`.
+ */
+export function buildDiscoveryIndex(
+  skills: Skill[],
+  apiBase: string = API_BASE
+): { $schema: string; skills: DiscoveryEntry[] } {
+  const base = apiBase.replace(/\/+$/, "");
   const entries: DiscoveryEntry[] = [];
   for (const skill of skills) {
     const latest = skillLatestVersion(skill);
@@ -106,7 +142,7 @@ export function buildDiscoveryIndex(skills: Skill[]): { $schema: string; skills:
       name: skill.slug,
       description: skill.description || "",
       type: "archive",
-      url: `/api/v1/bx/skills/${skill.slug}/download?version=${encodeURIComponent(latest.version)}`,
+      url: `${base}/bx/skills/${skill.slug}/download?version=${encodeURIComponent(latest.version)}`,
       digest: `sha256:${latest.sha256}`,
     });
   }

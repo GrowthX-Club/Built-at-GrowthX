@@ -465,7 +465,7 @@ npx skills@1.7.0 add http://127.0.0.1:8899 --skill hello-growthx -a claude-code 
       "name": "grill-me",
       "description": "Interview the user until the plan is clear, before any code…",
       "type": "archive",
-      "url": "/api/v1/bx/skills/grill-me/download?version=1.3.0",
+      "url": "https://<gx-backend-origin>/api/v1/bx/skills/grill-me/download?version=1.3.0",
       "digest": "sha256:<64 hex of the exact archive bytes>"
     }
   ]
@@ -475,6 +475,11 @@ npx skills@1.7.0 add http://127.0.0.1:8899 --skill hello-growthx -a claude-code 
 That's it. The CLI fetches the index, resolves `url` relative to it, downloads, checks the
 digest itself, and refuses on mismatch. It writes a `skills-lock.json` recording
 `wellKnownDigest`, so version bumps propagate through `skills update` for free.
+
+**`url` must be absolute.** Relative resolution puts it on `built.growthx.club`, which serves
+the web app and not `/api/v1` — a relative `/api/v1/bx/skills/…/download` 404s on every
+install. The index is built from the same `VITE_API_URL` base the rest of the web app talks
+to gx-backend through, so it points at the API origin rather than this one.
 
 ### What builders type
 

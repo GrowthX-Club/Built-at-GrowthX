@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLoaderData } from "react-router";
 import type { MetaFunction } from "react-router";
 import { C, T, type Skill } from "@/types";
-import { fetchSkills, fetchSkillsFlags } from "@/lib/skills-api";
+import { fetchSkills, fetchSkillsFlags, SKILLS_PAGE_LIMIT } from "@/lib/skills-api";
 import { BUNDLE_SKILLS, matchesBundleSkill } from "@/lib/skills-bundle";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import SkillBundleStrip from "@/components/SkillBundleStrip";
@@ -28,14 +28,14 @@ export async function loader() {
   const flags = await fetchSkillsFlags();
   if (!flags.marketplaceEnabled) throw new Response("Not Found", { status: 404 });
 
-  const skills = await fetchSkills({ sort: "installs", limit: 100 });
-  return { skills, publishEnabled: flags.publishEnabled };
+  const registry = await fetchSkills({ sort: "installs", limit: SKILLS_PAGE_LIMIT });
+  return { skills: registry.skills, loadFailed: !registry.ok, publishEnabled: flags.publishEnabled };
 }
 
 type SortKey = "installs" | "new";
 
 export default function SkillsIndexPage() {
-  const { skills: initialSkills, publishEnabled } = useLoaderData<typeof loader>();
+  const { skills: initialSkills, loadFailed, publishEnabled } = useLoaderData<typeof loader>();
   const { isMobile, isTablet } = useResponsive();
 
   const [query, setQuery] = useState("");
@@ -43,6 +43,7 @@ export default function SkillsIndexPage() {
   const [tag, setTag] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("installs");
   const [skills, setSkills] = useState<Skill[]>(initialSkills);
+  const [failed, setFailed] = useState(loadFailed);
   const [loading, setLoading] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -61,13 +62,21 @@ export default function SkillsIndexPage() {
   useEffect(() => {
     if (!debouncedQuery && !tag && sort === "installs") {
       setSkills(initialSkills);
+      setFailed(loadFailed);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    fetchSkills({ q: debouncedQuery || undefined, tag: tag || undefined, sort, limit: 100 })
-      .then((rows) => {
-        if (!cancelled) setSkills(rows);
+    fetchSkills({
+      q: debouncedQuery || undefined,
+      tag: tag || undefined,
+      sort,
+      limit: SKILLS_PAGE_LIMIT,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        setFailed(!result.ok);
+        setSkills(result.skills);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -75,7 +84,7 @@ export default function SkillsIndexPage() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, tag, sort, initialSkills]);
+  }, [debouncedQuery, tag, sort, initialSkills, loadFailed]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -244,7 +253,11 @@ export default function SkillsIndexPage() {
           </div>
 
           <div style={{ opacity: loading ? 0.5 : 1, transition: "opacity 0.15s" }}>
-            {skills.length === 0 ? (
+            {failed ? (
+              <div style={{ padding: "48px 0", textAlign: "center", color: C.errorText, fontSize: T.bodySm }}>
+                Couldn&rsquo;t reach the skills registry. Reload to try again.
+              </div>
+            ) : skills.length === 0 ? (
               <div style={{ padding: "48px 0", textAlign: "center", color: C.textMute, fontSize: T.bodySm }}>
                 {debouncedQuery || tag
                   ? "Nothing in the registry matches that yet."
