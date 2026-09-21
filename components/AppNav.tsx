@@ -49,7 +49,7 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
   );
 }
 
-const NAV_TABS = [
+const BASE_NAV_TABS = [
   { href: "/", label: "Projects" },
   { href: "/events", label: "Events" },
   { href: "/builders", label: "Builders" },
@@ -65,6 +65,7 @@ export default function AppNav() {
 
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [userLoading, setUserLoading] = useState(true);
+  const [skillsEnabled, setSkillsEnabled] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [portalMounted, setPortalMounted] = useState(false);
@@ -86,9 +87,17 @@ export default function AppNav() {
   const reloadUser = useCallback(() => {
     bxApi("/me")
       .then((r) => r.json())
-      .then((d) => setUser(normalizeUser(d.user)))
+      .then((d) => {
+        setUser(normalizeUser(d.user));
+        // a flag we cannot read counts as off, so the tab stays hidden on any failure
+        setSkillsEnabled(d?.flags?.skills_marketplace_enabled === true);
+      })
       .finally(() => setUserLoading(false));
   }, []);
+
+  const NAV_TABS = skillsEnabled
+    ? [...BASE_NAV_TABS, { href: "/skills", label: "Skills" }]
+    : BASE_NAV_TABS;
 
   useEffect(() => { reloadUser(); }, [reloadUser]);
 
@@ -118,7 +127,7 @@ export default function AppNav() {
         setUnderlineStyle({ left: el.offsetLeft, width: el.offsetWidth });
       }
     }
-  }, [pathname]);
+  }, [pathname, skillsEnabled]);
 
   useLayoutEffect(() => {
     updateUnderline();

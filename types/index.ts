@@ -658,6 +658,90 @@ export interface RevokeApiKeyResponse {
   msg: string;
 }
 
+// ---- Skills marketplace ----
+
+export type SkillTier = "prompt-only" | "has-executables";
+
+export interface SkillPublisher {
+  _id?: string;
+  name?: string;
+  username?: string;
+  display_picture?: string;
+}
+
+export interface SkillFile {
+  path: string;
+  size: number;
+  executable: boolean;
+}
+
+export interface SkillVersion {
+  version: string;
+  sha256: string;
+  size_bytes: number;
+  tier: SkillTier;
+  yanked: boolean;
+  files: SkillFile[];
+  created_at: string;
+}
+
+/** The `latest_version` populated on a list row — a subset of SkillVersion. */
+export interface SkillLatestVersion {
+  _id?: string;
+  version: string;
+  sha256: string;
+  size_bytes: number;
+  tier: SkillTier;
+}
+
+export interface Skill {
+  _id: string;
+  slug: string;
+  name: string;
+  title?: string;
+  description: string;
+  tags: string[];
+  install_count: number;
+  tier: SkillTier;
+  license: string | null;
+  source_url: string | null;
+  publisher: SkillPublisher | string | null;
+  latest_version: SkillLatestVersion | string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SkillDetail {
+  skill: Skill;
+  versions: SkillVersion[];
+  skill_md: string;
+  files: SkillFile[];
+}
+
+export interface SkillsFlags {
+  marketplaceEnabled: boolean;
+  publishEnabled: boolean;
+}
+
+/** A skill vendored into the Build Sprint bundle — a link out, never a registry row. */
+export interface BundleSkill {
+  name: string;
+  description: string;
+  /** Display label for the upstream, e.g. "anthropics/skills" */
+  upstream: string;
+  upstreamUrl: string;
+  ours: boolean;
+}
+
+/** `publisher` is populated on list and detail responses, a bare id everywhere else. */
+export function skillPublisher(skill: Skill): SkillPublisher | null {
+  return skill.publisher && typeof skill.publisher === "object" ? skill.publisher : null;
+}
+
+export function skillLatestVersion(skill: Skill): SkillLatestVersion | null {
+  return skill.latest_version && typeof skill.latest_version === "object" ? skill.latest_version : null;
+}
+
 export interface ActivityItem {
   id: string;
   type: 'vote' | 'comment' | 'project';

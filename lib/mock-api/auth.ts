@@ -22,7 +22,11 @@ export const bxAuthRoutes: MockRoute[] = [
     path: "/me",
     description: "Get current authenticated user profile",
     auth: false,
-    handler: () => ok({ user: MOCK_USER }),
+    handler: () =>
+      ok({
+        user: MOCK_USER,
+        flags: { skills_marketplace_enabled: true, skills_publish_enabled: true },
+      }),
   },
 
   {

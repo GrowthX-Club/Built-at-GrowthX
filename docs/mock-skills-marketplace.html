@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Skills Marketplace — mock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --serif:"Newsreader",Georgia,serif;
+  --sans:"DM Sans",system-ui,sans-serif;
+  --mono:"DM Mono","JetBrains Mono",monospace;
+
+  --c-bg:#F8F7F4; --c-surface:#FFFFFF; --c-surfaceWarm:#FAF9F6;
+  --c-border:#E8E5DE; --c-borderLight:#F0EDE6;
+  --c-text:#181710; --c-textSec:#6B665B; --c-textMute:#A09A8C;
+  --c-accent:#181710; --c-accentSoft:#EDEADE; --c-accentFg:#FFFFFF;
+  --c-gold:#B8962E; --c-goldSoft:#FDF8EC; --c-goldBorder:#E8D9A0;
+  --c-green:#2D7A3F; --c-greenSoft:#EDF7F0;
+  --c-blue:#2255CC; --c-blueSoft:#EEF3FF;
+  --c-brand:#0080FF; --c-brandSoft:#EBF4FF; --c-brandBorder:#99CCFF;
+  --c-navGlass:rgba(248,247,244,0.45);
+  --c-error:#DC2626; --c-errorSoft:#FEF2F2; --c-errorBorder:#FECACA; --c-errorText:#B91C1C;
+  --c-role-builder:#8B6914; --c-role-builder-bg:#FDF8EC;
+  --c-codeBg:#181710; --c-codeFg:#FAF9F6; --c-codeBorder:#181710;
+}
+[data-theme="dark"]{
+  --c-bg:#000000; --c-surface:#111111; --c-surfaceWarm:#0A0A0A;
+  --c-border:#2A2A2A; --c-borderLight:#1A1A1A;
+  --c-text:#F0F0F0; --c-textSec:#B0B0B0; --c-textMute:#888888;
+  --c-accent:#F0F0F0; --c-accentSoft:#1A1A1A; --c-accentFg:#000000;
+  --c-gold:#D4AE3A; --c-goldSoft:#1A1500; --c-goldBorder:#5C4E20;
+  --c-green:#4CAF6A; --c-greenSoft:#0A1A0F;
+  --c-blue:#5588EE; --c-blueSoft:#0A1225;
+  --c-brand:#3399FF; --c-brandSoft:#0A1525; --c-brandBorder:#2255AA;
+  --c-navGlass:rgba(0,0,0,0.82);
+  --c-error:#F87171; --c-errorSoft:#1A0A0A; --c-errorBorder:#5C2020; --c-errorText:#F87171;
+  --c-role-builder:#D4AE3A; --c-role-builder-bg:#1A1500;
+  --c-codeBg:#161616; --c-codeFg:#F0F0F0; --c-codeBorder:#2A2A2A;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--c-bg); color:var(--c-text);
+  font-family:var(--sans); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none;}
+
+/* ── nav ── */
+.nav{
+  position:sticky; top:0; z-index:20;
+  background:var(--c-navGlass); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--c-border);
+}
+.nav-in{
+  max-width:860px; margin:0 auto; padding:12px 24px;
+  display:flex; align-items:center; gap:24px;
+}
+.brand{font-family:var(--serif); font-size:20px; font-weight:600; letter-spacing:-0.01em;}
+.brand em{font-style:italic; color:var(--c-textSec); font-weight:400;}
+.nav-links{display:flex; gap:20px; margin-left:auto; align-items:center;}
+.nav-links a{
+  font-size:13px; color:var(--c-textSec);
+  padding-bottom:2px; border-bottom:1.5px solid transparent;
+}
+.nav-links a.on{color:var(--c-text); border-bottom-color:var(--c-accent);}
+.ghost{
+  font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  border:1px solid var(--c-border); background:var(--c-surface); color:var(--c-textSec);
+  padding:5px 10px; border-radius:6px; cursor:pointer;
+}
+.ghost:hover{border-color:var(--c-textMute); color:var(--c-text);}
+
+.wrap{max-width:860px; margin:0 auto; padding:0 24px 96px;}
+
+/* ── page head ── */
+.phead{padding:40px 0 24px;}
+.phead h1{
+  font-family:var(--serif); font-size:40px; font-weight:600;
+  letter-spacing:-0.02em; margin:0 0 8px;
+}
+.phead p{margin:0; color:var(--c-textSec); font-size:16px; max-width:56ch;}
+
+/* ── search ── */
+.searchbar{
+  display:flex; align-items:center; gap:10px;
+  background:var(--c-surface); border:1px solid var(--c-border);
+  border-radius:12px; padding:12px 16px; margin:8px 0 16px;
+}
+.searchbar:focus-within{border-color:var(--c-textMute);}
+.searchbar svg{flex:none; color:var(--c-textMute);}
+.searchbar input{
+  border:0; outline:0; background:transparent; color:var(--c-text);
+  font-family:var(--sans); font-size:16px; width:100%;
+}
+.searchbar input::placeholder{color:var(--c-textMute);}
+.searchbar kbd{
+  font-family:var(--mono); font-size:11px; color:var(--c-textMute);
+  border:1px solid var(--c-border); border-radius:4px; padding:2px 6px; flex:none;
+}
+
+/* ── pills ── */
+.pills{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:8px; scrollbar-width:none;}
+.pills::-webkit-scrollbar{display:none;}
+.pill{
+  flex:none; font-family:var(--mono); font-size:11px; letter-spacing:.04em;
+  padding:6px 12px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--c-border); background:var(--c-surface); color:var(--c-textSec);
+}
+.pill.on{background:var(--c-accent); color:var(--c-accentFg); border-color:var(--c-accent);}
+
+/* ── bundle strip ── */
+.bundle{
+  border:1px solid var(--c-border); border-radius:14px;
+  background:var(--c-surfaceWarm); overflow:hidden; margin:14px 0 10px;
+}
+.bundle-head{
+  padding:13px 18px; border-bottom:1px solid var(--c-borderLight);
+  display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+}
+.bundle-title{
+  font-family:var(--mono); font-size:11px; font-weight:700;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--c-textSec);
+}
+.bundle-sub{font-size:12px; color:var(--c-textMute);}
+.brow{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 18px; border-bottom:1px solid var(--c-borderLight);
+}
+.brow:hover{background:var(--c-surface);}
+.brow .bn{font-family:var(--mono); font-size:13px; font-weight:500; flex:none;}
+.brow .bd{
+  font-size:13px; color:var(--c-textSec); flex:1; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.brow .up{
+  font-family:var(--mono); font-size:10px; color:var(--c-textMute);
+  flex:none; display:flex; align-items:center; gap:4px;
+}
+.brow .up.ours{color:var(--c-gold);}
+.bundle-more{
+  padding:11px 18px; font-size:12px; color:var(--c-blue); cursor:pointer;
+}
+
+.sortrow{
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding:22px 0 10px; border-bottom:1px solid var(--c-borderLight);
+}
+.count{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--c-textMute);}
+.sorts{display:flex; gap:14px;}
+.sorts span{font-size:13px; color:var(--c-textMute); cursor:pointer;}
+.sorts span.on{color:var(--c-text); font-weight:500;}
+
+/* ── skill row ── */
+.row{
+  display:flex; gap:16px; align-items:flex-start;
+  padding:18px 16px; margin:0 -16px;
+  border-bottom:1px solid var(--c-borderLight);
+  border-radius:10px; cursor:pointer; transition:background .15s;
+}
+.row:hover{background:var(--c-surfaceWarm);}
+.glyph{
+  flex:none; width:44px; height:44px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:16px; font-weight:500; color:#fff;
+}
+.row-main{flex:1; min-width:0;}
+.row-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.sname{font-family:var(--mono); font-size:15px; font-weight:500; letter-spacing:-0.01em;}
+.sdesc{color:var(--c-textSec); font-size:14px; margin:3px 0 8px; line-height:1.5;}
+.meta{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--c-textMute);}
+.meta .by{display:flex; align-items:center; gap:6px; color:var(--c-textSec);}
+.av{
+  width:18px; height:18px; border-radius:5px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:8px; font-weight:700; color:#fff;
+}
+.dot{color:var(--c-border);}
+.installs{font-family:var(--mono); font-size:12px; color:var(--c-textSec);}
+
+.tag{
+  font-family:var(--mono); font-size:10px; letter-spacing:.04em;
+  padding:2px 7px; border-radius:4px;
+  background:var(--c-accentSoft); color:var(--c-textSec);
+}
+.chip-official{
+  font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  padding:2px 7px; border-radius:4px;
+  background:var(--c-goldSoft); color:var(--c-gold); border:1px solid var(--c-goldBorder);
+}
+.chip-scripts{
+  font-family:var(--mono); font-size:10px; letter-spacing:.05em;
+  padding:2px 7px; border-radius:4px;
+  background:var(--c-errorSoft); color:var(--c-errorText); border:1px solid var(--c-errorBorder);
+}
+.chip-new{
+  font-family:var(--mono); font-size:10px; letter-spacing:.05em;
+  padding:2px 7px; border-radius:4px;
+  background:var(--c-greenSoft); color:var(--c-green);
+}
+
+/* ── empty-ish footer cta ── */
+.cta{
+  margin-top:40px; border:1px dashed var(--c-border); border-radius:14px;
+  padding:24px; background:var(--c-surfaceWarm);
+}
+.cta h3{font-family:var(--serif); font-size:22px; font-weight:600; margin:0 0 6px;}
+.cta p{margin:0 0 14px; color:var(--c-textSec); font-size:14px;}
+
+/* ── code block ── */
+.code{
+  background:var(--c-codeBg); color:var(--c-codeFg);
+  border:1px solid var(--c-codeBorder);
+  border-radius:10px; padding:14px 16px;
+  font-family:var(--mono); font-size:13px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.code .copy{
+  font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  opacity:.55; cursor:pointer; flex:none;
+}
+.code .copy:hover{opacity:1;}
+
+/* ── detail ── */
+.back{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--c-textMute); padding:32px 0 20px; cursor:pointer;
+}
+.back:hover{color:var(--c-text);}
+.dhead{display:flex; gap:18px; align-items:flex-start;}
+.dhead .glyph{width:60px; height:60px; border-radius:15px; font-size:22px;}
+.dtitle{font-family:var(--mono); font-size:26px; font-weight:500; letter-spacing:-0.02em; margin:0;}
+.dsub{font-family:var(--serif); font-size:20px; color:var(--c-textSec); margin:4px 0 0; font-style:italic;}
+.dmeta{
+  display:flex; gap:0; flex-wrap:wrap; margin:22px 0 0;
+  border-top:1px solid var(--c-borderLight); border-bottom:1px solid var(--c-borderLight);
+}
+.dmeta div{padding:12px 22px 12px 0; margin-right:22px; border-right:1px solid var(--c-borderLight);}
+.dmeta div:last-child{border-right:0;}
+.dmeta dt{
+  font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--c-textMute); margin:0 0 3px;
+}
+.dmeta dd{margin:0; font-size:14px; font-weight:500;}
+
+.warn{
+  margin:24px 0 0; border:1px solid var(--c-errorBorder); background:var(--c-errorSoft);
+  border-radius:12px; padding:14px 16px; display:flex; gap:12px;
+}
+.warn .ic{flex:none; color:var(--c-errorText); font-size:15px; line-height:1.4;}
+.warn h4{margin:0 0 3px; font-size:14px; font-weight:700; color:var(--c-errorText);}
+.warn p{margin:0; font-size:13px; color:var(--c-textSec); line-height:1.5;}
+
+.sec{margin-top:36px;}
+.sec > h2{
+  font-family:var(--mono); font-size:11px; font-weight:500;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--c-textMute);
+  margin:0 0 12px; padding-bottom:8px; border-bottom:1px solid var(--c-borderLight);
+  display:flex; justify-content:space-between; align-items:baseline;
+}
+.sec > h2 .side{text-transform:none; letter-spacing:0; font-family:var(--sans); font-size:12px;}
+
+.card{background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px;}
+
+/* rendered SKILL.md */
+.md{padding:22px 26px 26px; font-size:15px; line-height:1.65;}
+.md h1{font-family:var(--serif); font-size:26px; font-weight:600; margin:0 0 14px;}
+.md h2{font-family:var(--serif); font-size:19px; font-weight:600; margin:24px 0 8px;}
+.md p{margin:0 0 12px; color:var(--c-textSec);}
+.md ul{margin:0 0 12px; padding-left:20px; color:var(--c-textSec);}
+.md li{margin-bottom:5px;}
+.md code{font-family:var(--mono); font-size:13px; background:var(--c-accentSoft); padding:1px 5px; border-radius:4px; color:var(--c-text);}
+.md .fm{
+  font-family:var(--mono); font-size:12px; line-height:1.6;
+  background:var(--c-surfaceWarm); border:1px solid var(--c-borderLight);
+  border-radius:8px; padding:12px 14px; margin:0 0 20px;
+  color:var(--c-textSec); white-space:pre-wrap; word-break:break-word;
+}
+.md .fm b{color:var(--c-text); font-weight:500;}
+.fade{position:relative;}
+.fade::after{
+  content:""; position:absolute; left:1px; right:1px; bottom:1px; height:90px;
+  background:linear-gradient(to bottom, transparent, var(--c-surface));
+  border-radius:0 0 12px 12px; pointer-events:none;
+}
+.expand{
+  position:absolute; bottom:16px; left:50%; transform:translateX(-50%); z-index:2;
+  font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  background:var(--c-surface); border:1px solid var(--c-border); color:var(--c-textSec);
+  padding:6px 14px; border-radius:999px; cursor:pointer;
+}
+
+/* file tree */
+.tree{padding:10px 8px; font-family:var(--mono); font-size:13px;}
+.f{
+  display:flex; align-items:center; gap:10px;
+  padding:6px 14px; border-radius:7px; color:var(--c-textSec);
+}
+.f:hover{background:var(--c-surfaceWarm);}
+.f .p{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.f .sz{font-size:11px; color:var(--c-textMute); flex:none;}
+.f.dir{color:var(--c-text);}
+.f.exec .p{color:var(--c-errorText);}
+.f .exec-tag{
+  font-size:9px; letter-spacing:.06em; padding:1px 5px; border-radius:3px; flex:none;
+  background:var(--c-errorSoft); color:var(--c-errorText); border:1px solid var(--c-errorBorder);
+}
+.ind{padding-left:30px;}
+
+/* versions */
+.v{
+  display:flex; align-items:center; gap:14px;
+  padding:13px 18px; border-bottom:1px solid var(--c-borderLight);
+}
+.v:last-child{border-bottom:0;}
+.v .num{font-family:var(--mono); font-size:13px; font-weight:500; width:58px; flex:none;}
+.v .when{font-size:13px; color:var(--c-textSec); flex:1;}
+.v .sha{font-family:var(--mono); font-size:11px; color:var(--c-textMute);}
+.v .diff{font-size:12px; color:var(--c-blue); cursor:pointer;}
+.v.cur{background:var(--c-surfaceWarm);}
+
+.footline{
+  margin-top:28px; display:flex; justify-content:space-between; align-items:center;
+  font-size:12px; color:var(--c-textMute);
+}
+.footline a{color:var(--c-textSec); text-decoration:underline; text-underline-offset:3px; cursor:pointer;}
+
+.hidden{display:none;}
+.note{
+  max-width:860px; margin:0 auto; padding:14px 24px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.04em;
+  color:var(--c-textMute); border-bottom:1px solid var(--c-border);
+  display:flex; gap:12px; align-items:center; justify-content:space-between;
+}
+@media (max-width:640px){
+  .phead h1{font-size:32px;}
+  .dmeta div{border-right:0; padding-right:0; margin-right:28px;}
+  .dhead .glyph{width:48px;height:48px;font-size:18px;border-radius:12px;}
+  .dtitle{font-size:22px;}
+}
+</style>
+</head>
+<body>
+
+<div class="note">
+  <span>MOCK · not wired to anything · Built at GrowthX design tokens</span>
+  <button class="ghost" onclick="toggleTheme()">dark / light</button>
+</div>
+
+<nav class="nav">
+  <div class="nav-in">
+    <div class="brand">Built <em>at</em> GrowthX</div>
+    <div class="nav-links">
+      <a>Built</a><a>Building</a><a>Builders</a><a class="on">Skills</a><a>Cities</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ INDEX ═══════════ -->
+<main class="wrap" id="index">
+  <div class="phead">
+    <h1>Skills</h1>
+    <p>Agent skills built by GrowthX members. Install one into Claude or Codex with the same <code style="font-family:var(--mono);font-size:14px">npx skills</code> command you already use — no login, no new tool.</p>
+  </div>
+
+  <div class="code" style="margin-bottom:22px">
+    <span>npx skills add built.growthx.club --list</span>
+    <span class="copy">copy</span>
+  </div>
+
+  <div class="searchbar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input placeholder="What do you want the agent to be better at?" />
+    <kbd>/</kbd>
+  </div>
+
+  <div class="pills">
+    <span class="pill on">All</span>
+    <span class="pill">frontend</span>
+    <span class="pill">writing</span>
+    <span class="pill">review</span>
+    <span class="pill">convex</span>
+    <span class="pill">design</span>
+    <span class="pill">research</span>
+    <span class="pill">ops</span>
+  </div>
+
+  <div class="bundle">
+    <div class="bundle-head">
+      <span class="bundle-title">In your Build Sprint bundle</span>
+      <span class="bundle-sub">11 skills · already installed if you ran the setup command</span>
+    </div>
+    <div id="bundleRows"></div>
+    <div class="bundle-more">Show all 11</div>
+  </div>
+
+  <div class="sortrow">
+    <span class="count">From the community · 23 skills</span>
+    <div class="sorts"><span class="on">Most installed</span><span>Recently updated</span></div>
+  </div>
+
+  <div id="rows"></div>
+
+  <div class="cta">
+    <h3>Built one yourself?</h3>
+    <p>Publish it from the terminal. Your agent reads the folder, you confirm, it's live.</p>
+    <div class="code"><span>/growthx-skills publish</span><span class="copy">copy</span></div>
+  </div>
+</main>
+
+<!-- ═══════════ DETAIL ═══════════ -->
+<main class="wrap hidden" id="detail">
+  <div class="back" onclick="show('index')">← All skills</div>
+
+  <div class="dhead">
+    <div class="glyph" style="background:linear-gradient(135deg,#B8962E,#B8962ECC)">GM</div>
+    <div style="flex:1;min-width:0">
+      <h1 class="dtitle">grill-me</h1>
+      <p class="dsub">Interviews you until the plan is clear, before any code gets written.</p>
+    </div>
+  </div>
+
+  <div class="dmeta">
+    <div><dt>Publisher</dt><dd>GrowthX <span class="chip-official" style="margin-left:4px">Official</span></dd></div>
+    <div><dt>Installs</dt><dd>412</dd></div>
+    <div><dt>Version</dt><dd>1.3.0 · 4 days ago</dd></div>
+    <div><dt>Contents</dt><dd style="color:var(--c-green)">Prompt only</dd></div>
+    <div><dt>License</dt><dd>MIT</dd></div>
+  </div>
+
+  <div style="margin-top:26px">
+    <div class="code"><span>npx skills add built.growthx.club --skill grill-me -a claude-code -a codex</span><span class="copy">copy</span></div>
+    <div style="margin-top:8px;font-size:12px;color:var(--c-textMute)">
+      Writes to <code style="font-family:var(--mono)">.claude/skills/grill-me/</code> and
+      <code style="font-family:var(--mono)">.agents/skills/grill-me/</code>. Restart your session afterwards — skills only load at start.
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>SKILL.md <span class="side">the whole thing. read it before you install it.</span></h2>
+    <div class="card fade" style="position:relative">
+      <div class="md">
+        <div class="fm">--- <br><b>name:</b> grill-me<br><b>description:</b> Interview the user until the plan is clear, before any code gets written. Use when the user shares a new product idea or feature, or asks to build something whose person, problem, core action or scope is not already written down in an approved IDEA_SCOPE.md or scoping doc. Also use when they say "grill me", "poke holes", "stress-test this", "what am I missing", or seem unsure what to build. Skip small fixes, copy tweaks, and work an approved scoping doc already covers.<br>---</div>
+        <h1>Grill me</h1>
+        <p>Interview the user relentlessly until you both understand exactly what they are building. Do not write code or a plan until they confirm the interview is done.</p>
+        <h2>How to ask</h2>
+        <ul>
+          <li>One question at a time. Wait for the answer before asking the next.</li>
+          <li>Give your recommended answer with every question, so they can just say "yes".</li>
+          <li>Offer concrete choices ("email login or no login?"), never abstract ones ("what auth strategy?").</li>
+          <li>Plain words. If you use a technical term, explain it in the same sentence.</li>
+          <li>Only ask questions whose prerequisites are settled.</li>
+          <li>Facts are your job: if something can be found in the project files, look it up instead of asking. Decisions are theirs.</li>
+        </ul>
+        <h2>What to cover</h2>
+        <p>Person, problem, core action, scope, and what "done" looks like on day fourteen…</p>
+      </div>
+      <button class="expand">Show all 148 lines</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Files <span class="side">2 files · 9.6 KB</span></h2>
+    <div class="card">
+      <div class="tree">
+        <div class="f dir"><span>▾</span><span class="p">grill-me/</span></div>
+        <div class="f ind"><span>◻</span><span class="p">SKILL.md</span><span class="sz">7.1 KB</span></div>
+        <div class="f ind"><span>◻</span><span class="p">agents/openai.yaml</span><span class="sz">2.5 KB</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Versions</h2>
+    <div class="card">
+      <div class="v cur"><span class="num">1.3.0</span><span class="when">4 days ago · GrowthX</span><span class="sha">sha256:9f2c…41ab</span><span class="diff">diff</span></div>
+      <div class="v"><span class="num">1.2.0</span><span class="when">18 Aug 2026 · GrowthX</span><span class="sha">sha256:1d07…c8e2</span><span class="diff">diff</span></div>
+      <div class="v"><span class="num">1.0.0</span><span class="when">2 Aug 2026 · GrowthX</span><span class="sha">sha256:77ba…0f31</span><span class="diff">—</span></div>
+    </div>
+  </div>
+
+  <div class="footline">
+    <span>Published by GrowthX · slug claimed 2 Aug 2026</span>
+    <a>Report this skill</a>
+  </div>
+
+  <!-- tier-2 variant, shown via toggle -->
+  <div class="sec">
+    <h2>Tier-2 variant <span class="side">what a skill shipping executables looks like</span></h2>
+    <div class="warn">
+      <span class="ic">▲</span>
+      <div>
+        <h4>This skill ships 9 executable files</h4>
+        <p>It can run commands on your machine when your agent invokes it. Nothing here is reviewed by GrowthX before it goes live — read <code style="font-family:var(--mono)">scripts/</code> below and the SKILL.md above before you install.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="tree">
+        <div class="f dir"><span>▾</span><span class="p">impeccable/</span></div>
+        <div class="f ind"><span>◻</span><span class="p">SKILL.md</span><span class="sz">22 KB</span></div>
+        <div class="f ind exec"><span>▸</span><span class="p">scripts/impeccable</span><span class="exec-tag">exec</span><span class="sz">14 KB</span></div>
+        <div class="f ind exec"><span>▸</span><span class="p">scripts/live-browser.js</span><span class="exec-tag">exec</span><span class="sz">31 KB</span></div>
+        <div class="f ind"><span>◻</span><span class="p">scripts/modern-screenshot.umd.js</span><span class="sz">704 KB</span></div>
+        <div class="f ind"><span>◻</span><span class="p">agents/impeccable_finish_reviewer.toml</span><span class="sz">3 KB</span></div>
+        <div class="f ind"><span>◻</span><span class="p">UPSTREAM-LICENSE</span><span class="sz">1 KB</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SKILLS = [
+  {n:"grill-me", t:"GM", c:"#B8962E", d:"Interviews you until the plan is clear, before any code gets written.", by:"GrowthX", bi:"GX", bc:"#181710", i:412, tags:["planning","writing"], official:true},
+  {n:"art-direction", t:"AD", c:"#5B21B6", d:"Gives the project one visual point of view before it generates a single image asset.", by:"GrowthX", bi:"GX", bc:"#181710", i:288, tags:["design"], official:true},
+  {n:"checkpoint", t:"CP", c:"#2D7A3F", d:"Saves a working state you can get back to when the next hour goes sideways.", by:"GrowthX", bi:"GX", bc:"#181710", i:241, tags:["ops"], official:true},
+  {n:"growthx-skills", t:"GS", c:"#0080FF", d:"Publish your own skill to this registry, or search what other builders have shipped.", by:"GrowthX", bi:"GX", bc:"#181710", i:196, tags:["ops"], official:true},
+  {n:"changelog-voice", t:"CV", c:"#92400E", d:"Turns a messy git log into a changelog a customer will actually read. Kills the corporate filler.", by:"Ananya R.", bi:"AR", bc:"#B45309", i:126, tags:["writing"], isnew:true},
+  {n:"razorpay-checkout", t:"RC", c:"#0C2451", d:"Wires Razorpay orders, webhooks and the failure paths everyone forgets on the first pass.", by:"Karthik S.", bi:"KS", bc:"#047857", i:97, tags:["payments","backend"], scripts:true},
+  {n:"cold-dm", t:"CD", c:"#DC2626", d:"Writes the first ten outreach messages for your launch and tells you which ones are lazy.", by:"Meera J.", bi:"MJ", bc:"#5B21B6", i:83, tags:["growth","writing"], isnew:true},
+  {n:"ship-check", t:"SC", c:"#166534", d:"Walks the golden path logged-out on a phone viewport before you call anything live.", by:"Dev P.", bi:"DP", bc:"#1E40AF", i:71, tags:["review","ops"], scripts:true},
+];
+
+const BUNDLE = [
+  {n:"grill-me", d:"Interviews you until the plan is clear, before any code.", up:"GrowthX", ours:true},
+  {n:"impeccable", d:"A menu of UI passes against your live app.", up:"pbakaus/impeccable"},
+  {n:"frontend-design", d:"Tokens, type scale, spacing, component patterns.", up:"anthropics/skills"},
+  {n:"convex-expert", d:"Schemas, queries, mutations the way Convex wants them.", up:"get-convex/agent-skills"},
+  {n:"copywriting", d:"Landing page, pricing page, headlines.", up:"coreyhaines31/marketingskills"},
+];
+
+document.getElementById("bundleRows").innerHTML = BUNDLE.map(b => `
+  <div class="brow">
+    <span class="bn">${b.n}</span>
+    <span class="bd">${b.d}</span>
+    <span class="up${b.ours ? " ours" : ""}">${b.ours ? "◆ " : ""}${b.up}</span>
+  </div>`).join("");
+
+document.getElementById("rows").innerHTML = SKILLS.map(s => `
+  <div class="row" onclick="show('detail')">
+    <div class="glyph" style="background:linear-gradient(135deg,${s.c},${s.c}CC)">${s.t}</div>
+    <div class="row-main">
+      <div class="row-top">
+        <span class="sname">${s.n}</span>
+        ${s.official ? '<span class="chip-official">Official</span>' : ''}
+        ${s.isnew ? '<span class="chip-new">new</span>' : ''}
+        ${s.scripts ? '<span class="chip-scripts">⚡ scripts</span>' : ''}
+      </div>
+      <div class="sdesc">${s.d}</div>
+      <div class="meta">
+        <span class="by"><span class="av" style="background:${s.bc}">${s.bi}</span>${s.by}</span>
+        <span class="dot">·</span>
+        <span class="installs">${s.i} installs</span>
+        <span class="dot">·</span>
+        ${s.tags.map(t => `<span class="tag">${t}</span>`).join("")}
+      </div>
+    </div>
+  </div>`).join("");
+
+function show(id){
+  document.getElementById("index").classList.toggle("hidden", id !== "index");
+  document.getElementById("detail").classList.toggle("hidden", id !== "detail");
+  window.scrollTo(0,0);
+}
+function toggleTheme(){
+  const el = document.documentElement;
+  el.dataset.theme = el.dataset.theme === "dark" ? "light" : "dark";
+}
+</script>
+</body>
+</html>
