@@ -9,11 +9,12 @@ import SkillMarkdown from "@/components/SkillMarkdown";
 
 const REPORT_EMAIL = "support@growthx.club";
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  const flags = await fetchSkillsFlags();
+export async function loader({ params, request }: LoaderFunctionArgs) {
+  const cookie = request.headers.get("cookie");
+  const flags = await fetchSkillsFlags(cookie);
   if (!flags.marketplaceEnabled) throw new Response("Not Found", { status: 404 });
 
-  const detail = await fetchSkillDetail(params.slug!);
+  const detail = await fetchSkillDetail(params.slug!, cookie);
   if (!detail) throw new Response("Not Found", { status: 404 });
   return detail;
 }

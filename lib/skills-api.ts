@@ -11,22 +11,29 @@ const MOCK_MODE =
   ((typeof import.meta !== "undefined" ? import.meta.env?.VITE_MOCK_MODE : undefined) ||
     (typeof process !== "undefined" ? process.env?.VITE_MOCK_MODE : undefined)) === "true";
 
-/** Unauthenticated read against gx-backend, usable from a loader or the browser. */
-async function bxRead(path: string): Promise<Response | null> {
+/**
+ * Read against gx-backend, usable from a loader or the browser. Feature flags are
+ * resolved per user, so a loader must hand in the request's Cookie header — server-side
+ * fetch has no cookie jar, and without it every SSR read is anonymous.
+ */
+async function bxRead(path: string, cookie?: string | null): Promise<Response | null> {
   if (MOCK_MODE) {
     const mocked = mockBxApi(path);
     if (mocked) return mocked;
   }
   try {
-    return await fetch(`${API_BASE}/bx${path}`);
+    return await fetch(`${API_BASE}/bx${path}`, {
+      credentials: "include",
+      headers: cookie ? { cookie } : undefined,
+    });
   } catch {
     return null;
   }
 }
 
 /** A flag we cannot read counts as off — a failed fetch closes the surface, never opens it. */
-export async function fetchSkillsFlags(): Promise<SkillsFlags> {
-  const res = await bxRead("/me");
+export async function fetchSkillsFlags(cookie?: string | null): Promise<SkillsFlags> {
+  const res = await bxRead("/me", cookie);
   if (!res || !res.ok) return { marketplaceEnabled: false, publishEnabled: false };
   try {
     const data = await res.json();
@@ -69,8 +76,8 @@ export interface SkillsResult {
   skills: Skill[];
 }
 
-export async function fetchSkills(query: SkillsQuery = {}): Promise<SkillsResult> {
-  const res = await bxRead(`/skills${skillsQueryString(query)}`);
+export async function fetchSkills(query: SkillsQuery = {}, cookie?: string | null): Promise<SkillsResult> {
+  const res = await bxRead(`/skills${skillsQueryString(query)}`, cookie);
   if (!res || !res.ok) return { ok: false, skills: [] };
   try {
     const data = await res.json();
@@ -82,15 +89,15 @@ export async function fetchSkills(query: SkillsQuery = {}): Promise<SkillsResult
 
 /** Walks the registry a page at a time, stopping at MAX_REGISTRY_PAGES so it can never hang. */
 export async function fetchAllSkills(
-  query: Omit<SkillsQuery, "limit" | "offset"> = {}
+  query: Omit<SkillsQuery, "limit" | "offset"> = {},
+  cookie?: string | null
 ): Promise<SkillsResult> {
   const skills: Skill[] = [];
   for (let page = 0; page < MAX_REGISTRY_PAGES; page++) {
-    const result = await fetchSkills({
-      ...query,
-      limit: SKILLS_PAGE_LIMIT,
-      offset: page * SKILLS_PAGE_LIMIT,
-    });
+    const result = await fetchSkills(
+      { ...query, limit: SKILLS_PAGE_LIMIT, offset: page * SKILLS_PAGE_LIMIT },
+      cookie
+    );
     if (!result.ok) return { ok: false, skills: [] };
     skills.push(...result.skills);
     if (result.skills.length < SKILLS_PAGE_LIMIT) break;
@@ -98,8 +105,8 @@ export async function fetchAllSkills(
   return { ok: true, skills };
 }
 
-export async function fetchSkillDetail(slug: string): Promise<SkillDetail | null> {
-  const res = await bxRead(`/skills/${encodeURIComponent(slug)}`);
+export async function fetchSkillDetail(slug: string, cookie?: string | null): Promise<SkillDetail | null> {
+  const res = await bxRead(`/skills/${encodeURIComponent(slug)}`, cookie);
   if (!res || !res.ok) return null;
   try {
     const data = await res.json();

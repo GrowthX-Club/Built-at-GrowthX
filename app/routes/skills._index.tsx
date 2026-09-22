@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLoaderData } from "react-router";
-import type { MetaFunction } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { C, T, type Skill } from "@/types";
 import { fetchSkills, fetchSkillsFlags, SKILLS_PAGE_LIMIT } from "@/lib/skills-api";
 import { BUNDLE_SKILLS, matchesBundleSkill } from "@/lib/skills-bundle";
@@ -24,11 +24,12 @@ export const meta: MetaFunction = () => [
   { tagName: "link", rel: "canonical", href: "https://built.growthx.club/skills" },
 ];
 
-export async function loader() {
-  const flags = await fetchSkillsFlags();
+export async function loader({ request }: LoaderFunctionArgs) {
+  const cookie = request.headers.get("cookie");
+  const flags = await fetchSkillsFlags(cookie);
   if (!flags.marketplaceEnabled) throw new Response("Not Found", { status: 404 });
 
-  const registry = await fetchSkills({ sort: "installs", limit: SKILLS_PAGE_LIMIT });
+  const registry = await fetchSkills({ sort: "installs", limit: SKILLS_PAGE_LIMIT }, cookie);
   return { skills: registry.skills, loadFailed: !registry.ok, publishEnabled: flags.publishEnabled };
 }
 
