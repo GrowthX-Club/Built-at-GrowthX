@@ -62,6 +62,9 @@ export default function SettingsPage() {
   // OpenClaw guide
   const [guideExpanded, setGuideExpanded] = useState(false);
 
+  // Skills publishing (hidden until the flag opens)
+  const [publishEnabled, setPublishEnabled] = useState(false);
+
   // ---- Data loading ----
 
   const loadKeys = useCallback(() => {
@@ -79,6 +82,8 @@ export default function SettingsPage() {
     bxApi("/me")
       .then(r => r.json())
       .then(d => {
+        // a flag we cannot read counts as off
+        setPublishEnabled(d?.flags?.skills_publish_enabled === true);
         if (d.user) {
           const u = normalizeUser(d.user);
           setUser(u);
@@ -170,6 +175,13 @@ export default function SettingsPage() {
           <p style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
             Manage API keys for OpenClaw and other integrations.
           </p>
+          {publishEnabled && (
+            <p style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)", marginTop: 8 }}>
+              The same key publishes agent skills — run <code style={{ fontFamily: "var(--mono)" }}>/growthx-skills publish</code>{" "}
+              with <code style={{ fontFamily: "var(--mono)" }}>GROWTHX_API_KEY</code> set, then find it on{" "}
+              <a href="/skills" style={{ color: C.textSec, textDecoration: "underline", textUnderlineOffset: 3 }}>Skills</a>.
+            </p>
+          )}
         </div>
 
         {userLoading ? (

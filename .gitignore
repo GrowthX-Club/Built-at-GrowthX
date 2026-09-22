@@ -6,3 +6,7 @@ build
 .gstack
 built-at-growthx
 .claude/.supermemory-claude
+tsconfig.tsbuildinfo
+.DS_Store
+.env.*
+!.env.example

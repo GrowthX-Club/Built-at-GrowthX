@@ -16,6 +16,7 @@ import memberRoutes from "./members";
 import cityRoutes from "./cities";
 import threadRoutes from "./threads";
 import apiKeyRoutes from "./api-keys";
+import skillRoutes from "./skills";
 import { bxAuthRoutes, gxAuthRoutes } from "./auth";
 
 // --- Aggregate routes ---
@@ -29,6 +30,7 @@ const bxRoutes: MockRoute[] = [
   ...cityRoutes,
   ...threadRoutes,
   ...apiKeyRoutes,
+  ...skillRoutes,
 ];
 
 const gxRoutes: MockRoute[] = [...gxAuthRoutes];
