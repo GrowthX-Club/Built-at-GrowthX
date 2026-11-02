@@ -27,7 +27,7 @@ function ConnectButton() {
       onMouseEnter={e => { e.currentTarget.style.background = C.surfaceWarm; }}
       onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
     >
-      Connect GrowthX {"→"}
+      Connect GrowthX MCP {"→"}
     </a>
   );
 }
@@ -63,7 +63,7 @@ function pinnedGithubUrl(raw: string): string | null {
   }
 }
 
-/** The project page's box for a reviewed skill: use it through GrowthX, or install it in a coding agent. */
+/** The project page's box for a reviewed skill: install it in a coding agent, or use it through GrowthX MCP. */
 export function SkillUseBox({ skill }: { skill: ProjectSkill }) {
   const [copied, setCopied] = useState(false);
   const source = pinnedGithubUrl(skill.sourceUrl);
