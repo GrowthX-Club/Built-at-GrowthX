@@ -926,7 +926,7 @@ export default function ProjectDetailPage() {
           )}
 
           {/* Tech stack */}
-          <div style={{ marginBottom: 28 }}>
+          {p.stack.length > 0 && (<div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
             <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
             {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
@@ -968,7 +968,7 @@ export default function ProjectDetailPage() {
               })}
             </div>
             </div>
-          </div>
+          </div>)}
         </div>
 
         {/* DISCUSSION */}
