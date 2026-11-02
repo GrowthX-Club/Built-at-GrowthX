@@ -27,7 +27,7 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
 import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
-import { SkillUseBox } from "@/components/SkillUse";
+import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
 import ProjectIcon from "@/components/ProjectIcon";
 
@@ -784,7 +784,8 @@ export default function ProjectDetailPage() {
 
         {p.skill && (
           <div className="fade-up stagger-1">
-            <SkillUseBox skill={p.skill} />
+            {/* Keyed by the project, so the chosen tab doesn't carry over to the next skill on client navigation. */}
+            <SkillUseBox key={p.slug || String(p.id)} skill={p.skill} slug={p.slug || String(p.id)} />
           </div>
         )}
 
@@ -811,6 +812,9 @@ export default function ProjectDetailPage() {
               <RichTextDisplay description={p.buildProcess} />
             </div>
           )}
+
+          {/* The full skill, after the maker's own description of it */}
+          {p.skill && <div style={{ marginTop: 28 }}><SkillText key={p.slug || String(p.id)} skill={p.skill} /></div>}
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
@@ -923,7 +927,7 @@ export default function ProjectDetailPage() {
           )}
 
           {/* Tech stack */}
-          <div style={{ marginBottom: 28 }}>
+          {p.stack.length > 0 && (<div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
             <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
             {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
@@ -965,7 +969,7 @@ export default function ProjectDetailPage() {
               })}
             </div>
             </div>
-          </div>
+          </div>)}
         </div>
 
         {/* DISCUSSION */}

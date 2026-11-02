@@ -26,6 +26,8 @@ export default function HomePage() {
   const { openLoginDialog } = useLoginDialog();
   const [showSubmit, setShowSubmit] = useState(false);
   const [submitStep, setSubmitStep] = useState(0);
+  // One Submit button everywhere: it first asks whether this is a project or a skill.
+  const [submitKind, setSubmitKind] = useState<"choose" | "project">("choose");
   const [submitData, setSubmitData] = useState({
     name: "", tagline: "", description: "", buildProcess: "",
     stack: [] as string[], stackInput: "",
@@ -76,6 +78,7 @@ export default function HomePage() {
       return;
     }
     setShowSubmit(true);
+    setSubmitKind("choose");
     setSubmitStep(0);
     setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaFiles: [] });
     setSubmitError("");
@@ -270,6 +273,58 @@ export default function HomePage() {
               .submit-textarea::placeholder { color: ${C.textMute}; }
             `}</style>
 
+            {submitKind === "choose" && (
+              <div style={{ padding: "24px 28px 28px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: T.bodyLg, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>
+                    What are you submitting?
+                  </div>
+                  <button onClick={() => setShowSubmit(false)} aria-label="Close" style={{
+                    width: 32, height: 32, borderRadius: 32,
+                    border: `1px solid ${C.borderLight}`, background: "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", fontSize: T.bodyLg, color: C.textMute,
+                    transition: "all 0.12s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.borderLight; e.currentTarget.style.color = C.textMute; }}
+                  >{"×"}</button>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+                  {([
+                    {
+                      key: "project",
+                      title: "A project",
+                      body: "Something you built that people use: an app, a website or a tool. It gets its own page where members vote and comment.",
+                      go: () => setSubmitKind("project"),
+                    },
+                    {
+                      key: "skill",
+                      title: "A skill",
+                      body: "Instructions that teach an AI assistant a task, as a folder with a SKILL.md file. GrowthX checks it, then anyone can add it to Claude, ChatGPT, Claude Code or Codex.",
+                      go: () => { setShowSubmit(false); navigate("/skills/new"); },
+                    },
+                  ] as const).map(o => (
+                    <button key={o.key} onClick={o.go} style={{
+                      display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left",
+                      padding: "16px 18px", borderRadius: 14, border: `1px solid ${C.border}`,
+                      background: C.surface, cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.surfaceWarm; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.surface; }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", marginBottom: 4 }}>{o.title}</div>
+                        <div style={{ fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.55 }}>{o.body}</div>
+                      </div>
+                      <span style={{ fontSize: T.bodyLg, color: C.textMute }}>{"→"}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {submitKind === "project" && (<>
             {/* Progress bar */}
             <div style={{ height: 3, background: C.borderLight }}>
               <div style={{
@@ -860,6 +915,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+            </>)}
           </div>
         </div>, document.body
       )}

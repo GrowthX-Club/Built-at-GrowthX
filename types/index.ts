@@ -142,9 +142,39 @@ export interface Project {
 
 export interface ProjectSkill {
   name: string;
-  /** The skill's folder on GitHub at the reviewed commit. */
-  sourceUrl: string;
+  /** The skill's folder on GitHub at the reviewed commit, when it came from GitHub. */
+  sourceUrl?: string;
   reviewedAt: string;
+  /** The full SKILL.md text; only the project page carries it, never the lists. */
+  instructions?: string;
+  files: { path: string; size: number }[];
+  downloads: number;
+  version?: number;
+  /** Whether a downloadable zip exists (Claude and ChatGPT upload it). */
+  hasBundle: boolean;
+  category?: string;
+}
+
+/** A member's skill upload while GrowthX checks it (GET /bx/skills/submissions). */
+export interface SkillSubmission {
+  id: string;
+  status: "pending" | "approved" | "sent_back";
+  name: string;
+  /** The listing's title and one-line summary; null means the backend makes them from SKILL.md. */
+  title: string | null;
+  tagline: string | null;
+  description: string;
+  category: string;
+  files: { path: string; size: number }[];
+  sourceUrl: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+  reviewedAt: string | null;
+  projectSlug: string | null;
+  instructions?: string;
+  /** Every file in the upload with its text (null for binary files); only the single-submission read has it. */
+  contents?: { path: string; text: string | null }[];
+  user?: { id: string; name: string; avatarUrl?: string };
 }
 
 export interface BuildingProject {
@@ -461,10 +491,59 @@ export function normalizeProject(p: Record<string, unknown>): Project {
   };
 }
 
+type RawFile = { path?: string; size?: number };
+const normalizeFiles = (files: unknown) =>
+  (Array.isArray(files) ? (files as RawFile[]) : [])
+    .filter(f => typeof f?.path === "string")
+    .map(f => ({ path: f.path as string, size: Number(f.size) || 0 }));
+
 function normalizeSkill(raw: unknown): ProjectSkill | undefined {
-  const s = raw as { name?: string; source_url?: string; reviewed_at?: string } | null | undefined;
-  if (!s?.name || !s.source_url || !s.reviewed_at) return undefined;
-  return { name: s.name, sourceUrl: s.source_url, reviewedAt: s.reviewed_at };
+  const s = raw as {
+    name?: string; source_url?: string | null; reviewed_at?: string | null; instructions?: string;
+    files?: unknown; downloads?: number; version?: number; has_bundle?: boolean; category?: string;
+  } | null | undefined;
+  if (!s?.name || !s.reviewed_at) return undefined;
+  return {
+    name: s.name,
+    sourceUrl: s.source_url || undefined,
+    reviewedAt: s.reviewed_at,
+    instructions: s.instructions || undefined,
+    files: normalizeFiles(s.files),
+    downloads: Number(s.downloads) || 0,
+    version: s.version,
+    hasBundle: !!s.has_bundle,
+    category: s.category || undefined,
+  };
+}
+
+export function normalizeSubmission(raw: Record<string, unknown>): SkillSubmission {
+  const u = raw.user as { _id?: string; name?: { first?: string; last?: string }; display_picture?: string } | undefined;
+  return {
+    id: String(raw._id ?? ""),
+    status: (["pending", "approved", "sent_back"].includes(raw.status as string) ? raw.status : "pending") as SkillSubmission["status"],
+    name: String(raw.name ?? ""),
+    title: (raw.title as string) || null,
+    tagline: (raw.tagline as string) || null,
+    description: String(raw.description ?? ""),
+    category: String(raw.category ?? ""),
+    files: normalizeFiles(raw.files),
+    sourceUrl: (raw.source_url as string) || null,
+    reviewNote: (raw.review_note as string) || null,
+    createdAt: String(raw.created_at ?? ""),
+    reviewedAt: (raw.reviewed_at as string) || null,
+    projectSlug: (raw.project_slug as string) || null,
+    instructions: (raw.instructions as string) || undefined,
+    contents: Array.isArray(raw.contents)
+      ? (raw.contents as { path?: string; text?: string | null }[])
+          .filter(c => typeof c?.path === "string")
+          .map(c => ({ path: c.path as string, text: typeof c.text === "string" ? c.text : null }))
+      : undefined,
+    user: u ? {
+      id: String(u._id ?? ""),
+      name: `${u.name?.first ?? ""} ${u.name?.last ?? ""}`.trim() || "A GrowthX member",
+      avatarUrl: u.display_picture || undefined,
+    } : undefined,
+  };
 }
 
 const VALID_TRACKS = new Set<NonNullable<ProjectTrack>>(['virality', 'revenue', 'maas']);

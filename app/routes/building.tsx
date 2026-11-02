@@ -150,13 +150,15 @@ export default function BuildingPage() {
                 <button
                   onClick={() => navigate("/?submit=1")}
                   style={{
-                    width: 32, height: 32, borderRadius: 32,
+                    height: 32, padding: "0 12px", borderRadius: 32,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec, fontFamily: "var(--sans)",
                     transition: "all 0.12s", flexShrink: 0,
                   }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+                  Submit
                 </button>
                 {userLoading ? (
                   <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
@@ -214,10 +216,10 @@ export default function BuildingPage() {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/?submit=1")}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  {isTablet ? "" : "Submit your project"}
+                  {isTablet ? "" : "Submit"}
                 </button>
                 {userLoading ? (
                   <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
@@ -308,15 +310,6 @@ export default function BuildingPage() {
                   color: pathname === t.href ? C.text : C.textSec, fontFamily: "var(--sans)", textAlign: "left",
                 }}>{t.label}</button>
               ))}
-              <div style={{ height: 1, background: C.borderLight, margin: "8px 6px" }} />
-              <button onClick={() => { setMobileMenuOpen(false); navigate("/"); }} style={{
-                padding: "12px 14px", border: "none", background: "none", borderRadius: 10, cursor: "pointer",
-                fontSize: T.body, fontWeight: 500, color: C.textSec, fontFamily: "var(--sans)", textAlign: "left",
-                display: "flex", alignItems: "center", gap: 10,
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                Submit your project
-              </button>
             </div>
           </div>
         </>, document.body

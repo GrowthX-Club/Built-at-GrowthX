@@ -1,11 +1,11 @@
-import type { MetaFunction } from "react-router";
-import { C } from "@/types";
+import { type MetaFunction } from "react-router";
+import { C, T } from "@/types";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import ProjectListView from "@/components/ProjectListView";
 import { ConnectCard } from "@/components/SkillUse";
 
 const DESCRIPTION =
-  "Skills GrowthX members built to teach AI a job they know. Install any of them in Claude Code or Codex in one line.";
+  "Skills GrowthX members built to teach AI a job they know. Add any of them to Claude, ChatGPT, Claude Code or Codex.";
 
 export const meta: MetaFunction = () => [
   { title: "Skills — Built at GrowthX" },
@@ -39,11 +39,11 @@ export default function SkillsPage() {
             headerSubtitle="Each one teaches your AI a job, the way a GrowthX member does it. GrowthX checks every skill before it's listed."
             skillsOnly
             featuredEnabled={false}
-            defaultSort="top"
+            defaultSort="installs"
             emptyState={{
               icon: "🧰",
               title: "No skills yet",
-              description: "Skills members build show up here once GrowthX has checked them.",
+              description: "Skills members upload show up here once GrowthX has checked them.",
             }}
           />
           {narrow && <div style={{ marginTop: 32 }}><ConnectCard /></div>}

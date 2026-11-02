@@ -134,7 +134,7 @@ export interface ProjectListViewProps {
     title: string;
     description: string;
   };
-  defaultSort?: "trending" | "new" | "top";
+  defaultSort?: "trending" | "new" | "top" | "installs";
   /** Bump this counter to force a reload (e.g. after a successful submit). */
   refreshKey?: number;
   /**
@@ -203,7 +203,7 @@ export default function ProjectListView({
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
-  const [sortMode, setSortMode] = useState<"trending" | "new" | "top">(defaultSort);
+  const [sortMode, setSortMode] = useState<"trending" | "new" | "top" | "installs">(defaultSort);
   const [selectedFilterKey, setSelectedFilterKey] = useState<string>(customFilters?.[0]?.key ?? "");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
@@ -461,6 +461,7 @@ export default function ProjectListView({
               );
             })
           : ([
+              ...(skillsOnly ? [{ key: "installs" as const, label: isMobile ? "Installs" : "Most installed" }] : []),
               { key: "trending" as const, label: "Trending" },
               { key: "new" as const, label: "New" },
               { key: "top" as const, label: "Top" },
