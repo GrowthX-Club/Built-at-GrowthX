@@ -151,6 +151,8 @@ export interface ProjectListViewProps {
    * selected tab's predicate. Used by /opencode and /sarvam.
    */
   customFilters?: FilterTab[];
+  /** Only projects that ship a skill GrowthX has reviewed (the Skills tab). */
+  skillsOnly?: boolean;
 }
 
 export interface FilterTab {
@@ -188,6 +190,7 @@ export default function ProjectListView({
   refreshKey = 0,
   featuredEnabled = true,
   customFilters,
+  skillsOnly = false,
 }: ProjectListViewProps) {
   const navigate = useNavigate();
   const { openLoginDialog } = useLoginDialog();
@@ -208,11 +211,12 @@ export default function ProjectListView({
   sortModeRef.current = sortMode;
   const usingCustomFilters = !!customFilters && customFilters.length > 0;
 
-  const filterSuffix = buildathonFilter
-    ? `&buildathon=${encodeURIComponent(buildathonFilter)}`
-    : excludeBuildathon
-      ? `&exclude_buildathon=${encodeURIComponent(excludeBuildathon)}`
-      : "";
+  const filterSuffix =
+    (buildathonFilter
+      ? `&buildathon=${encodeURIComponent(buildathonFilter)}`
+      : excludeBuildathon
+        ? `&exclude_buildathon=${encodeURIComponent(excludeBuildathon)}`
+        : "") + (skillsOnly ? "&has_skill=true" : "");
 
   const loadProjects = useCallback(() => {
     const requestedSort = sortMode;

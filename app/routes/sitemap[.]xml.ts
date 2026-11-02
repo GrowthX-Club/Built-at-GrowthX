@@ -9,6 +9,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const staticRoutes = [
     { url: SITE_URL, changefreq: "daily", priority: "1.0" },
     { url: `${SITE_URL}/projects`, changefreq: "daily", priority: "0.9" },
+    { url: `${SITE_URL}/skills`, changefreq: "weekly", priority: "0.8" },
     { url: `${SITE_URL}/builders`, changefreq: "weekly", priority: "0.7" },
     { url: `${SITE_URL}/building`, changefreq: "daily", priority: "0.6" },
     { url: `${SITE_URL}/cities`, changefreq: "weekly", priority: "0.5" },

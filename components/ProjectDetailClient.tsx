@@ -27,6 +27,7 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
 import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
+import { SkillUseBox } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
 import ProjectIcon from "@/components/ProjectIcon";
 
@@ -778,6 +779,12 @@ export default function ProjectDetailPage() {
               <span style={{ fontWeight: 600 }}>Draft</span>
               <span style={{ color: C.textSec, fontWeight: 400 }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
             </div>
+          </div>
+        )}
+
+        {p.skill && (
+          <div className="fade-up stagger-1">
+            <SkillUseBox skill={p.skill} />
           </div>
         )}
 
