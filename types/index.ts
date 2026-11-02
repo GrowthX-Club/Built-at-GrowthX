@@ -136,6 +136,15 @@ export interface Project {
   track?: ProjectTrack;
   /** Project accolade / ranking (nullable — server may not populate). */
   accolade?: ProjectAccolade;
+  /** A skill shipped with the project; only set once GrowthX has reviewed it. */
+  skill?: ProjectSkill;
+}
+
+export interface ProjectSkill {
+  name: string;
+  /** The skill's folder on GitHub at the reviewed commit. */
+  sourceUrl: string;
+  reviewedAt: string;
 }
 
 export interface BuildingProject {
@@ -448,7 +457,14 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     enabled: (p.enabled !== undefined ? p.enabled : true) as boolean,
     track: normalizeTrack(p.track),
     accolade: normalizeAccolade(p.accolade),
+    skill: normalizeSkill(p.skill),
   };
+}
+
+function normalizeSkill(raw: unknown): ProjectSkill | undefined {
+  const s = raw as { name?: string; source_url?: string; reviewed_at?: string } | null | undefined;
+  if (!s?.name || !s.source_url || !s.reviewed_at) return undefined;
+  return { name: s.name, sourceUrl: s.source_url, reviewedAt: s.reviewed_at };
 }
 
 const VALID_TRACKS = new Set<NonNullable<ProjectTrack>>(['virality', 'revenue', 'maas']);
