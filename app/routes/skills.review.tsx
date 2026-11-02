@@ -28,6 +28,36 @@ const date = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "
 
 type Outcome = { approved: boolean; slug: string | null };
 
+const pre = {
+  maxHeight: 480, overflow: "auto", margin: 0, padding: "14px 16px", borderRadius: 10,
+  background: C.bg, border: `1px solid ${C.borderLight}`, whiteSpace: "pre-wrap", overflowWrap: "anywhere",
+  fontSize: T.label, lineHeight: 1.55, fontFamily: "var(--mono)", color: C.text,
+} as const;
+
+/** One file of the upload, folded; SKILL.md starts open. The exact text, so the team reads what members install. */
+function FileView({ path, text, size }: { path: string; text: string | null; size?: number }) {
+  const [open, setOpen] = useState(/(^|\/)SKILL\.md$/.test(path));
+  return (
+    <div style={{ borderTop: `1px solid ${C.borderLight}` }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+          padding: "10px 0", background: "none", border: "none", cursor: "pointer", textAlign: "left",
+        }}
+      >
+        <span style={{ fontSize: T.bodySm, fontFamily: "var(--mono)", color: C.text, overflowWrap: "anywhere" }}>{path}</span>
+        <span style={{ ...meta2, flexShrink: 0 }}>{size !== undefined ? `${formatBytes(size)} · ` : ""}{open ? "Hide" : "Show"}</span>
+      </button>
+      {open && (
+        <div style={{ paddingBottom: 12 }}>
+          {text === null ? <p style={meta2}>Binary file, not shown</p> : <pre style={pre}>{text || "This file is empty."}</pre>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PendingSkill({ s, onDone }: { s: SkillSubmission; onDone: (o: Outcome) => void }) {
   const [full, setFull] = useState<SkillSubmission | null>(null);
   const [open, setOpen] = useState(false);
@@ -83,15 +113,19 @@ function PendingSkill({ s, onDone }: { s: SkillSubmission; onDone: (o: Outcome) 
       {open && (
         <div style={{ marginTop: 16 }}>
           <p style={{ ...body, marginBottom: 6 }}><strong style={{ color: C.text, fontWeight: 600 }}>{s.name}</strong>: {s.description}</p>
-          <p style={{ ...meta2, marginBottom: 10 }}>{s.files.map(f => `${f.path} (${formatBytes(f.size)})`).join(" · ")}</p>
-          {/* The exact text, front matter included: a reviewer should see what the agent will read. */}
-          <pre style={{
-            maxHeight: 480, overflow: "auto", margin: 0, padding: "14px 16px", borderRadius: 10,
-            background: C.bg, border: `1px solid ${C.borderLight}`, whiteSpace: "pre-wrap", overflowWrap: "anywhere",
-            fontSize: T.label, lineHeight: 1.55, fontFamily: "var(--mono)", color: C.text,
-          }}>
-            {full ? full.instructions || "This skill has no text." : "Loading…"}
-          </pre>
+          {/* Every file's exact text, front matter included: a reviewer should see what the agent will read. */}
+          {!full ? (
+            <p style={meta2}>Loading…</p>
+          ) : full.contents ? (
+            <div style={{ borderBottom: `1px solid ${C.borderLight}` }}>
+              {full.contents.map(c => (
+                <FileView key={c.path} path={c.path} text={c.text}
+                  size={s.files.find(f => f.path === c.path || f.path.endsWith(`/${c.path}`))?.size} />
+              ))}
+            </div>
+          ) : (
+            <pre style={pre}>{full.instructions || "This skill has no text."}</pre>
+          )}
 
           {sendingBack && (
             <div style={{ marginTop: 14 }}>

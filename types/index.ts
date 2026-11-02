@@ -172,6 +172,8 @@ export interface SkillSubmission {
   reviewedAt: string | null;
   projectSlug: string | null;
   instructions?: string;
+  /** Every file in the upload with its text (null for binary files); only the single-submission read has it. */
+  contents?: { path: string; text: string | null }[];
   user?: { id: string; name: string; avatarUrl?: string };
 }
 
@@ -531,6 +533,11 @@ export function normalizeSubmission(raw: Record<string, unknown>): SkillSubmissi
     reviewedAt: (raw.reviewed_at as string) || null,
     projectSlug: (raw.project_slug as string) || null,
     instructions: (raw.instructions as string) || undefined,
+    contents: Array.isArray(raw.contents)
+      ? (raw.contents as { path?: string; text?: string | null }[])
+          .filter(c => typeof c?.path === "string")
+          .map(c => ({ path: c.path as string, text: typeof c.text === "string" ? c.text : null }))
+      : undefined,
     user: u ? {
       id: String(u._id ?? ""),
       name: `${u.name?.first ?? ""} ${u.name?.last ?? ""}`.trim() || "A GrowthX member",
