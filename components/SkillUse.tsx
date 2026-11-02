@@ -24,7 +24,7 @@ function ConnectButton() {
       target="_blank"
       rel="noopener noreferrer"
       style={{
-        // Outlined, like Copy: GrowthX MCP is invite-only, so the downloads stay the main way in.
+        // Outlined, like Copy: the downloads stay the main way in.
         display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10,
         border: `1px solid ${C.border}`, background: C.surface, color: C.text, fontSize: T.bodySm, fontWeight: 600,
         fontFamily: "var(--sans)", textDecoration: "none", transition: "background 0.15s",
@@ -48,7 +48,7 @@ export function ConnectCard() {
       </p>
       <p style={{ ...body, marginBottom: 14 }}>
         <strong style={strong}>Use all of them in Claude</strong> through GrowthX MCP, with nothing to install. Connect
-        once, then ask Claude for the task and it uses the skill that fits. GrowthX MCP is in an invite-only beta.
+        once, then ask Claude for the task and it uses the skill that fits.
       </p>
       <ConnectButton />
     </div>
@@ -250,7 +250,7 @@ export function SkillUseBox({ skill, slug }: { skill: ProjectSkill; slug: string
         <div>
           <p style={{ ...body, marginBottom: 12 }}>
             With GrowthX MCP connected, Claude can use this skill with nothing to install. Ask for the task, or name the
-            skill. GrowthX MCP is in an invite-only beta.
+            skill.
           </p>
           <ConnectButton />
         </div>
