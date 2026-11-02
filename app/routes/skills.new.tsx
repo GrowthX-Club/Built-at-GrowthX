@@ -17,7 +17,10 @@ const SKILL_CATEGORIES = ["Product", "Design", "Engineering", "Marketing", "Sale
 // Same limits the backend enforces; checked here too so a member hears it before the upload.
 const MAX_BYTES = 4 * 1024 * 1024;
 const MAX_FILES = 200;
-const JUNK = /(^|\/)(\.DS_Store|__MACOSX|\.git|Thumbs\.db)(\/|$)/;
+// Same rule as the backend: any path part starting with "." (.git, .env, .DS_Store…), __MACOSX and node_modules
+// never go up. Folders are skipped before they're read.
+const skipName = (name: string) => name.startsWith(".") || name === "__MACOSX" || name === "node_modules";
+const isJunk = (path: string) => path.split("/").some(skipName);
 
 type Picked = { path: string; file: File };
 type Choice =
@@ -68,8 +71,12 @@ function walk(entry: FileSystemEntry, prefix: string): Promise<Picked[]> {
   const all: FileSystemEntry[] = [];
   return new Promise((resolve, reject) => {
     const next = () => reader.readEntries(async batch => {
-      if (batch.length) { all.push(...batch); next(); return; }
-      resolve((await Promise.all(all.map(e => walk(e, `${prefix}${entry.name}/`)))).flat());
+      if (batch.length) { all.push(...batch.filter(e => !skipName(e.name))); next(); return; }
+      try {
+        resolve((await Promise.all(all.map(e => walk(e, `${prefix}${entry.name}/`)))).flat());
+      } catch (e) {
+        reject(e);
+      }
     }, reject);
     next();
   });
@@ -84,7 +91,7 @@ async function toBase64(blob: Blob): Promise<string> {
 
 /** A folder's files → the preview, or the plain-words reason it can't be uploaded. */
 async function readFolder(all: Picked[]): Promise<Choice | string> {
-  const files = all.filter(f => !JUNK.test(f.path));
+  const files = all.filter(f => !isJunk(f.path));
   const skillMd = files.filter(f => /(^|\/)SKILL\.md$/.test(f.path)).sort((a, b) => a.path.length - b.path.length)[0];
   if (!skillMd) return "That folder has no SKILL.md file. A skill is a folder with SKILL.md at the top.";
   const size = files.reduce((n, f) => n + f.file.size, 0);
@@ -125,6 +132,7 @@ export default function UploadSkillPage() {
   const [listingTitle, setListingTitle] = useState("");
   const [tagline, setTagline] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState("");
@@ -158,15 +166,35 @@ export default function UploadSkillPage() {
     return () => clearNavOverride();
   }, [setNavOverride, clearNavOverride]);
 
+  // Title and one line belong to the source they were read from: a new folder prefills them, any other change
+  // of source clears them, so skill B can't go live under skill A's title.
   const take = async (next: Choice | string) => {
     setUploaded("");
+    const folder = typeof next !== "string" && next.kind === "folder" ? next : null;
+    setListingTitle(folder ? titleFrom(folder.name) : "");
+    setTagline(folder ? taglineFrom(folder.description) : "");
     if (typeof next === "string") { setError(next); setChoice(null); return; }
     setError("");
     setChoice(next);
     setGithub("");
-    if (next.kind === "folder") {
-      setListingTitle(titleFrom(next.name));
-      setTagline(taglineFrom(next.description));
+  };
+
+  const clearSource = () => {
+    setChoice(null);
+    setListingTitle("");
+    setTagline("");
+  };
+
+  // Reads a picked or dropped folder, with a visible state for big ones and a plain message if the browser can't.
+  const takeFolder = async (read: () => Promise<Picked[]>) => {
+    setReading(true);
+    setError("");
+    try {
+      take(await readFolder(await read()));
+    } catch {
+      take("Couldn't read that folder. Try choosing it again.");
+    } finally {
+      setReading(false);
     }
   };
 
@@ -183,8 +211,7 @@ export default function UploadSkillPage() {
       return;
     }
     // A dropped folder, or loose files from inside one.
-    const picked = (await Promise.all(items.map(entry => walk(entry, "")))).flat();
-    take(await readFolder(picked));
+    takeFolder(async () => (await Promise.all(items.filter(entry => !skipName(entry.name)).map(entry => walk(entry, "")))).flat());
   };
 
   const upload = async () => {
@@ -220,7 +247,7 @@ export default function UploadSkillPage() {
     }
   };
 
-  const ready = !!choice || /^https:\/\/github\.com\/\S+/.test(github.trim());
+  const ready = !reading && (!!choice || /^https:\/\/github\.com\/\S+/.test(github.trim()));
 
   if (!userLoaded) return null;
 
@@ -269,13 +296,14 @@ export default function UploadSkillPage() {
                 <button type="button" style={outlined} onClick={() => folderInput.current?.click()}>Choose folder</button>
                 <button type="button" style={outlined} onClick={() => zipInput.current?.click()}>Choose .zip</button>
               </div>
+              {reading && <p style={{ ...meta2, marginTop: 12 }}>Reading your folder…</p>}
               <input
                 ref={el => { folderInput.current = el; el?.setAttribute("webkitdirectory", ""); }}
                 type="file" multiple hidden
                 onChange={async e => {
                   const files = Array.from(e.target.files || []).map(file => ({ path: file.webkitRelativePath || file.name, file }));
                   e.target.value = "";
-                  if (files.length) take(await readFolder(files));
+                  if (files.length) takeFolder(async () => files);
                 }}
               />
               <input
@@ -300,7 +328,7 @@ export default function UploadSkillPage() {
                     </>
                   )}
                 </div>
-                <button type="button" onClick={() => setChoice(null)} style={{ ...outlined, padding: "4px 10px", fontSize: T.label }}>Remove</button>
+                <button type="button" onClick={clearSource} style={{ ...outlined, padding: "4px 10px", fontSize: T.label }}>Remove</button>
               </div>
             )}
 
@@ -316,7 +344,7 @@ export default function UploadSkillPage() {
                 id="skill-github"
                 type="url"
                 value={github}
-                onChange={e => { setGithub(e.target.value); if (e.target.value) setChoice(null); setUploaded(""); }}
+                onChange={e => { setGithub(e.target.value); clearSource(); setUploaded(""); }}
                 placeholder="https://github.com/you/repo/tree/main/my-skill"
                 style={input}
               />

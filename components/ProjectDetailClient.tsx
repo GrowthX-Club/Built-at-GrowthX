@@ -784,7 +784,8 @@ export default function ProjectDetailPage() {
 
         {p.skill && (
           <div className="fade-up stagger-1">
-            <SkillUseBox skill={p.skill} slug={p.slug || String(p.id)} />
+            {/* Keyed by the project, so the chosen tab doesn't carry over to the next skill on client navigation. */}
+            <SkillUseBox key={p.slug || String(p.id)} skill={p.skill} slug={p.slug || String(p.id)} />
           </div>
         )}
 
@@ -813,7 +814,7 @@ export default function ProjectDetailPage() {
           )}
 
           {/* The full skill, after the maker's own description of it */}
-          {p.skill && <div style={{ marginTop: 28 }}><SkillText skill={p.skill} /></div>}
+          {p.skill && <div style={{ marginTop: 28 }}><SkillText key={p.slug || String(p.id)} skill={p.skill} /></div>}
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>

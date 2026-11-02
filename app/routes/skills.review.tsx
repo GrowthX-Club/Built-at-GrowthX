@@ -67,11 +67,24 @@ function PendingSkill({ s, onDone }: { s: SkillSubmission; onDone: (o: Outcome) 
   const [error, setError] = useState("");
   const size = s.files.reduce((n, f) => n + f.size, 0);
 
+  // Approve and Send back stay off until every file is on screen.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const loadFiles = () => {
+    setLoadFailed(false);
+    bxApi(`/skills/submissions/${s.id}`)
+      .then(async r => {
+        const d = r.ok ? await r.json() : null;
+        const sub = d?.submission ? normalizeSubmission(d.submission) : null;
+        if (!sub?.contents?.length) throw new Error("no files");
+        setFull(sub);
+      })
+      .catch(() => setLoadFailed(true));
+  };
+  const loaded = !!full?.contents?.length;
+
   const toggle = () => {
     setOpen(o => !o);
-    if (!full) {
-      bxApi(`/skills/submissions/${s.id}`).then(r => r.json()).then(d => setFull(normalizeSubmission(d.submission || {}))).catch(() => setError("Couldn't load the skill. Try again."));
-    }
+    if (!loaded) loadFiles();
   };
 
   const review = async (approve: boolean) => {
@@ -88,6 +101,8 @@ function PendingSkill({ s, onDone }: { s: SkillSubmission; onDone: (o: Outcome) 
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { setError(d.message || "That didn't go through. Try again."); return; }
       onDone({ approved: approve, slug: normalizeSubmission(d.submission || {}).projectSlug });
+    } catch {
+      setError("That didn't go through. Try again.");
     } finally {
       setBusy(false);
     }
@@ -114,17 +129,20 @@ function PendingSkill({ s, onDone }: { s: SkillSubmission; onDone: (o: Outcome) 
         <div style={{ marginTop: 16 }}>
           <p style={{ ...body, marginBottom: 6 }}><strong style={{ color: C.text, fontWeight: 600 }}>{s.name}</strong>: {s.description}</p>
           {/* Every file's exact text, front matter included: a reviewer should see what the agent will read. */}
-          {!full ? (
+          {loadFailed ? (
+            <p style={{ ...body, color: C.errorText }}>
+              Couldn&apos;t load this upload&apos;s files.{" "}
+              <button onClick={loadFiles} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textDecoration: "underline", textUnderlineOffset: 2, font: "inherit" }}>Try again</button>
+            </p>
+          ) : !loaded ? (
             <p style={meta2}>Loading…</p>
-          ) : full.contents ? (
+          ) : (
             <div style={{ borderBottom: `1px solid ${C.borderLight}` }}>
-              {full.contents.map(c => (
+              {full!.contents!.map(c => (
                 <FileView key={c.path} path={c.path} text={c.text}
                   size={s.files.find(f => f.path === c.path || f.path.endsWith(`/${c.path}`))?.size} />
               ))}
             </div>
-          ) : (
-            <pre style={pre}>{full.instructions || "This skill has no text."}</pre>
           )}
 
           {sendingBack && (
@@ -147,13 +165,13 @@ function PendingSkill({ s, onDone }: { s: SkillSubmission; onDone: (o: Outcome) 
           <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
             {sendingBack ? (
               <>
-                <button onClick={() => review(false)} disabled={busy} style={primary}>{busy ? "Sending…" : "Send back"}</button>
+                <button onClick={() => review(false)} disabled={busy || !loaded} style={primary}>{busy ? "Sending…" : "Send back"}</button>
                 <button onClick={() => { setSendingBack(false); setError(""); }} style={outlined}>Cancel</button>
               </>
             ) : (
               <>
-                <button onClick={() => review(true)} disabled={busy || !full} style={{ ...primary, opacity: full ? 1 : 0.5 }}>{busy ? "Approving…" : "Approve"}</button>
-                <button onClick={() => setSendingBack(true)} style={outlined}>Send back</button>
+                <button onClick={() => review(true)} disabled={busy || !loaded} style={{ ...primary, opacity: loaded ? 1 : 0.5, cursor: loaded ? "pointer" : "default" }}>{busy ? "Approving…" : "Approve"}</button>
+                <button onClick={() => setSendingBack(true)} disabled={!loaded} style={{ ...outlined, opacity: loaded ? 1 : 0.5, cursor: loaded ? "pointer" : "default" }}>Send back</button>
               </>
             )}
           </div>
