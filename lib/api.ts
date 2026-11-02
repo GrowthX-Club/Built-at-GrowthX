@@ -1,6 +1,7 @@
 import { mockBxApi, mockGxApi } from './mock-api/index';
 
-const API_BASE = (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_URL : process.env.VITE_API_URL) || 'http://localhost:8000/api/v1';
+// Trimmed: the live value ends in a line break, which showed up inside the copyable install prompt.
+const API_BASE = ((typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_URL : process.env.VITE_API_URL) || 'http://localhost:8000/api/v1').trim();
 const MOCK_MODE = ((typeof import.meta !== 'undefined' ? import.meta.env?.VITE_MOCK_MODE : process.env.VITE_MOCK_MODE) === 'true');
 
 const TOKEN_KEY = 'bx_token';
