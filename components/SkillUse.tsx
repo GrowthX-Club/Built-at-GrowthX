@@ -40,8 +40,8 @@ export function ConnectCard() {
     <div style={card}>
       <div style={{ ...title, marginBottom: 8 }}>How to use them</div>
       <p style={{ ...body, marginBottom: 12 }}>
-        <strong style={strong}>Install one</strong> in Claude Code or Codex: copy the one-line install from the skill's
-        page.
+        <strong style={strong}>Install any of them</strong> in Claude Code or Codex: copy its one-line install from the
+        skill's page.
       </p>
       <p style={{ ...body, marginBottom: 14 }}>
         <strong style={strong}>Use all of them in Claude</strong> through GrowthX MCP, with nothing to install. Connect
