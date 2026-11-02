@@ -19,28 +19,30 @@ function ConnectButton() {
       target="_blank"
       rel="noopener noreferrer"
       style={{
-        display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10,
-        background: C.accent, color: C.accentFg, fontSize: T.bodySm, fontWeight: 600,
-        fontFamily: "var(--sans)", textDecoration: "none", transition: "opacity 0.15s",
+        // Outlined, like Copy: GrowthX MCP is invite-only, so the install line stays the main way in.
+        display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10,
+        border: `1px solid ${C.border}`, background: C.surface, color: C.text, fontSize: T.bodySm, fontWeight: 600,
+        fontFamily: "var(--sans)", textDecoration: "none", transition: "background 0.15s",
       }}
-      onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+      onMouseEnter={e => { e.currentTarget.style.background = C.surfaceWarm; }}
+      onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
     >
       Connect GrowthX {"→"}
     </a>
   );
 }
 
-/** The Skills page's side card: one connection gives an assistant every skill listed. */
+/** The Skills page's side card: the install works for anyone; GrowthX MCP is invite-only (mcp_access flag) for now. */
 export function ConnectCard() {
   return (
     <div style={card}>
-      <div style={{ ...title, marginBottom: 8 }}>Use them in Claude</div>
+      <div style={{ ...title, marginBottom: 8 }}>How to use them</div>
+      <p style={{ ...body, marginBottom: 12 }}>Each skill's page has a one-line install for Claude Code or Codex.</p>
       <p style={{ ...body, marginBottom: 14 }}>
-        Connect GrowthX to Claude once. When a task fits one of these skills, Claude uses it and tells you whose it is.
+        In Claude, through GrowthX MCP, which is in an invite-only beta: if it's on for you, connect once and Claude uses
+        these skills when a task fits.
       </p>
       <ConnectButton />
-      <p style={{ ...meta, marginTop: 14 }}>Using Claude Code or Codex? Each skill's page has a one-line install.</p>
     </div>
   );
 }
@@ -90,14 +92,6 @@ export function SkillUseBox({ skill }: { skill: ProjectSkill }) {
       <div style={{ ...title, marginBottom: 16 }}>Use this skill</div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-        <div>
-          <div style={{ ...body, color: C.text, fontWeight: 600, marginBottom: 4 }}>In Claude</div>
-          <p style={{ ...body, marginBottom: 12 }}>
-            Connect GrowthX once, then ask Claude for the task. It uses this skill and tells you it did.
-          </p>
-          <ConnectButton />
-        </div>
-
         {command && (
           <div>
             <div style={{ ...body, color: C.text, fontWeight: 600, marginBottom: 8 }}>In Claude Code or Codex</div>
@@ -128,6 +122,15 @@ export function SkillUseBox({ skill }: { skill: ProjectSkill }) {
             <p style={{ ...meta, marginTop: 8 }}>Installs the exact version GrowthX checked.</p>
           </div>
         )}
+
+        <div>
+          <div style={{ ...body, color: C.text, fontWeight: 600, marginBottom: 4 }}>In Claude, through GrowthX MCP</div>
+          <p style={{ ...body, marginBottom: 12 }}>
+            GrowthX MCP is in an invite-only beta. If it's on for you, connect once, then ask Claude for the task. It
+            uses this skill and tells you it did.
+          </p>
+          <ConnectButton />
+        </div>
       </div>
 
       <div style={{ ...meta, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${C.borderLight}` }}>
