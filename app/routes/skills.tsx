@@ -5,7 +5,7 @@ import ProjectListView from "@/components/ProjectListView";
 import { ConnectCard } from "@/components/SkillUse";
 
 const DESCRIPTION =
-  "Skills GrowthX members built to teach AI a job they know. Use any of them in Claude through GrowthX.";
+  "Skills GrowthX members built to teach AI a job they know. Install any of them in Claude Code or Codex in one line.";
 
 export const meta: MetaFunction = () => [
   { title: "Skills — Built at GrowthX" },
