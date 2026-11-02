@@ -37,6 +37,11 @@ export function bxApi(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}/bx${path}`, authHeaders(init));
 }
 
+/** A full URL for a plain link (e.g. a download) to a Built at GrowthX API path. */
+export function bxUrl(path: string): string {
+  return `${API_BASE}/bx${path}`;
+}
+
 export function gxApi(path: string, init?: RequestInit): Promise<Response> {
   if (MOCK_MODE) {
     const res = mockGxApi(path, init);

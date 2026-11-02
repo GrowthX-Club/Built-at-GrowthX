@@ -27,7 +27,7 @@ import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextDisplay from "@/components/RichTextDisplay";
 import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
-import { SkillUseBox } from "@/components/SkillUse";
+import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
 import ProjectIcon from "@/components/ProjectIcon";
 
@@ -784,7 +784,7 @@ export default function ProjectDetailPage() {
 
         {p.skill && (
           <div className="fade-up stagger-1">
-            <SkillUseBox skill={p.skill} />
+            <SkillUseBox skill={p.skill} slug={p.slug || String(p.id)} />
           </div>
         )}
 
@@ -811,6 +811,9 @@ export default function ProjectDetailPage() {
               <RichTextDisplay description={p.buildProcess} />
             </div>
           )}
+
+          {/* The full skill, after the maker's own description of it */}
+          {p.skill && <div style={{ marginTop: 28 }}><SkillText skill={p.skill} /></div>}
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>

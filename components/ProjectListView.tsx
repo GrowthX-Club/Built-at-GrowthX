@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import {
   C,
@@ -134,7 +134,7 @@ export interface ProjectListViewProps {
     title: string;
     description: string;
   };
-  defaultSort?: "trending" | "new" | "top";
+  defaultSort?: "trending" | "new" | "top" | "installs";
   /** Bump this counter to force a reload (e.g. after a successful submit). */
   refreshKey?: number;
   /**
@@ -153,6 +153,8 @@ export interface ProjectListViewProps {
   customFilters?: FilterTab[];
   /** Only projects that ship a skill GrowthX has reviewed (the Skills tab). */
   skillsOnly?: boolean;
+  /** A button beside the header (e.g. "Upload a skill"). */
+  headerAction?: ReactNode;
 }
 
 export interface FilterTab {
@@ -191,6 +193,7 @@ export default function ProjectListView({
   featuredEnabled = true,
   customFilters,
   skillsOnly = false,
+  headerAction,
 }: ProjectListViewProps) {
   const navigate = useNavigate();
   const { openLoginDialog } = useLoginDialog();
@@ -203,7 +206,7 @@ export default function ProjectListView({
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
   const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
-  const [sortMode, setSortMode] = useState<"trending" | "new" | "top">(defaultSort);
+  const [sortMode, setSortMode] = useState<"trending" | "new" | "top" | "installs">(defaultSort);
   const [selectedFilterKey, setSelectedFilterKey] = useState<string>(customFilters?.[0]?.key ?? "");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
@@ -405,7 +408,11 @@ export default function ProjectListView({
   return (
     <>
       {/* Header */}
-      <div className="fade-up" style={{ marginBottom: 36 }}>
+      <div className="fade-up" style={{
+        marginBottom: 36,
+        ...(headerAction ? { display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "flex-end", justifyContent: "space-between", gap: isMobile ? 16 : 24 } : {}),
+      }}>
+        <div>
         <h1 className="responsive-h1 hero-title" style={{
           fontSize: isMobile ? 28 : isTablet ? 36 : 44, fontWeight: 400,
           fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10,
@@ -415,6 +422,8 @@ export default function ProjectListView({
         <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
           {headerSubtitle}
         </p>
+        </div>
+        {headerAction}
       </div>
 
       {/* Sort / filter tabs */}
@@ -461,6 +470,7 @@ export default function ProjectListView({
               );
             })
           : ([
+              ...(skillsOnly ? [{ key: "installs" as const, label: isMobile ? "Installs" : "Most installed" }] : []),
               { key: "trending" as const, label: "Trending" },
               { key: "new" as const, label: "New" },
               { key: "top" as const, label: "Top" },
