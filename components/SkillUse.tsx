@@ -11,6 +11,8 @@ const card = {
 const title = { fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.3 } as const;
 const body = { fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.55 } as const;
 const meta = { fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", lineHeight: 1.4 } as const;
+// Same weight and colour as the "In Claude Code or Codex" label in the box below.
+const strong = { color: C.text, fontWeight: 600 } as const;
 
 function ConnectButton() {
   return (
@@ -37,10 +39,13 @@ export function ConnectCard() {
   return (
     <div style={card}>
       <div style={{ ...title, marginBottom: 8 }}>How to use them</div>
-      <p style={{ ...body, marginBottom: 12 }}>Each skill's page has a one-line install for Claude Code or Codex.</p>
+      <p style={{ ...body, marginBottom: 12 }}>
+        <strong style={strong}>Install one</strong> in Claude Code or Codex: copy the one-line install from the skill's
+        page.
+      </p>
       <p style={{ ...body, marginBottom: 14 }}>
-        In Claude, through GrowthX MCP, which is in an invite-only beta: if it's on for you, connect once and Claude uses
-        these skills when a task fits.
+        <strong style={strong}>Use all of them in Claude</strong> through GrowthX MCP, with nothing to install. Connect
+        once, then ask Claude for the task and it uses the skill that fits. GrowthX MCP is in an invite-only beta.
       </p>
       <ConnectButton />
     </div>
@@ -126,8 +131,8 @@ export function SkillUseBox({ skill }: { skill: ProjectSkill }) {
         <div>
           <div style={{ ...body, color: C.text, fontWeight: 600, marginBottom: 4 }}>In Claude, through GrowthX MCP</div>
           <p style={{ ...body, marginBottom: 12 }}>
-            GrowthX MCP is in an invite-only beta. If it's on for you, connect once, then ask Claude for the task. It
-            uses this skill and tells you it did.
+            With GrowthX MCP connected, Claude can use this skill with nothing to install. Ask for the task, or name the
+            skill. GrowthX MCP is in an invite-only beta.
           </p>
           <ConnectButton />
         </div>
