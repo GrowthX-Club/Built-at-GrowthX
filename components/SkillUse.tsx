@@ -127,7 +127,7 @@ function DownloadButton({ href }: { href: string }) {
     <a
       href={href}
       style={{
-        // Primary button, as "Submit your first project" in my-projects.tsx.
+        // Primary button: the accent fill of Continue in the home submit flow (_index.tsx).
         display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 10,
         background: C.accent, color: C.accentFg, fontSize: T.bodySm, fontWeight: 600,
         fontFamily: "var(--sans)", textDecoration: "none", transition: "opacity 0.15s",

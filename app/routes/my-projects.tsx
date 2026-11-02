@@ -305,14 +305,7 @@ export default function MyProjectsPage() {
             padding: "48px 32px", textAlign: "center",
             background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14,
           }}>
-            <p style={{ fontSize: T.bodyLg, color: C.textSec, marginBottom: 16 }}>You haven&apos;t submitted any projects yet.</p>
-            <button onClick={() => navigate("/?submit=1")} style={{
-              padding: "10px 24px", borderRadius: 10,
-              border: "none", background: C.accent, color: C.accentFg,
-              fontSize: T.body, fontWeight: 600, cursor: "pointer", fontFamily: "var(--sans)",
-            }}>
-              Submit your first project
-            </button>
+            <p style={{ fontSize: T.bodyLg, color: C.textSec }}>You haven&apos;t submitted any projects yet.</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

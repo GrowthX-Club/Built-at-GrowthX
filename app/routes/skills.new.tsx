@@ -27,7 +27,7 @@ type Choice =
   | { kind: "folder"; files: Picked[]; size: number; name: string; description: string }
   | { kind: "zip"; file: File };
 
-// Styles from SubmitModal.tsx (labels, inputs) and my-projects.tsx (page frame, cards, primary button).
+// Styles from SubmitModal.tsx (labels, inputs) and my-projects.tsx (page frame, cards).
 const label = { display: "block", fontSize: T.bodySm, fontWeight: 500, color: C.text, marginBottom: 6, fontFamily: "var(--sans)" } as const;
 const input = {
   width: "100%", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 12px", fontSize: T.body,
@@ -399,7 +399,7 @@ export default function UploadSkillPage() {
                 fontFamily: "var(--sans)", opacity: ready && !uploading ? 1 : 0.5,
               }}
             >
-              {uploading ? "Uploading…" : "Upload skill"}
+              {uploading ? "Submitting…" : "Submit"}
             </button>
           </div>
 
