@@ -249,7 +249,7 @@ export default function HomePage() {
         <header className="page-head">
           <h1 className="page-title">What the community shipped</h1>
           <p className="page-sub">Products built by the GrowthX community. Ranked by the people who build.</p>
-          <SearchBox value={query} onChange={setQuery} placeholder="Search projects, builders, companies or tools" />
+          <SearchBox value={query} onChange={setQuery} placeholder="Search projects, builders or tools" />
         </header>
 
         {!searching && (

@@ -86,7 +86,8 @@ type RawTag = { tag?: string; buildathon?: string; count?: number; first_at?: st
 type RawCategory = { category?: string; name?: string; count?: number };
 
 /**
- * GET /bx/collections when it is live; until then, totalCount per tag (and no categories).
+ * GET /bx/collections ({ buildathons: [{ tag, count, first_at, last_at }], categories: [{ category, count }] }) when it
+ * is live; until then, totalCount per tag and no categories (the chip row stays hidden).
  */
 export async function fetchCollectionStats(): Promise<CollectionStats> {
   try {
@@ -94,7 +95,7 @@ export async function fetchCollectionStats(): Promise<CollectionStats> {
     if (r.ok) {
       const d = await r.json();
       const tags: Record<string, TagStat> = {};
-      for (const t of (d.tags ?? d.collections ?? []) as RawTag[]) {
+      for (const t of (d.buildathons ?? d.tags ?? []) as RawTag[]) {
         const tag = t.tag ?? t.buildathon;
         if (tag) tags[tag] = { count: t.count ?? 0, firstAt: t.first_at, lastAt: t.last_at };
       }
