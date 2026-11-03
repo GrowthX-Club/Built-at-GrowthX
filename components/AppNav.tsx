@@ -16,7 +16,7 @@ import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import { useTheme } from "@/context/ThemeContext";
 import BuiltLogo from "@/components/BuiltLogo";
-import NotificationBell from "@/components/NotificationBell";
+import { Link } from "react-router";
 
 function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
@@ -51,10 +51,22 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
 
 const NAV_TABS = [
   { href: "/", label: "Projects" },
-  { href: "/skills", label: "Skills" },
+  { href: "/build-sprint", label: "Build Sprint" },
   { href: "/events", label: "Events" },
+  { href: "/skills", label: "Skills" },
   { href: "/builders", label: "Builders" },
 ];
+
+// Which tab a page belongs to (event pages sit under Events, Build Sprint has its own tab).
+function tabFor(pathname: string): string {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  if (p === "/" || p === "/projects") return "/";
+  if (p.startsWith("/build-sprint")) return "/build-sprint";
+  if (p.startsWith("/events") || p === "/opencode" || p === "/sarvam") return "/events";
+  if (p === "/skills") return "/skills";
+  if (p === "/builders") return "/builders";
+  return "";
+}
 
 export default function AppNav() {
   const router = useRouter();
@@ -72,7 +84,7 @@ export default function AppNav() {
   const [scrolled, setScrolled] = useState(false);
   const [showThemeTooltip, setShowThemeTooltip] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
+  const tabsRef = useRef<Record<string, HTMLAnchorElement | null>>({});
   const [underlineStyle, setUnderlineStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
 
   useEffect(() => { setPortalMounted(true); }, []);
@@ -108,17 +120,8 @@ export default function AppNav() {
   }, []);
 
   const updateUnderline = useCallback(() => {
-    const checkActive = (href: string) => {
-      if (href === "/") return pathname === "/" || pathname === "/projects";
-      return pathname === href;
-    };
-    const activeTab = NAV_TABS.find(t => checkActive(t.href));
-    if (activeTab) {
-      const el = tabsRef.current[activeTab.href];
-      if (el) {
-        setUnderlineStyle({ left: el.offsetLeft, width: el.offsetWidth });
-      }
-    }
+    const el = tabsRef.current[tabFor(pathname)];
+    setUnderlineStyle(el ? { left: el.offsetLeft, width: el.offsetWidth } : { left: 0, width: 0 });
   }, [pathname]);
 
   useLayoutEffect(() => {
@@ -138,10 +141,7 @@ export default function AppNav() {
     setShowProfileMenu(false);
   };
 
-  const isTabActive = (href: string) => {
-    if (href === "/") return pathname === "/" || pathname === "/projects";
-    return pathname === href;
-  };
+  const isTabActive = (href: string) => tabFor(pathname) === href;
 
   if (pathname.replace(/\/+$/, "") === "/sarvam") return null;
 
@@ -173,7 +173,6 @@ export default function AppNav() {
               )}
               <BuiltLogo height={36} onClick={() => router.push("/")} />
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {user && <NotificationBell />}
                 {voteState && showVoteInNav ? (
                   <button
                     onClick={voteState.onVote}
@@ -200,7 +199,7 @@ export default function AppNav() {
                       height: 32, padding: "0 12px", borderRadius: 32,
                       border: `1px solid ${C.border}`, background: C.surface,
                       cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-                      fontSize: T.bodySm, fontWeight: 550, color: C.textSec, fontFamily: "var(--sans)",
+                      fontSize: 13, fontWeight: 550, color: C.textSec, fontFamily: "var(--sans)",
                       transition: "all 0.12s", flexShrink: 0,
                     }}
                   >
@@ -217,15 +216,15 @@ export default function AppNav() {
                     </button>
                     {showProfileMenu && (
                       <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100 }}>
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 16, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/settings"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                        <button onClick={() => { setShowProfileMenu(false); router.push("/settings"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 16, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: T.body }}>{"\u2699\uFE0F"}</span> Settings
                         </button>
                         <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.errorText, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 16, fontWeight: 500, color: C.errorText, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
                         </button>
                       </div>
@@ -255,7 +254,7 @@ export default function AppNav() {
                       padding: "6px 14px", borderRadius: 8,
                       border: `1.5px solid ${C.accent}`,
                       background: voteState.hasVoted ? C.accent : C.surface,
-                      cursor: "pointer", fontSize: T.bodySm, fontWeight: 650,
+                      cursor: "pointer", fontSize: 16, fontWeight: 650,
                       fontFamily: "var(--sans)",
                       color: voteState.hasVoted ? C.accentFg : C.text,
                       transition: "all 0.3s ease",
@@ -270,8 +269,6 @@ export default function AppNav() {
                     <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
                   </button>
                 )}
-                {/* Notification bell — desktop, logged in only */}
-                {user && <NotificationBell />}
                 {/* Theme toggle — desktop only */}
                 <div style={{ position: "relative" }}>
                   <button
@@ -319,7 +316,7 @@ export default function AppNav() {
                 <button className="submit-btn" style={{
                   padding: "8px 18px", borderRadius: 10,
                   border: `1px solid ${C.border}`, background: C.surface,
-                  fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
+                  fontSize: 16, fontWeight: 550, color: C.textSec,
                   cursor: "pointer", fontFamily: "var(--sans)",
                   transition: "color 0.25s, border-color 0.25s, box-shadow 0.25s",
                   display: "flex", alignItems: "center", gap: 6,
@@ -341,7 +338,7 @@ export default function AppNav() {
                     <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                       <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
                       <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
-                      <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
+                      <span aria-hidden="true" style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
                     </button>
                     {showProfileMenu && (
                       <div style={{
@@ -351,7 +348,7 @@ export default function AppNav() {
                       }}>
                         <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
+                          cursor: "pointer", fontSize: 16, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
@@ -363,7 +360,7 @@ export default function AppNav() {
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={() => { setShowProfileMenu(false); router.push("/settings"); }} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
+                          cursor: "pointer", fontSize: 16, fontWeight: 500, color: C.text,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
@@ -375,7 +372,7 @@ export default function AppNav() {
                         <div style={{ height: 1, background: C.borderLight }} />
                         <button onClick={handleSignOut} style={{
                           width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.errorText,
+                          cursor: "pointer", fontSize: 16, fontWeight: 500, color: C.errorText,
                           fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
                           transition: "background 0.1s",
                         }}
@@ -391,7 +388,7 @@ export default function AppNav() {
                   <button onClick={handleSignIn} style={{
                     padding: "8px 18px", borderRadius: 10,
                     border: `1px solid ${C.border}`, background: C.surface,
-                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
+                    fontSize: 16, fontWeight: 550, color: C.textSec,
                     cursor: "pointer", fontFamily: "var(--sans)",
                     transition: "all 0.12s",
                   }}
@@ -436,21 +433,21 @@ export default function AppNav() {
                       {NAV_TABS.map(t => {
                         const active = isTabActive(t.href);
                         return (
-                          <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => { router.push(t.href); window.scrollTo(0, 0); }} style={{
-                            padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
+                          <Link key={t.href} to={t.href} prefetch="intent" ref={el => { tabsRef.current[t.href] = el; }} aria-current={active ? "page" : undefined} onClick={() => window.scrollTo(0, 0)} style={{
+                            padding: isTablet ? "18px 10px" : "18px 16px", textDecoration: "none",
                             fontSize: T.body,
-                            color: active ? C.text : C.textMute,
+                            color: active ? C.text : C.textSec,
                             fontFamily: "var(--sans)",
                             transition: "color 0.25s ease",
                             letterSpacing: "0.005em",
-                            position: "relative",
+                            position: "relative", whiteSpace: "nowrap",
                           }}
-                            onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
-                            onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
+                            onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.text; }}
+                            onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
                           >
                             <span style={{ fontWeight: 600, visibility: "hidden" }}>{t.label}</span>
                             <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: active ? 600 : 400 }}>{t.label}</span>
-                          </button>
+                          </Link>
                         );
                       })}
                     </div>
@@ -495,13 +492,31 @@ export default function AppNav() {
               {NAV_TABS.map(t => {
                 const active = isTabActive(t.href);
                 return (
-                  <button key={t.href} onClick={() => { setMobileMenuOpen(false); router.push(t.href); window.scrollTo(0, 0); }} style={{
-                    padding: "12px 14px", border: "none", background: active ? C.accentSoft : "none",
-                    borderRadius: 10, cursor: "pointer", fontSize: T.body, fontWeight: active ? 600 : 450,
+                  <Link key={t.href} to={t.href} aria-current={active ? "page" : undefined} onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); }} style={{
+                    padding: "12px 14px", background: active ? C.accentSoft : "none",
+                    borderRadius: 10, fontSize: T.body, fontWeight: active ? 600 : 400, textDecoration: "none",
                     color: active ? C.text : C.textSec, fontFamily: "var(--sans)", textAlign: "left",
-                  }}>{t.label}</button>
+                  }}>{t.label}</Link>
                 );
               })}
+              <div style={{ height: 1, background: C.border, margin: "12px 14px" }} />
+              <button
+                onClick={triggerFlip}
+                disabled={isAnimating}
+                aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+                style={{
+                  padding: "12px 14px", border: "none", background: "none", borderRadius: 10, cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 10, fontSize: T.body, color: C.textSec,
+                  fontFamily: "var(--sans)", textAlign: "left",
+                }}
+              >
+                {theme === "light" ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                )}
+                {theme === "light" ? "Turn off the lights" : "Turn on the lights"}
+              </button>
             </div>
           </div>
         </>, document.body
