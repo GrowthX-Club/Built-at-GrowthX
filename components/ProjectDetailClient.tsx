@@ -660,15 +660,15 @@ export default function ProjectDetailPage() {
             const said = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
             const companies = Array.from(new Set(team.map(m => m.company).filter(Boolean)));
             return (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-                <span style={{ display: "flex" }} aria-hidden="true">
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span style={{ display: "flex", flexShrink: 0 }} aria-hidden="true">
                   {team.slice(0, 4).map((m, i) => (
                     <span key={m._id || m.name} style={{ marginLeft: i ? -8 : 0, borderRadius: 32, boxShadow: `0 0 0 2px ${C.bg}` }}>
                       <Av initials={m.avatar} size={28} src={m.avatarUrl} />
                     </span>
                   ))}
                 </span>
-                <span style={{ fontSize: 16, color: C.text }}>
+                <span style={{ fontSize: 16, color: C.text, flex: "1 1 0", minWidth: 0 }}>
                   {said}
                   {companies.length > 0 && <span style={{ color: C.textSec }}> · {companies.join(", ")}</span>}
                 </span>
