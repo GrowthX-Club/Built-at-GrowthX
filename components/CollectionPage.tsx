@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import type { MetaDescriptor } from "react-router";
 import {
   type Collection, type SortKey, type ProjectPage, type CollectionStats,
-  fetchProjects, fetchCollectionStats, collectionStat, dateRange, isOpen, listParams, usefulCategories,
+  fetchProjects, fetchCollectionStats, collectionStat, dateRange, isOpen, listParams,
 } from "@/lib/collections";
 import { pageMeta, itemListLd, breadcrumbLd } from "@/lib/seo";
 import ProjectListView, { type FilterTab } from "@/components/ProjectListView";
@@ -97,7 +97,6 @@ export default function CollectionPage({ c, customFilters, hideTitle = false }: 
         tag={data.tag}
         sorts={SORTS}
         sort={data.sort}
-        categories={usefulCategories(data.stats.categories)}
         category={data.category}
         query={query}
         onClearQuery={() => setQuery("")}

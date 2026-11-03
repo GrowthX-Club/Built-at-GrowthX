@@ -57,7 +57,9 @@ export default function ProjectRow({
         <p className="prow-tagline">{p.tagline}</p>
       </div>
       <div className="prow-meta">
-        {p.url && <TryIt url={p.url} name={p.name} />}
+        {p.skill ? (
+          <Link to={`${href}#install`} className="try-it" aria-label={`Install ${p.name}`}>Install</Link>
+        ) : p.url && <TryIt url={p.url} name={p.name} />}
         <span className="prow-who">{who}{event ? ` · ${event.name}` : ""}</span>
       </div>
       {thumb && <img className="prow-thumb" src={thumb} alt={`${p.name} screenshot`} loading="lazy" decoding="async" width={136} height={85} />}

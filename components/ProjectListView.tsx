@@ -197,6 +197,14 @@ export default function ProjectListView({
     setProjects(prev => prev.map(p => (String(p.id) === pid ? { ...p, weighted: w, raw: rv } : p)));
   };
 
+  // Phones scroll the chip row sideways: keep the chosen category in view (row only, never the page).
+  const chipsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const row = chipsRef.current;
+    const chip = row?.querySelector<HTMLElement>(".chip.is-active");
+    if (row && chip && row.scrollWidth > row.clientWidth) row.scrollLeft = chip.offsetLeft - row.offsetLeft - 16;
+  }, [category]);
+
   const pickSort = (s: SortKey) => { setSort(s); replaceParam("sort", s === sorts[0] ? "" : s); };
   const pickCategory = (c: string) => { setCategory(c); replaceParam("category", c); };
 
@@ -230,7 +238,7 @@ export default function ProjectListView({
           </div>
         )}
         {categories.length > 0 && (
-          <div className="chip-row" aria-label="Categories">
+          <div className="chip-row" aria-label="Categories" ref={chipsRef}>
             <button type="button" className={pill(!category)} aria-pressed={!category} onClick={() => pickCategory("")}>All</button>
             {categories.map(c => (
               <button key={c.name} type="button" className={pill(category === c.name)} aria-pressed={category === c.name} onClick={() => pickCategory(c.name)}>
@@ -241,9 +249,9 @@ export default function ProjectListView({
         )}
       </div>
 
-      {searching && !loading && (
+      {searching && !loading && shown.length > 0 && (
         <p className="list-count">
-          {shown.length === 0 ? "No projects match" : `${shown.length.toLocaleString()} ${shown.length === 1 ? "project matches" : "projects match"}`} “{query.trim()}”
+          {shown.length.toLocaleString()} {shown.length === 1 ? "project matches" : "projects match"} “{query.trim()}”
         </p>
       )}
 

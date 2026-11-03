@@ -644,6 +644,12 @@ export default function ProjectDetailPage() {
 
   const p = project;
   const isOwner = user?._id && (user._id === p.builder._id || p.creators?.some(c => c._id === user._id));
+  // The one filled action: Install for a skill (its box is on this page), else Try it on the product's own site.
+  const primary = p.skill
+    ? { href: "#install", label: "Install", ext: {} }
+    : p.url
+      ? { href: p.url, label: <>Try it <span aria-hidden="true">↗</span></>, ext: { target: "_blank", rel: "noopener noreferrer" } }
+      : null;
 
   return (
     <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: isMobile ? "48px 32px 140px" : "48px 32px 100px", fontFamily: "var(--sans)" }}>
@@ -667,13 +673,13 @@ export default function ProjectDetailPage() {
           })()}
           {!isMobile && (
             <div ref={voteBtnRef} style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 24, flexWrap: "wrap" }}>
-              {p.url && (
-                <a href={p.url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ minHeight: 48, padding: "0 24px" }}>
-                  Try it <span aria-hidden="true">↗</span>
+              {primary && (
+                <a href={primary.href} {...primary.ext} className="btn-primary" style={{ minHeight: 48, padding: "0 24px" }}>
+                  {primary.label}
                 </a>
               )}
               <button data-vote-detail onClick={handleVote} aria-pressed={hasVoted}
-                className={`${p.url ? "btn-outline" : "btn-primary"}${hasVoted && p.url ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
+                className={`${primary ? "btn-outline" : "btn-primary"}${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
                 style={{ minHeight: 48 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
@@ -1093,18 +1099,18 @@ export default function ProjectDetailPage() {
             padding: "12px 16px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
             display: "flex", gap: 10,
           }}>
-            {p.url && (
-              <a href={p.url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ flex: 1, minHeight: 48 }}>
-                Try it <span aria-hidden="true">↗</span>
+            {primary && (
+              <a href={primary.href} {...primary.ext} className="btn-primary" style={{ flex: 1, minHeight: 48 }}>
+                {primary.label}
               </a>
             )}
             <button data-vote-float onClick={handleVote} aria-pressed={hasVoted} aria-label={`${hasVoted ? "Remove upvote" : "Upvote"} (${p.weighted})`}
-              className={`${p.url ? "btn-outline" : "btn-primary"}${hasVoted && p.url ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
-              style={{ minHeight: 48, ...(p.url ? {} : { flex: 1 }) }}>
+              className={`${primary ? "btn-outline" : "btn-primary"}${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
+              style={{ minHeight: 48, ...(primary ? {} : { flex: 1 }) }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
               </svg>
-              {p.url ? p.weighted.toLocaleString() : `${hasVoted ? "Upvoted" : "Upvote"} · ${p.weighted.toLocaleString()}`}
+              {primary ? p.weighted.toLocaleString() : `${hasVoted ? "Upvoted" : "Upvote"} · ${p.weighted.toLocaleString()}`}
             </button>
             {isOwner && (
               <Link to="/my-projects" className="btn-outline" style={{ minHeight: 48 }}>Manage</Link>
