@@ -185,7 +185,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
         </button>
       ))}
       <div style={{ position: "relative" }}>
-        <button onClick={() => setPicker(!picker)} style={{
+        <button onClick={() => setPicker(!picker)} aria-label="Add a reaction" style={{
           width: 30, height: 30, borderRadius: 20,
           border: `1px dashed ${C.border}`, background: "transparent",
           cursor: "pointer",
@@ -195,7 +195,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
         onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.accentSoft; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "transparent"; }}
         >
-          <span style={{ fontSize: T.body, lineHeight: 1, opacity: 0.55 }}>{"\u{1F642}"}</span>
+          <span aria-hidden="true" style={{ fontSize: T.body, lineHeight: 1, opacity: 0.55 }}>{"\u{1F642}"}</span>
           <span style={{
             position: "absolute", bottom: -1, right: -1,
             width: 12, height: 12, borderRadius: 12,
@@ -873,7 +873,7 @@ export default function ProjectDetailPage() {
                       flexShrink: 0, letterSpacing: "-0.02em",
                       position: "relative", overflow: "hidden",
                     }}>
-                      {meta.icon}
+                      <span aria-hidden="true">{meta.icon}</span>
                       {logoUrl && (
                         <img
                           src={logoUrl}
