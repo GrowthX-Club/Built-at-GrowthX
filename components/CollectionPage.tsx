@@ -73,37 +73,32 @@ export default function CollectionPage({ c, customFilters }: { c: Collection; cu
 
   return (
     <main className="page">
-      {c.photos ? (
-        <div className="photo-strip">{c.photos.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" />)}</div>
-      ) : c.cover ? (
-        <img className="coll-hero-img" src={c.cover} alt={`${c.name} cover`} />
-      ) : null}
       <nav aria-label="Breadcrumb" className="crumbs"><Link to="/events">Events</Link><span aria-hidden="true"> / </span><span>{c.name}</span></nav>
-      <header className="page-head">
-        <h1 className="page-title">{c.name}</h1>
-        <p className="page-sub">{c.blurb}</p>
-        {c.seasons && (
-          <div className="chip-row" style={{ marginTop: 18 }} role="group" aria-label="Seasons">
-            {c.seasons.map(s => (
-              <Link
-                key={s.key}
-                to={`${c.path}?season=${s.key}`}
-                preventScrollReset
-                className={`chip${s.key === data.seasonKey ? " is-active" : ""}`}
-                aria-current={s.key === data.seasonKey ? "page" : undefined}
-              >
-                {s.label} · {s.when}
-              </Link>
-            ))}
-          </div>
-        )}
-        <p className="coll-facts">
-          {season?.ranAs ? `${season.label} ran as ${season.ranAs}. ` : ""}
-          {isOpen(season ? seasonStat?.lastAt : total.lastAt) ? <span className="open-pill">Open now</span> : when}
-          {count > 0 ? ` · ${count.toLocaleString()} ${count === 1 ? "project" : "projects"}` : ""}
-        </p>
-        {!small && <SearchBox value={query} onChange={setQuery} placeholder={`Search ${season ? `${c.name} ${season.label}` : c.name} projects`} />}
+      {c.photos && <div className="photo-strip">{c.photos.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" />)}</div>}
+      {/* Devpost's hackathon banner: the event's real cover beside its name (the home page's Build Sprint band) */}
+      <header className={c.cover && !c.photos ? "sprint-band event-band" : "event-head"}>
+        {c.cover && !c.photos && <img src={c.cover} alt={`${c.name} cover`} />}
+        <div className={c.cover && !c.photos ? "sprint-text" : undefined}>
+          <h1 className="page-title">{season ? `${c.name} ${season.label}` : c.name}</h1>
+          <p className="page-sub">{c.blurb}</p>
+          <p className="coll-facts">
+            {season?.ranAs ? `${season.label} ran as ${season.ranAs}. ` : ""}
+            {isOpen(season ? seasonStat?.lastAt : total.lastAt) ? <span className="open-pill">Open now</span> : when}
+            {count > 0 ? ` · ${count.toLocaleString()} ${count === 1 ? "project" : "projects"}` : ""}
+          </p>
+        </div>
       </header>
+      {/* Devpost's hackathon tab strip; here one tab per season */}
+      {c.seasons ? (
+        <nav className="tabs" aria-label="Seasons">
+          {c.seasons.map(s => (
+            <Link key={s.key} to={`${c.path}?season=${s.key}`} preventScrollReset className={`tab${s.key === data.seasonKey ? " is-active" : ""}`}
+              aria-current={s.key === data.seasonKey ? "page" : undefined}>
+              {s.label}<span>{s.when}</span>
+            </Link>
+          ))}
+        </nav>
+      ) : <div style={{ height: 32 }} />}
       <ProjectListView
         key={data.tag}
         initial={data.list}
@@ -115,6 +110,7 @@ export default function CollectionPage({ c, customFilters }: { c: Collection; cu
         onClearQuery={() => setQuery("")}
         customFilters={customFilters}
         showEvent={false}
+        toolbarEnd={small ? undefined : <SearchBox value={query} onChange={setQuery} placeholder={season ? `Search ${season.label} projects` : "Search projects"} />}
         emptyState={{
           title: "No projects here yet",
           description: season ? `${c.name} ${season.label} builds show up here once they are published.` : "Projects from this event show up here once they are published.",

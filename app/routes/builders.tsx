@@ -15,7 +15,6 @@ import {
   getCompanyLogoUrl,
 } from "@/types";
 import { bxApi } from "@/lib/api";
-import { useResponsive } from "@/hooks/useMediaQuery";
 
 const DESCRIPTION = "GrowthX members who ship, ranked by projects shipped, with upvotes breaking ties.";
 
@@ -65,12 +64,16 @@ export const meta: MetaFunction = () => [
 
 // ---- Inline Components ----
 
-function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
+function Av({ initials, size = 32, role, src, className }: { initials: string; size?: number; role?: string; src?: string; className?: string }) {
   const r = role ? ROLES[role] : undefined;
-  if (src && src.startsWith("http")) {
+  // A profile photo that no longer exists falls back to the initials.
+  const [broken, setBroken] = useState(false);
+  if (src && src.startsWith("http") && !broken) {
     return (
       <img
         src={src}
+        className={className}
+        onError={() => setBroken(true)}
         alt={initials}
         style={{
           width: size, height: size, borderRadius: size,
@@ -81,7 +84,7 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
     );
   }
   return (
-    <div style={{
+    <div className={className} style={{
       width: size, height: size, borderRadius: size,
       background: r?.bg || C.accentSoft,
       color: r?.color || C.textSec,
@@ -116,7 +119,6 @@ function CompanyTag({ company, companyLogo }: { company?: string; companyColor?:
 // ---- Page ----
 
 export default function BuildersPage() {
-  const { isMobile } = useResponsive();
   const first = useLoaderData<typeof loader>();
   const [builders, setBuilders] = useState<BuilderProfile[]>(() => first.members.map(normalizeMember));
   const [totalCount, setTotalCount] = useState(first.totalCount);
@@ -191,7 +193,7 @@ export default function BuildersPage() {
           {shown.map(({ b, rank }) => (
             <li key={b._id || rank} className="builder-row">
               <span className="builder-rank">{rank}</span>
-              <Av initials={b.avatar} size={isMobile ? 40 : 48} role={b.role} src={b.avatarUrl} />
+              <Av initials={b.avatar} size={48} role={b.role} src={b.avatarUrl} className="builder-av" />
               <span className="builder-text">
                 <button type="button" className="builder-name" onClick={() => openBuilderDialog(b)}>{b.name}</button>
                 {(b.title || b.company) && (

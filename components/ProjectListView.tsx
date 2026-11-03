@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { C, type Project, type BuilderProfile, normalizeProject, normalizeUser } from "@/types";
 import { bxApi } from "@/lib/api";
 import {
@@ -6,7 +6,8 @@ import {
   fetchProjects, fetchAllProjects, replaceParam,
 } from "@/lib/collections";
 import { useLoginDialog } from "@/context/LoginDialogContext";
-import ProjectRow from "@/components/ProjectRow";
+import ProjectCard, { ProjectCardSkeleton } from "@/components/ProjectCard";
+import { SkillCard } from "@/components/SkillsPanel";
 
 export interface FilterTab {
   key: string;
@@ -41,13 +42,17 @@ export interface ProjectListViewProps {
   refreshKey?: number;
   /** A "Show more" button instead of infinite scroll, so what follows the list stays reachable (home). */
   moreButton?: boolean;
+  /** How many cards to show before "Show more" (home shows two rows). */
+  pageSize?: number;
+  /** Something to put at the end of the toolbar (e.g. a search box). */
+  toolbarEnd?: ReactNode;
 }
 
 const SORT_LABELS: Record<SortKey, string> = {
   best: "Best", trending: "Trending", new: "New", top: "Top", installs: "Popular",
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 21; // seven rows of three
 
 // Whole-scope fetches (search, event pills) are cached per scope for the visit.
 const allCache = new Map<string, Promise<ProjectPage>>();
@@ -100,7 +105,7 @@ export function voteBurst(btn: Element | null) {
 export default function ProjectListView({
   initial, tag, skillsOnly = false, sorts = ["best", "trending", "new"], sort: startSort, categories = [],
   category: startCategory = "", query = "", onClearQuery, customFilters, showEvent = true, emptyState, refreshKey = 0,
-  moreButton = false,
+  moreButton = false, pageSize = PAGE_SIZE, toolbarEnd,
 }: ProjectListViewProps) {
   const { openLoginDialog } = useLoginDialog();
   const [sort, setSort] = useState<SortKey>(startSort && sorts.includes(startSort) ? startSort : sorts[0]);
@@ -135,7 +140,7 @@ export default function ProjectListView({
     const id = ++requestId.current;
     setLoading(true);
     const q: ListQuery = JSON.parse(scopeKey);
-    (wholeScope ? fetchAllCached(q) : fetchProjects({ ...q, limit: PAGE_SIZE, offset: 0 }))
+    (wholeScope ? fetchAllCached(q) : fetchProjects({ ...q, limit: pageSize, offset: 0 }))
       .then(d => {
         if (id !== requestId.current) return;
         setFailed(!!d.error && d.projects.length === 0);
@@ -145,7 +150,7 @@ export default function ProjectListView({
       })
       .catch(() => { if (id === requestId.current) setProjects([]); })
       .finally(() => { if (id === requestId.current) setLoading(false); });
-  }, [scopeKey, wholeScope]);
+  }, [scopeKey, wholeScope, pageSize]);
 
   useEffect(() => {
     if (refreshKey === 0 && !wholeScope && serverKey === JSON.stringify({ sort, category })) return;
@@ -156,7 +161,7 @@ export default function ProjectListView({
     if (wholeScope || loadingMore || projects.length >= totalCount) return;
     const id = requestId.current;
     setLoadingMore(true);
-    fetchProjects({ ...JSON.parse(scopeKey), limit: PAGE_SIZE, offset: projects.length })
+    fetchProjects({ ...JSON.parse(scopeKey), limit: pageSize, offset: projects.length })
       .then(d => {
         if (id !== requestId.current) return;
         setProjects(prev => {
@@ -166,7 +171,7 @@ export default function ProjectListView({
         if (d.projects.length === 0) setTotalCount(projects.length);
       })
       .finally(() => setLoadingMore(false));
-  }, [wholeScope, loadingMore, projects.length, totalCount, scopeKey]);
+  }, [wholeScope, loadingMore, projects.length, totalCount, scopeKey, pageSize]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -230,7 +235,7 @@ export default function ProjectListView({
 
   return (
     <div>
-      {!small && <div className="list-toolbar">
+      {(!small || toolbarEnd) && <div className="list-toolbar">
         {customFilters ? (
           <div className="chip-row" role="group" aria-label="Filter projects">
             {customFilters.map(t => (
@@ -239,7 +244,7 @@ export default function ProjectListView({
               </button>
             ))}
           </div>
-        ) : sorts.length > 1 && (
+        ) : sorts.length > 1 && !small && (
           <div className="seg" role="group" aria-label="Sort projects">
             {sorts.map(s => (
               <button key={s} type="button" aria-pressed={sort === s} className={`seg-btn${sort === s ? " is-active" : ""}`} onClick={() => pickSort(s)}>
@@ -248,7 +253,7 @@ export default function ProjectListView({
             ))}
           </div>
         )}
-        {categories.length > 0 && (
+        {categories.length > 0 && !small && (
           <div className="chip-row" role="group" aria-label="Categories" ref={chipsRef}>
             <button type="button" className={pill(!category)} aria-pressed={!category} onClick={() => pickCategory("")}>All</button>
             {categories.map(c => (
@@ -258,6 +263,7 @@ export default function ProjectListView({
             ))}
           </div>
         )}
+        {toolbarEnd}
       </div>}
 
       {searching && !loading && shown.length > 0 && (
@@ -267,17 +273,8 @@ export default function ProjectListView({
       )}
 
       {loading && shown.length === 0 ? (
-        <div aria-busy="true">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="prow no-thumb" style={{ pointerEvents: "none" }}>
-              <div className="prow-text">
-                <div className="skeleton" style={{ height: 18, width: "40%", marginBottom: 8 }} />
-                <div className="skeleton" style={{ height: 16, width: "75%" }} />
-              </div>
-              <div className="prow-meta"><div className="skeleton" style={{ height: 14, width: 180 }} /></div>
-              <div className="prow-vote"><div className="skeleton" style={{ width: 52, height: 56, borderRadius: 10 }} /></div>
-            </div>
-          ))}
+        <div aria-busy="true" className={skillsOnly ? "sgrid" : "pgrid"}>
+          {[...Array(6)].map((_, i) => <ProjectCardSkeleton key={i} />)}
         </div>
       ) : shown.length === 0 ? (
         <div className="empty-state">
@@ -306,11 +303,13 @@ export default function ProjectListView({
         </div>
       ) : (
         <div aria-busy={loading}>
-          {shown.map(p => (
-            <ProjectRow key={p.id} project={p} voted={votedIds.includes(String(p.id))} onVote={() => handleVote(p.id)} showEvent={showEvent} />
-          ))}
+          <div className={skillsOnly ? "sgrid" : "pgrid"}>
+            {shown.map((p, i) => skillsOnly
+              ? <SkillCard key={p.id} skill={p} />
+              : <ProjectCard key={p.id} project={p} voted={votedIds.includes(String(p.id))} onVote={() => handleVote(p.id)} showEvent={showEvent} eager={i < 3} />)}
+          </div>
           {!wholeScope && projects.length < totalCount && (moreButton ? (
-            <div style={{ display: "flex", justifyContent: "center", paddingTop: 20 }}>
+            <div style={{ display: "flex", justifyContent: "center", paddingTop: 32 }}>
               <button type="button" className="btn-outline" onClick={loadMore} disabled={loadingMore}>
                 {loadingMore ? "Loading…" : "Show more projects"}
               </button>

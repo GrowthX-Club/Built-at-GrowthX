@@ -19,24 +19,24 @@ import SearchBox from "@/components/SearchBox";
 import CollectionCard from "@/components/CollectionCard";
 import SkillsPanel from "@/components/SkillsPanel";
 import {
-  type SortKey, BUILD_SPRINT, CATEGORIES,
+  type SortKey, type CollectionStats, BUILD_SPRINT, CATEGORIES,
   fetchProjects, fetchCollectionStats, usefulCategories, listParams, listedCollections,
 } from "@/lib/collections";
-import { makersLine } from "@/components/ProjectRow";
 import { itemListLd, pageMeta } from "@/lib/seo";
 import { normalizeProject } from "@/types";
 
 const HOME_SORTS: SortKey[] = ["best", "trending", "new"];
+// Three rows of three, then "Show more", so Skills and Events stay one scroll away.
+const HOME_PAGE = 9;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { sort, category, q } = listParams(request.url, HOME_SORTS);
-  const [list, stats, skills, sprint] = await Promise.all([
-    fetchProjects({ sort, category: category || undefined, limit: 20 }),
+  const [list, stats, skills] = await Promise.all([
+    fetchProjects({ sort, category: category || undefined, limit: HOME_PAGE }),
     fetchCollectionStats(),
     fetchProjects({ has_skill: true, sort: "installs", limit: 3 }),
-    fetchProjects({ buildathon: "build-sprint", sort: "new", limit: 8 }),
   ]);
-  return { list, stats, skills: skills.projects, sprint, sort, category, q };
+  return { list, stats, skills: skills.projects, sort, category, q };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
@@ -57,7 +57,6 @@ export default function HomePage() {
   const searching = query.trim().length >= 2;
   const categories = usefulCategories(data.stats.categories);
   const skills = data.skills.map(normalizeProject);
-  const sprint = data.sprint.projects.map(normalizeProject);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { openLoginDialog } = useLoginDialog();
@@ -253,63 +252,52 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
       <main className="page">
-        <header>
-          <h1 className="page-title">What the community shipped</h1>
+        <header className="home-hero">
+          <div>
+            <h1 className="page-title">The best of what GrowthX members built</h1>
+            <p className="page-sub">Products and AI skills from Build Sprint, the buildathons and side projects.</p>
+          </div>
           <SearchBox value={query} onChange={setQuery} placeholder="Search projects, builders or tools" />
         </header>
 
-        {!searching && sprint.length > 0 && (
-          <section className="home-strip" aria-labelledby="sprint-title">
-            <div className="section-head">
-              <h2 className="bx-section-title" id="sprint-title">Build Sprint · Season 04</h2>
-              <Link to={BUILD_SPRINT.path} className="text-link">See all {data.sprint.totalCount} →</Link>
-            </div>
-            <div className="strip-row">
-              {sprint.map(p => (
-                <div key={p.id} className="strip-card">
-                  <Link to={`/projects/${p.slug || p.id}`} prefetch="intent">{p.name}</Link>
-                  <p>{p.tagline}</p>
-                  <span>{makersLine(p)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        {!searching && <SprintBand stats={data.stats} />}
 
-        <div className="home-cols" style={searching ? { gridTemplateColumns: "minmax(0, 1fr)", marginTop: 24 } : undefined}>
-          <section aria-labelledby="projects-title">
-            {!searching && (
-              <div className="section-head">
-                <h2 className="bx-section-title" id="projects-title">Projects</h2>
-              </div>
-            )}
-            <ProjectListView
-              initial={data.list}
-              sorts={HOME_SORTS}
-              sort={data.sort}
-              categories={categories}
-              category={data.category}
-              query={query}
-              onClearQuery={() => setQuery("")}
-              refreshKey={listRefreshKey}
-              moreButton
-            />
-          </section>
+        <section aria-labelledby="projects-title">
           {!searching && (
-            <aside className="home-rail">
-              <section aria-labelledby="events-title">
-                <div className="section-head">
-                  <h2 className="bx-section-title" id="events-title">Events</h2>
-                  <Link to="/events" className="text-link">All →</Link>
-                </div>
-                <div className="rail-events">
-                  {listedCollections(data.stats).map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} />)}
-                </div>
-              </section>
-              <SkillsPanel skills={skills} />
-            </aside>
+            <div className="section-head">
+              <h2 className="bx-section-title" id="projects-title">Projects</h2>
+            </div>
           )}
-        </div>
+          <ProjectListView
+            initial={data.list}
+            sorts={HOME_SORTS}
+            sort={data.sort}
+            categories={categories}
+            category={data.category}
+            query={query}
+            onClearQuery={() => setQuery("")}
+            refreshKey={listRefreshKey}
+            moreButton
+            pageSize={HOME_PAGE}
+          />
+        </section>
+
+        {!searching && <SkillsPanel skills={skills} />}
+
+        {!searching && (() => {
+          const events = listedCollections(data.stats).filter(c => c !== BUILD_SPRINT);
+          return events.length > 0 && (
+            <section className="section" aria-labelledby="events-title">
+              <div className="section-head">
+                <h2 className="bx-section-title" id="events-title">Buildathons</h2>
+                <Link to="/events" className="text-link">All events →</Link>
+              </div>
+              <div className="events-grid rail-scroll">
+                {events.map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} blurb />)}
+              </div>
+            </section>
+          );
+        })()}
       </main>
 
       {/* ---- SUBMIT FLOW ---- */}
@@ -1015,5 +1003,29 @@ export default function HomePage() {
 
       {/* Sign-in handled via redirect to GrowthX login */}
     </div>
+  );
+}
+
+// Build Sprint, the biggest collection: a dark band with the real Season 04 cover and a chip per season.
+function SprintBand({ stats }: { stats: CollectionStats }) {
+  const seasons = (BUILD_SPRINT.seasons ?? []).filter(x => stats.error || (stats.tags[x.tag]?.count ?? 0) > 0);
+  const newest = seasons[0];
+  const count = newest ? stats.tags[newest.tag]?.count ?? 0 : 0;
+  return (
+    <section className="sprint-band" aria-labelledby="sprint-title">
+      <img src={BUILD_SPRINT.cover} alt="" />
+      <div className="sprint-text">
+        <h2 id="sprint-title"><Link to={BUILD_SPRINT.path} prefetch="intent">Build Sprint</Link></h2>
+        <p>{BUILD_SPRINT.blurb}</p>
+        {newest && <span className="sprint-short">{newest.label} · {count > 0 ? `${count} projects` : newest.when}</span>}
+        <div className="sprint-seasons">
+          {seasons.map((x, i) => (
+            <Link key={x.key} to={`${BUILD_SPRINT.path}?season=${x.key}`} className={i === 0 ? "is-new" : undefined}>
+              {i === 0 ? `${x.label} · ${x.when}` : x.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

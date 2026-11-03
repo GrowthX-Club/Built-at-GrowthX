@@ -31,7 +31,7 @@ import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
 import { eventFor, fetchProjects } from "@/lib/collections";
 import { withoutEventFooter } from "@/lib/editor-utils";
-import ProjectRow from "@/components/ProjectRow";
+import ProjectCard, { Faces } from "@/components/ProjectCard";
 import { voteBurst } from "@/components/ProjectListView";
 
 function timeAgo(dateStr: string): string {
@@ -647,275 +647,134 @@ export default function ProjectDetailPage() {
       ? { href: p.url, label: <>Try it <span aria-hidden="true">↗</span></>, ext: { target: "_blank", rel: "noopener noreferrer" } }
       : null;
 
+  const event = eventFor(p.buildathon);
+  const date = formatProjectDate(p.date);
+  // Everyone who made it (submitter, co-creators, collaborators), once each, with what they do now.
+  const seen = new Set<string>();
+  const people = [p.builder, ...(p.creators || []), ...p.collabs].filter(m => {
+    const key = m._id || m.name;
+    if (!m.name || m.name === "Anonymous" || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const upvoteLabel = `${hasVoted ? "Upvoted" : "Upvote"}${p.weighted > 0 ? ` · ${p.weighted.toLocaleString()}` : ""}`;
+  const upIcon = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
+    </svg>
+  );
+
   return (
-    <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: isMobile ? "48px 32px 140px" : "48px 32px 100px", fontFamily: "var(--sans)" }}>
-        {/* Hero: name, pitch, where it came from, then Try it as the main action */}
-        <div className="fade-up" style={{ marginBottom: 32 }}>
-          <h1 className="page-title" style={{ marginBottom: 8 }}>{p.name}</h1>
-          <p style={{ fontSize: 22, color: C.textSec, fontFamily: "var(--serif)", fontStyle: "italic", lineHeight: 1.35, margin: "0 0 14px" }}>{p.tagline}</p>
-          {(() => {
-            // Everyone who made it, right under the pitch: avatars, names, then their companies.
-            const team = teamOf(p);
-            if (team.length === 0) return null;
-            const names = team.map(m => m.name);
-            const said = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
-            const companies = Array.from(new Set(team.map(m => m.company).filter(Boolean)));
-            return (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <span style={{ display: "flex", flexShrink: 0 }} aria-hidden="true">
-                  {team.slice(0, 4).map((m, i) => (
-                    <span key={m._id || m.name} style={{ marginLeft: i ? -8 : 0, borderRadius: 32, boxShadow: `0 0 0 2px ${C.bg}` }}>
-                      <Av initials={m.avatar} size={28} src={m.avatarUrl} />
-                    </span>
-                  ))}
-                </span>
-                <span style={{ fontSize: 16, color: C.text, flex: "1 1 0", minWidth: 0 }}>
-                  {said}
-                  {companies.length > 0 && <span style={{ color: C.textSec }}> · {companies.join(", ")}</span>}
-                </span>
-              </div>
-            );
-          })()}
-          {(() => {
-            const event = eventFor(p.buildathon);
-            const date = formatProjectDate(p.date);
-            if (!event && !date && !p.accolade && !p.track) return null;
-            return (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 13, color: C.textSec }}>
-                {p.accolade && <AccoladeBadge accolade={p.accolade} />}
-                {p.track && <TrackChip track={p.track} />}
-                {event && <Link to={event.href} className="meta-link">{event.name}</Link>}
-                {event && date && <span aria-hidden="true">·</span>}
-                {date && <span>{date}</span>}
-              </div>
-            );
-          })()}
+    <div className="detail">
+        {event && (
+          <nav aria-label="Breadcrumb" className="crumbs">
+            <Link to={event.href}>{event.name}</Link><span aria-hidden="true"> / </span><span>{p.name}</span>
+          </nav>
+        )}
+
+        {/* Product Hunt launch header: name and tagline on the left, the actions on the right; Try it is the filled one */}
+        <header className="detail-head">
+          <div style={{ minWidth: 0, flex: "1 1 420px" }}>
+            <h1 className="detail-name">{p.name}</h1>
+            <p className="detail-tagline">{p.tagline}</p>
+          </div>
           {!isMobile && (
-            <div ref={voteBtnRef} style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 24, flexWrap: "wrap" }}>
-              {primary && (
-                <a href={primary.href} {...primary.ext} className="btn-primary" style={{ minHeight: 48, padding: "0 24px" }}>
-                  {primary.label}
-                </a>
-              )}
+            <div ref={voteBtnRef} className="detail-actions">
+              {isOwner && <Link to="/my-projects" className="meta-link" style={{ fontSize: 16, marginRight: 4 }}>Manage</Link>}
               <button data-vote-detail onClick={handleVote} aria-pressed={hasVoted}
-                className={`${primary ? "btn-outline" : "btn-primary"}${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
-                style={{ minHeight: 48 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
-                </svg>
-                {hasVoted ? "Upvoted" : "Upvote"}{p.weighted > 0 ? ` · ${p.weighted.toLocaleString()}` : ""}
+                className={`${primary ? "btn-outline" : "btn-primary"} btn-lg${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}>
+                {upIcon}{upvoteLabel}
               </button>
-              {isOwner && (
-                <Link to="/my-projects" className="meta-link" style={{ fontSize: 16, marginLeft: 4 }}>Manage</Link>
+              {primary && (
+                <a href={primary.href} {...primary.ext} className="btn-primary btn-lg">{primary.label}</a>
               )}
             </div>
           )}
-        </div>
+        </header>
 
-        {/* Draft banner */}
-        {p.isDraft && (
-          <div className="fade-up stagger-1" style={{
-            padding: "14px 20px", borderRadius: 12, marginBottom: 24,
-            background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
-            display: "flex", alignItems: "center", gap: 10,
-            fontSize: 16, fontFamily: "var(--sans)", color: C.text,
-          }}>
-            <span aria-hidden="true" style={{ fontSize: 16 }}>&#9998;</span>
-            <div>
-              <span style={{ fontWeight: 600 }}>Draft</span>
-              <span style={{ color: C.textSec, fontWeight: 400 }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
-            </div>
+        {(p.accolade || p.track || (p.category && p.category !== "Other") || date) && (
+          <div className="detail-meta">
+            {p.accolade && <AccoladeBadge accolade={p.accolade} />}
+            {p.track && <TrackChip track={p.track} />}
+            {[p.category !== "Other" ? p.category : "", date].filter(Boolean).join(" · ")}
           </div>
         )}
 
-        {p.skill && (
-          <div className="fade-up stagger-1">
-            {/* Keyed by the project, so the chosen tab doesn't carry over to the next skill on client navigation. */}
-            <div id="install" style={{ scrollMarginTop: 96 }}>
-              <SkillUseBox key={p.slug || String(p.id)} skill={p.skill} slug={p.slug || String(p.id)} />
-            </div>
-          </div>
-        )}
-
-        {/* Media gallery */}
-        {p.media && p.media.length > 0 && (
-          <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
-            <MediaGallery media={p.media} />
-          </div>
-        )}
-
-        {/* Product info */}
-        <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
-          <RichTextDisplay description={withoutEventFooter(p.description)} />
-
-          {/* Build process */}
-          {p.buildProcess && (
-            <div style={{ marginTop: 28 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>How it was built</h2>
-              <RichTextDisplay description={p.buildProcess} />
-            </div>
-          )}
-
-          {/* The full skill, after the maker's own description of it */}
-          {p.skill && <div style={{ marginTop: 28 }}><SkillText key={p.slug || String(p.id)} skill={p.skill} /></div>}
-
-          {/* Creators */}
-          <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>
-              Built by
-            </h2>
-            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
-            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
-            <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "10px 16px", borderRadius: 12,
-                background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-              }}>
-                <Av initials={p.builder.avatar} size={34} src={p.builder.avatarUrl} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
-                    <span>{p.builder.title}</span>
-                    {p.builder.company && (
-                      <>
-                        <span style={{
-                          width: 14, height: 14, borderRadius: 4,
-                          background: p.builder.companyColor || C.accent,
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
-                          overflow: "hidden", position: "relative",
-                        }}>
-                          <span aria-hidden="true">{p.builder.company[0]}</span>
-                          <img src={getCompanyLogoUrl(p.builder.company, p.builder.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                        </span>
-                        <span style={{ fontWeight: 520, color: C.textSec }}>{p.builder.company}</span>
-                      </>
-                    )}
-                    {p.builder.city && <><span aria-hidden="true" style={{ margin: "0 2px" }}>{"\u00B7"}</span><span>{p.builder.city}</span></>}
-                  </div>
-                </div>
-              </div>
-              {(p.creators || []).map((c, i) => (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 16px", borderRadius: 12,
-                  background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-                }}>
-                  <Av initials={c.avatar} size={30} src={c.avatarUrl} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ fontSize: 16, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
-                    {c.title && c.company && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
-                        <span>{c.title}</span>
-                        <span style={{
-                          width: 13, height: 13, borderRadius: 3,
-                          background: c.companyColor || C.accent,
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
-                          overflow: "hidden", position: "relative",
-                        }}>
-                          <span aria-hidden="true">{c.company[0]}</span>
-                          <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                        </span>
-                        <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
-                      </div>
-                    )}
+        {people.length > 0 && (
+          <div className="team-panel">
+            <b>Built by</b>
+            <div className="team-list">
+              {people.map(m => (
+                <div key={m._id || m.name} className="team-member">
+                  <Faces people={[m]} max={1} />
+                  <div style={{ minWidth: 0 }}>
+                    <b>{m.name}</b>
+                    {(m.title || m.company) && <span>{[m.title, m.company].filter(Boolean).join(" at ")}</span>}
                   </div>
                 </div>
               ))}
             </div>
-            </div>
           </div>
+        )}
 
-          {/* Collaborators */}
-          {p.collabs.length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>With help from</h2>
-              <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
-              {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
-              <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
-                {p.collabs.map((c, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 16px", borderRadius: 12,
-                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-                  }}>
-                    <Av initials={c.avatar} size={30} src={c.avatarUrl} />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span style={{ fontSize: 16, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
-                      {c.title && c.company && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
-                          <span>{c.title}</span>
-                          <span style={{
-                            width: 13, height: 13, borderRadius: 3,
-                            background: c.companyColor || C.accent,
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
-                            overflow: "hidden", position: "relative",
-                          }}>
-                            <span aria-hidden="true">{c.company[0]}</span>
-                            <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                          </span>
-                          <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              </div>
-            </div>
-          )}
+        {/* Draft banner */}
+        {p.isDraft && (
+          <div style={{
+            padding: "14px 20px", borderRadius: 12, marginTop: 24,
+            background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
+            fontSize: 16, color: C.text,
+          }}>
+            <span style={{ fontWeight: 600 }}>Draft</span>
+            <span style={{ color: C.textSec }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
+          </div>
+        )}
 
-          {/* Tech stack */}
-          {p.stack.length > 0 && (<div style={{ marginBottom: 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>Built with</h2>
-            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
-            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
-            <div style={{ display: "flex", gap: 8, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
+        <MediaGallery project={p} />
+
+        {p.skill && (
+          <div id="install" className="detail-section" style={{ scrollMarginTop: 96 }}>
+            {/* Keyed by the project, so the chosen tab doesn't carry over to the next skill on client navigation. */}
+            <SkillUseBox key={p.slug || String(p.id)} skill={p.skill} slug={p.slug || String(p.id)} />
+          </div>
+        )}
+
+        <div className="detail-section">
+          <RichTextDisplay description={withoutEventFooter(p.description)} />
+        </div>
+
+        {p.buildProcess && (
+          <div className="detail-section">
+            <h2>How it was built</h2>
+            <RichTextDisplay description={p.buildProcess} />
+          </div>
+        )}
+
+        {/* The full skill, after the maker's own description of it */}
+        {p.skill && <div className="detail-section"><SkillText key={p.slug || String(p.id)} skill={p.skill} /></div>}
+
+        {p.stack.length > 0 && (
+          <div className="detail-section">
+            <h2>Built with</h2>
+            <div className="stack-row">
               {p.stack.map((t, i) => {
                 const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: C.accentFg };
                 const logoUrl = getStackLogoUrl(t);
                 return (
-                  <div key={i} style={{
-                    display: "inline-flex", alignItems: "center", gap: 8,
-                    padding: "6px 16px 6px 8px", borderRadius: 40,
-                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-                  }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: 6,
-                      background: meta.bg, color: meta.color,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 13, fontWeight: 750, fontFamily: "var(--sans)",
-                      flexShrink: 0, letterSpacing: "-0.02em",
-                      position: "relative", overflow: "hidden",
-                    }}>
-                      <span aria-hidden="true">{meta.icon}</span>
-                      {logoUrl && (
-                        <img
-                          src={logoUrl}
-                          alt={t}
-                          style={{
-                            position: "absolute", top: 0, left: 0,
-                            width: 22, height: 22, borderRadius: 6,
-                            objectFit: "contain", background: "#fff",
-                          }}
-                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      )}
-                    </div>
-                    <span style={{ fontSize: 16, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
-                  </div>
+                  <span key={i} className="stack-chip">
+                    <i style={{ background: meta.bg, color: meta.color }} aria-hidden="true">
+                      {meta.icon}
+                      {logoUrl && <img src={logoUrl} alt="" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                    </i>
+                    {t}
+                  </span>
                 );
               })}
             </div>
-            </div>
-          </div>)}
-        </div>
+          </div>
+        )}
 
         {/* DISCUSSION */}
-        <div className="fade-up stagger-3" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
+        <div className="detail-section" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20 }}>
             <h2 className="bx-section-title">Discussion</h2>
           </div>
@@ -1117,42 +976,27 @@ export default function ProjectDetailPage() {
         </div>
 
         {more.length > 0 && (() => {
-          const event = eventFor(p.buildathon);
           return (
-            <section style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32, marginTop: 32 }} aria-labelledby="more-title">
+            <section className="section" aria-labelledby="more-title">
               <div className="section-head">
                 <h2 className="bx-section-title" id="more-title">{event ? `More from ${event.name}` : "More projects"}</h2>
                 <Link to={event ? event.href : "/"} className="text-link">All →</Link>
               </div>
-              {more.map(m => <ProjectRow key={m.id} project={m} showEvent={!event} />)}
+              <div className="pgrid">{more.slice(0, 3).map(m => <ProjectCard key={m.id} project={m} showEvent={!event} />)}</div>
             </section>
           );
         })()}
 
         {/* Phone: the actions stay in reach at the bottom; Try it is the filled one */}
         {isMobile && (
-          <div style={{
-            position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
-            background: C.bg, borderTop: `1px solid ${C.border}`,
-            padding: "12px 16px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
-            display: "flex", gap: 10,
-          }}>
-            {primary && (
-              <a href={primary.href} {...primary.ext} className="btn-primary" style={{ flex: 1, minHeight: 48 }}>
-                {primary.label}
-              </a>
-            )}
+          <div className="mobile-cta">
+            {isOwner && <Link to="/my-projects" className="btn-outline">Manage</Link>}
             <button data-vote-float onClick={handleVote} aria-pressed={hasVoted} aria-label={`${hasVoted ? "Remove upvote" : "Upvote"} (${p.weighted})`}
               className={`${primary ? "btn-outline" : "btn-primary"}${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
-              style={{ minHeight: 48, ...(primary ? {} : { flex: 1 }) }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
-              </svg>
-              {primary ? (p.weighted > 0 ? p.weighted.toLocaleString() : "") : `${hasVoted ? "Upvoted" : "Upvote"}${p.weighted > 0 ? ` · ${p.weighted.toLocaleString()}` : ""}`}
+              style={primary ? undefined : { flex: 1 }}>
+              {upIcon}{primary ? (p.weighted > 0 ? p.weighted.toLocaleString() : "") : upvoteLabel}
             </button>
-            {isOwner && (
-              <Link to="/my-projects" className="btn-outline" style={{ minHeight: 48 }}>Manage</Link>
-            )}
+            {primary && <a href={primary.href} {...primary.ext} className="btn-primary">{primary.label}</a>}
           </div>
         )}
     </div>

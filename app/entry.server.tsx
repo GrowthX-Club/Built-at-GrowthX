@@ -1,7 +1,7 @@
 import { PassThrough } from "node:stream";
 import type { EntryContext } from "react-router";
 import { createReadableStreamFromReadable } from "@react-router/node";
-import { renderToPipeableStream, renderToString } from "react-dom/server";
+import { renderToPipeableStream } from "react-dom/server";
 import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
 import createEmotionServer from "@emotion/server/create-instance";
@@ -10,71 +10,27 @@ import { CacheProvider } from "@emotion/react";
 
 const ABORT_DELAY = 5_000;
 
+// Bots and link previews get the page once everything has rendered (onAllReady), people get it streamed as soon as
+// the shell is ready (onShellReady). Both go through the same stream: renderToString for bots left Suspense
+// boundaries on their fallback and never finished React Router's data stream, so crawlers saw a skeleton.
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
   routerContext: EntryContext
 ) {
-  const userAgent = request.headers.get("user-agent") || "";
-  return isbot(userAgent)
-    ? handleBotRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        routerContext
-      )
-    : handleBrowserRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        routerContext
-      );
+  return handleBrowserRequest(request, responseStatusCode, responseHeaders, routerContext, isbot(request.headers.get("user-agent") || ""));
 }
 
 /**
- * Bot/crawler path: renderToString so the full HTML is available immediately.
- * We extract Emotion critical CSS and inject it before </head>.
- */
-function handleBotRequest(
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  routerContext: EntryContext
-) {
-  const cache = createCache({ key: "css" });
-  const { extractCriticalToChunks, constructStyleTagsFromChunks } =
-    createEmotionServer(cache);
-
-  const html = renderToString(
-    <CacheProvider value={cache}>
-      <ServerRouter context={routerContext} url={request.url} />
-    </CacheProvider>
-  );
-
-  const emotionChunks = extractCriticalToChunks(html);
-  const emotionCss = constructStyleTagsFromChunks(emotionChunks);
-
-  // Inject Emotion styles before </head>
-  const markup = html.replace("</head>", `${emotionCss}</head>`);
-
-  responseHeaders.set("Content-Type", "text/html");
-
-  return new Response(`<!DOCTYPE html>${markup}`, {
-    headers: responseHeaders,
-    status: responseStatusCode,
-  });
-}
-
-/**
- * Browser path: streaming SSR via renderToPipeableStream.
- * Emotion CSS is extracted after the shell renders and injected inline.
+ * Streaming SSR via renderToPipeableStream; Emotion CSS is extracted from the head chunk and injected inline.
  */
 function handleBrowserRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  routerContext: EntryContext
+  routerContext: EntryContext,
+  waitForAll: boolean
 ) {
   return new Promise((resolve, reject) => {
     let shellRendered = false;
@@ -88,7 +44,7 @@ function handleBrowserRequest(
         <ServerRouter context={routerContext} url={request.url} />
       </CacheProvider>,
       {
-        onShellReady() {
+        [waitForAll ? "onAllReady" : "onShellReady"]() {
           shellRendered = true;
 
           const body = new PassThrough({

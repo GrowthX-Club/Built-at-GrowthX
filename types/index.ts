@@ -414,7 +414,28 @@ const CDN = "https://public-cdn.growthx.club/";
 export function projectImage(p: Pick<Project, "media">, width: number): string | undefined {
   const m = p.media?.find(x => x.type === "image" && x.url.startsWith(CDN) && /\.(png|jpe?g|gif|webp)$/i.test(x.url));
   if (!m) return undefined;
-  return `${CDN}cdn-cgi/image/width=${width},quality=75,format=auto/${m.url.slice(CDN.length)}`;
+  return cdnImage(m.url, width);
+}
+
+/**
+ * The picture for a project's card: its first screenshot; else a frame from the maker's own demo video (YouTube's
+ * still, or Loom's through /thumb/loom/:id, which looks it up server-side); else none (the card shows its title card).
+ */
+export function projectThumb(p: Pick<Project, "media">, width: number): { src: string; video?: "youtube" | "loom" } | undefined {
+  const img = projectImage(p, width);
+  if (img) return { src: img };
+  for (const m of p.media ?? []) {
+    const yt = m.type === "youtube" ? getYouTubeVideoId(m.url) : null;
+    if (yt) return { src: `https://img.youtube.com/vi/${yt}/hqdefault.jpg`, video: "youtube" };
+    const loom = m.type === "loom" ? getLoomVideoId(m.url) : null;
+    if (loom) return { src: `/thumb/loom/${loom}`, video: "loom" };
+  }
+  return undefined;
+}
+
+/** Our CDN's images resized by Cloudflare to `width` px; any other URL is returned as it is. */
+export function cdnImage(url: string, width: number): string {
+  return url.startsWith(CDN) ? `${CDN}cdn-cgi/image/width=${width},quality=75,format=auto/${url.slice(CDN.length)}` : url;
 }
 
 /**

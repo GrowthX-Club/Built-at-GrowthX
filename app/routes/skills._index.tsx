@@ -22,22 +22,23 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { "script:ld+json": breadcrumbLd([{ name: "Built at GrowthX", path: "/" }, { name: "Skills", path: "/skills" }]) },
 ];
 
-// Same frame as the home page: list on the left, the how-to card beside it on desktop.
+// Ported from the Raycast Store: a centred title, search and the one action, then segmented sort tabs over a
+// two-column grid of bordered skill cards with Install on each.
 export default function SkillsPage() {
   const data = useLoaderData<typeof loader>();
   const [query, setQuery] = useState(data.q);
   return (
     <main className="page">
-      <header className="page-head">
+      <header className="skills-hero">
         <h1 className="page-title">Skills the community built</h1>
         <p className="page-sub">Each one teaches your AI a job, the way a GrowthX member does it. GrowthX checks every skill before it's listed.</p>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginTop: 16 }}>
+        {(data.list.error || data.list.totalCount >= 10) && <SearchBox value={query} onChange={setQuery} placeholder="Search skills" />}
+        <div className="actions">
           {/* The same Submit chooser as the nav's Submit, opened on "A skill". */}
           <Link to="/?submit=skill" className="btn-outline">Add your skill</Link>
         </div>
-        {(data.list.error || data.list.totalCount >= 10) && <SearchBox value={query} onChange={setQuery} placeholder="Search skills" />}
       </header>
-      <div className="home-cols" style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 32 }}>
         <ProjectListView
           initial={data.list}
           skillsOnly
@@ -47,8 +48,10 @@ export default function SkillsPage() {
           onClearQuery={() => setQuery("")}
           emptyState={{ title: "No skills yet", description: "Skills members upload show up here once GrowthX has checked them." }}
         />
-        <aside style={{ order: 1 }}><ConnectCard /></aside>
       </div>
+      <section className="section" style={{ maxWidth: 640 }}>
+        <ConnectCard />
+      </section>
     </main>
   );
 }
