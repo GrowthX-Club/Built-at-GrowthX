@@ -1,4 +1,5 @@
 import { bxApi } from "@/lib/api";
+import { demoFromDescription } from "@/types";
 
 export const SITE_URL = "https://built.growthx.club";
 
@@ -211,8 +212,13 @@ const qs = (q: ListQuery) =>
     Object.entries(q).filter(([, v]) => v !== undefined && v !== "" && v !== false).map(([k, v]) => [k, String(v)])
   ).toString();
 
-// Lists never show the long description; dropping it keeps server-rendered pages light.
-const slim = (p: RawProject): RawProject => { const { description: _d, ...rest } = p; return rest; };
+// Lists never show the long description; dropping it keeps server-rendered pages light. A demo video linked in it
+// is kept first, as media, so the card can show its still.
+const slim = (p: RawProject): RawProject => {
+  const { description, ...rest } = p;
+  const demo = demoFromDescription(p.media, description);
+  return demo ? { ...rest, media: [...((p.media as unknown[]) ?? []), demo] } : rest;
+};
 
 export async function fetchProjects(q: ListQuery): Promise<ProjectPage> {
   try {

@@ -1,6 +1,6 @@
 // ---- Typography scale ----
 export const T = {
-  micro: 8, badge: 11, caption: 12, label: 13,
+  micro: 8, badge: 11, caption: 12, label: 14, // label = the 14px meta size of the v2 scale (14 / 16 / 24)
   bodySm: 14, body: 16, bodyLg: 18, subtitle: 20,
   title: 22, logo: 24, heading: 28, headingLg: 32,
   pageTitle: 40, display: 44,
@@ -433,6 +433,18 @@ export function projectThumb(p: Pick<Project, "media">, width: number): { src: s
   return undefined;
 }
 
+/**
+ * A demo video the maker linked in the description ("Demo: https://youtu.be/…"), for projects whose media has no
+ * picture or video of their own; null otherwise.
+ */
+export function demoFromDescription(media: unknown, description: unknown): string | null {
+  const items = normalizeMedia(media);
+  if (items.some(m => m.type !== "image" || /\.(png|jpe?g|gif|webp)$/i.test(m.url))) return null;
+  if (typeof description !== "string") return null;
+  const m = description.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=[\w-]{6,}|youtu\.be\/[\w-]{6,}|loom\.com\/share\/[a-zA-Z0-9]{16,})/);
+  return m ? m[0] : null;
+}
+
 /** Our CDN's images resized by Cloudflare to `width` px; any other URL is returned as it is. */
 export function cdnImage(url: string, width: number): string {
   return url.startsWith(CDN) ? `${CDN}cdn-cgi/image/width=${width},quality=75,format=auto/${url.slice(CDN.length)}` : url;
@@ -515,7 +527,7 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     featured: (p.featured ?? false) as boolean,
     date: (p.date ?? p.created_at ?? p.createdAt ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
-    media: normalizeMedia(p.media),
+    media: normalizeMedia(demoFromDescription(p.media, p.description) ? [...((p.media as unknown[]) ?? []), demoFromDescription(p.media, p.description)] : p.media),
     slug: (p.slug ?? undefined) as string | undefined,
     // Only web links become Try it buttons; anything else (javascript:, data:, typos) is dropped here, once.
     url: typeof p.url === 'string' && /^https?:\/\/\S+$/i.test(p.url.trim()) ? p.url.trim() : undefined,

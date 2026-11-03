@@ -89,7 +89,7 @@ function Av({ initials, size = 32, role, src, className }: { initials: string; s
       background: r?.bg || C.accentSoft,
       color: r?.color || C.textSec,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: Math.round(size * 0.36), fontWeight: 650,
+      fontSize: size >= 40 ? 16 : 14, fontWeight: 600,
       fontFamily: "var(--sans)", letterSpacing: "0.01em",
       border: `1px solid ${C.borderLight}`,
       flexShrink: 0,

@@ -10,7 +10,7 @@ const CONNECT_URL = "https://growthx.club/community/mcp";
 const card = {
   background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px",
 } as const;
-const title = { fontSize: 18, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.3 } as const;
+const title = { fontSize: 16, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.3 } as const;
 const body = { fontSize: 16, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.55 } as const;
 const meta = { fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", lineHeight: 1.4 } as const;
 // Same weight and colour as the "In Claude Code or Codex" label in the box below.
@@ -295,7 +295,7 @@ export function SkillMarkdown({ text }: { text: string }) {
     const heading = /^(#{1,6})\s+(.*)$/.exec(line);
     if (heading) {
       flush();
-      const size = heading[1].length === 1 ? T.bodyLg : heading[1].length === 2 ? T.body : T.bodySm;
+      const size = heading[1].length <= 2 ? T.body : T.bodySm;
       blocks.push(<div key={blocks.length} style={{ fontSize: size, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", margin: "18px 0 8px", lineHeight: 1.3 }}>{heading[2]}</div>);
     } else if (/^```/.test(line)) {
       flush();
