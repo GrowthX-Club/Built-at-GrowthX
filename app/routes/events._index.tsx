@@ -1,114 +1,43 @@
+import { useLoaderData } from "react-router";
 import type { MetaFunction } from "react-router";
-import { C, T } from "@/types";
-import { useResponsive } from "@/hooks/useMediaQuery";
-import EventCard, { type EventCardProps } from "@/components/EventCard";
+import { BUILD_SPRINT, COLLECTIONS, SITE_URL, fetchCollectionStats, collectionStat } from "@/lib/collections";
+import { pageMeta, breadcrumbLd } from "@/lib/seo";
+import CollectionCard from "@/components/CollectionCard";
+
+export async function loader() {
+  return { stats: await fetchCollectionStats() };
+}
+
+const DESCRIPTION = "Build Sprint and the GrowthX buildathons, with every project members shipped at each one.";
 
 export const meta: MetaFunction = () => [
-  { title: "Events · Built at GrowthX" },
+  ...pageMeta({ title: "Events — Built at GrowthX", description: DESCRIPTION, path: "/events" }),
   {
-    name: "description",
-    content:
-      "Buildathons, summits, and other things the GrowthX community ships at. Discover the next event to join.",
+    "script:ld+json": {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "GrowthX build events",
+      itemListElement: COLLECTIONS.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, url: `${SITE_URL}${c.path}` })),
+    },
   },
-  { property: "og:type", content: "website" },
-  { property: "og:title", content: "Events · Built at GrowthX" },
-  {
-    property: "og:description",
-    content:
-      "Buildathons, summits, and other things the GrowthX community ships at. Discover the next event to join.",
-  },
-  { name: "twitter:card", content: "summary" },
-  { name: "twitter:title", content: "Events · Built at GrowthX" },
-  {
-    name: "twitter:description",
-    content:
-      "Buildathons, summits, and other things the GrowthX community ships at. Discover the next event to join.",
-  },
-  { tagName: "link", rel: "canonical", href: "https://built.growthx.club/events" },
-];
-
-const EVENTS: EventCardProps[] = [
-  {
-    slug: "sarvam",
-    title: "Sarvam Epoch Buildathon",
-    tagline: "~600 builders shipping with Sarvam AI in a single day.",
-    dateRange: "July 2026",
-    status: "live",
-    href: "/sarvam",
-  },
-  {
-    slug: "ai-weekender",
-    title: "AI Weekender Buildathon",
-    tagline: "Ship an AI product over the weekend. Build, prove, win.",
-    dateRange: "April 2026",
-    status: "live",
-    href: "/ai-weekender",
-  },
-  {
-    slug: "opencode",
-    title: "OpenCode Buildathon",
-    tagline: "India's first OpenCode Buildathon, powered by GrowthX.",
-    dateRange: "April 2026",
-    status: "archived",
-    href: "/opencode",
-  },
+  { "script:ld+json": breadcrumbLd([{ name: "Built at GrowthX", path: "/" }, { name: "Events", path: "/events" }]) },
 ];
 
 export default function EventsPage() {
-  const { isMobile, isTablet } = useResponsive();
-
+  const { stats } = useLoaderData<typeof loader>();
+  // Build Sprint first, then the buildathons by their latest project.
+  const others = COLLECTIONS.filter(c => c !== BUILD_SPRINT)
+    .sort((a, b) => (collectionStat(b, stats).lastAt ?? "").localeCompare(collectionStat(a, stats).lastAt ?? ""));
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <main className="responsive-main" style={{
-        maxWidth: 960, margin: "0 auto",
-        padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 32px 100px",
-      }}>
-        {/* Header */}
-        <div className="fade-up" style={{ marginBottom: 36 }}>
-          <h1 className="responsive-h1" style={{
-            fontSize: 44, fontWeight: 400, color: C.text,
-            fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10,
-          }}>
-            Events
-          </h1>
-          <p style={{
-            fontSize: T.bodyLg, color: C.textSec,
-            fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560,
-          }}>
-            Buildathons, summits, and other things the GrowthX community ships at.
-          </p>
-        </div>
-
-        {/* Events list */}
-        {EVENTS.length === 0 ? (
-          <div className="fade-up stagger-2" style={{
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", padding: "64px 24px", textAlign: "center",
-          }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>{"\u{1F5D3}\u{FE0F}"}</div>
-            <div style={{
-              fontSize: T.title, fontWeight: 500, color: C.text,
-              fontFamily: "var(--serif)", marginBottom: 8,
-            }}>
-              No events yet
-            </div>
-            <div style={{
-              fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
-              fontWeight: 400, maxWidth: 360, lineHeight: 1.5,
-            }}>
-              The next buildathon drops soon.
-            </div>
-          </div>
-        ) : (
-          <div>
-            {EVENTS.map((e, i) => (
-              <div key={e.slug} className={`fade-up stagger-${Math.min(i + 1, 6)}`}>
-                <EventCard {...e} />
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+    <main className="page narrow">
+      <header className="page-head">
+        <h1 className="page-title">Events</h1>
+        <p className="page-sub">{DESCRIPTION}</p>
+      </header>
+      <div className="coll-grid events-grid">
+        <CollectionCard c={BUILD_SPRINT} stats={stats} feature />
+        {others.map(c => <CollectionCard key={c.slug} c={c} stats={stats} />)}
+      </div>
+    </main>
   );
 }
