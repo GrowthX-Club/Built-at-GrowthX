@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { type Collection, type CollectionStats, collectionStat, dateRange, isOpen } from "@/lib/collections";
+import { type Collection, type CollectionStats, collectionStat, dateRange, isOpen, sitePhoto } from "@/lib/collections";
 
 // An event card: the event's real photo or cover on top (every card without one gets the same typographic cover),
 // then name, newest season, dates and count. The name's link covers the card; the season chip is its own link.
@@ -10,7 +10,7 @@ export default function CollectionCard({ c, stats, blurb = false, flagship = fal
   return (
     <article className={`coll-card${flagship ? " is-flagship" : ""}`}>
       {c.cover
-        ? <img className="coll-cover" src={c.cover} alt="" loading="lazy" decoding="async" />
+        ? <img className="coll-cover" src={sitePhoto(c.cover, 800)} alt="" loading="lazy" decoding="async" />
         : mosaic.length >= 4
           ? <div className="coll-mosaic" aria-hidden="true">{mosaic.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" />)}</div>
           : <div className="coll-mark" aria-hidden="true">{c.mark ?? c.name}</div>}

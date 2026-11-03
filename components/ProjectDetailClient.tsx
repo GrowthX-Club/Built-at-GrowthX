@@ -18,6 +18,7 @@ import {
   getStackLogoUrl,
   formatProjectDate,
   teamOf,
+  cdnImage,
 } from "@/types";
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
@@ -70,7 +71,7 @@ function Av({ initials, size = 32, highlight, role, src }: { initials: string; s
   const r = role ? ROLES[role] : undefined;
   if (src && src.startsWith("http")) {
     return (
-      <img src={src} alt={initials} style={{
+      <img src={cdnImage(src, 96)} alt={initials} loading="lazy" decoding="async" style={{
         width: size, height: size, borderRadius: size,
         flexShrink: 0, objectFit: "cover",
       }} />

@@ -138,6 +138,8 @@ export interface Project {
   accolade?: ProjectAccolade;
   /** A skill shipped with the project; only set once GrowthX has reviewed it. */
   skill?: ProjectSkill;
+  /** A demo video the maker linked in the description, shown when the project has no picture or video of its own. */
+  demo?: string;
 }
 
 export interface ProjectSkill {
@@ -283,7 +285,7 @@ const LOGO_DEV_TOKEN = 'pk_RqfvqsxqSGSajjqEOE8sTQ';
 export function getCompanyLogoUrl(company: string, dbLogoUrl?: string): string {
   // logo.dev's growthx.com is a different company; use our own mark (growthx.club apple-touch-icon)
   if (typeof company === 'string' && /^growthx(club)?$/.test(company.toLowerCase().replace(/[^a-z0-9]/g, ''))) return '/growthx-logo.png';
-  if (dbLogoUrl && !dbLogoUrl.includes('cdn.brandfetch.io')) return dbLogoUrl;
+  if (dbLogoUrl && !dbLogoUrl.includes('cdn.brandfetch.io')) return cdnImage(dbLogoUrl, 64);
   if (!company) return '';
   // Strip common suffixes and normalize to a plausible domain
   const cleaned = company
@@ -421,10 +423,10 @@ export function projectImage(p: Pick<Project, "media">, width: number): string |
  * The picture for a project's card: its first screenshot; else a frame from the maker's own demo video (YouTube's
  * still, or Loom's through /thumb/loom/:id, which looks it up server-side); else none (the card shows its title card).
  */
-export function projectThumb(p: Pick<Project, "media">, width: number): { src: string; video?: "youtube" | "loom" } | undefined {
+export function projectThumb(p: Pick<Project, "media" | "demo">, width: number): { src: string; video?: "youtube" | "loom" } | undefined {
   const img = projectImage(p, width);
   if (img) return { src: img };
-  for (const m of p.media ?? []) {
+  for (const m of [...(p.media ?? []), ...(p.demo ? [{ type: detectMediaType(p.demo), url: p.demo }] : [])]) {
     const yt = m.type === "youtube" ? getYouTubeVideoId(m.url) : null;
     if (yt) return { src: `https://img.youtube.com/vi/${yt}/hqdefault.jpg`, video: "youtube" };
     const loom = m.type === "loom" ? getLoomVideoId(m.url) : null;
@@ -527,7 +529,9 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     featured: (p.featured ?? false) as boolean,
     date: (p.date ?? p.created_at ?? p.createdAt ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
-    media: normalizeMedia(demoFromDescription(p.media, p.description) ? [...((p.media as unknown[]) ?? []), demoFromDescription(p.media, p.description)] : p.media),
+    media: normalizeMedia(p.media),
+    // Display only (cards and the gallery), never written back: lists carry it as `demo`, pages find it in the description.
+    demo: (typeof p.demo === "string" ? p.demo : null) ?? demoFromDescription(p.media, p.description) ?? undefined,
     slug: (p.slug ?? undefined) as string | undefined,
     // Only web links become Try it buttons; anything else (javascript:, data:, typos) is dropped here, once.
     url: typeof p.url === 'string' && /^https?:\/\/\S+$/i.test(p.url.trim()) ? p.url.trim() : undefined,

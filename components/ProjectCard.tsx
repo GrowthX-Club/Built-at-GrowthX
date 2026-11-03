@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useState, useRef, useEffect } from "react";
-import { type Project, teamOf, projectThumb } from "@/types";
+import { type Project, teamOf, projectThumb, cdnImage } from "@/types";
 import { sprintPill, eventFor } from "@/lib/collections";
 
 // A project card, ported from Devpost's project gallery: the product's own screenshot on top (every card has the
@@ -40,7 +40,7 @@ export function Face({ src, initials }: { src?: string; initials?: string }) {
   const ref = useRef<HTMLImageElement>(null);
   useEffect(() => { const i = ref.current; if (i && i.complete && i.naturalWidth === 0) setOk(false); }, []);
   return ok && src?.startsWith("http")
-    ? <img ref={ref} className="face" src={src} alt="" loading="lazy" decoding="async" onError={() => setOk(false)} />
+    ? <img ref={ref} className="face" src={cdnImage(src, 96)} alt="" loading="lazy" decoding="async" onError={() => setOk(false)} />
     : <span className="face">{initials?.[0] ?? "?"}</span>;
 }
 

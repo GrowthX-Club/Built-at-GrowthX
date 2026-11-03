@@ -155,7 +155,18 @@ export default function ProjectListView({
   }, [scopeKey, wholeScope, pageSize]);
 
   useEffect(() => {
-    if (refreshKey === 0 && !wholeScope && serverKey === JSON.stringify({ sort, category })) return;
+    if (refreshKey === 0 && !wholeScope && serverKey === JSON.stringify({ sort, category })) {
+      // Back on the view the server rendered: the first time nothing has changed; after another view was loaded,
+      // put the server's page back (and drop any request still in flight).
+      if (requestId.current > 0 && initial) {
+        ++requestId.current;
+        setProjects(initial.projects.map(normalizeProject));
+        setTotalCount(initial.totalCount);
+        setFailed(false);
+        setLoading(false);
+      }
+      return;
+    }
     load();
   }, [load, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -170,7 +181,7 @@ export default function ProjectListView({
           const seen = new Set(prev.map(p => String(p.id)));
           return [...prev, ...d.projects.map(normalizeProject).filter(p => !seen.has(String(p.id)))];
         });
-        if (d.projects.length === 0) setTotalCount(projects.length);
+        if (d.projects.length === 0 && !d.error) setTotalCount(projects.length);
       })
       .finally(() => setLoadingMore(false));
   }, [wholeScope, loadingMore, projects.length, totalCount, scopeKey, pageSize]);

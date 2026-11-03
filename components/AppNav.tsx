@@ -9,6 +9,7 @@ import {
   ROLES,
   type BuilderProfile,
   normalizeUser,
+  cdnImage,
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
@@ -23,7 +24,7 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
   if (src && src.startsWith("http")) {
     return (
       <img
-        src={src}
+        src={cdnImage(src, 96)}
         alt={initials}
         style={{
           width: size, height: size, borderRadius: size,

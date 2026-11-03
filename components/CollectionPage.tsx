@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import type { MetaDescriptor } from "react-router";
 import {
   type Collection, type SortKey, type ProjectPage, type CollectionStats, SITE_URL,
-  fetchProjects, fetchCollectionStats, collectionStat, dateRange, isOpen, listParams, defaultSeason, mosaicOf,
+  fetchProjects, fetchCollectionStats, collectionStat, dateRange, isOpen, listParams, defaultSeason, mosaicOf, sitePhoto,
 } from "@/lib/collections";
 import { pageMeta, itemListLd, breadcrumbLd } from "@/lib/seo";
 import ProjectListView, { type FilterTab } from "@/components/ProjectListView";
@@ -41,7 +41,7 @@ export async function loadCollection(request: Request, c: Collection): Promise<C
   return { list, stats, tag, seasonKey: season?.key ?? "", sort: listSort, category, q };
 }
 
-const absolute = (src: string) => (src.startsWith("/") ? `${SITE_URL}${src}` : src);
+const absolute = (src: string) => (src.startsWith("/") ? `${SITE_URL}${src}` : src).replace("format=auto", "format=jpeg");
 
 export function collectionMeta(c: Collection, data: CollectionData | undefined, extra: MetaDescriptor[] = []): MetaDescriptor[] {
   const season = c.seasons?.find(s => s.key === data?.seasonKey);
@@ -78,7 +78,7 @@ export default function CollectionPage({ c, customFilters }: { c: Collection; cu
   return (
     <main className="page">
       <nav aria-label="Breadcrumb" className="crumbs"><Link to="/events">Events</Link><span aria-hidden="true"> / </span><span>{c.name}</span></nav>
-      {c.photos && <div className="photo-strip">{c.photos.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" />)}</div>}
+      {c.photos && <div className="photo-strip">{c.photos.map(src => <img key={src} src={sitePhoto(src, 480)} alt="" loading="lazy" decoding="async" />)}</div>}
       {/* Devpost's hackathon banner: the event's real cover beside its name (the home page's Build Sprint band). The
           Build Sprint cover is Season 04's; other seasons and events without a cover show four of their best screenshots. */}
       <header className={art ? "sprint-band event-band" : "event-head"}>

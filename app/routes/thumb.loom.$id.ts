@@ -15,8 +15,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
       if (r.ok) {
         const url = String((await r.json()).thumbnail_url ?? "");
         if (/^https:\/\/cdn\.loom\.com\/\S+\.(gif|jpe?g|png)$/i.test(url)) thumb = url.replace(/\.gif$/i, ".jpg");
+      } else if (r.status === 429 || r.status >= 500) {
+        // Loom busy or down: answer "try later" and remember nothing, so the next request asks again.
+        return new Response("Unavailable", { status: 503, headers: { "Cache-Control": "no-store" } });
       }
-    } catch { /* timeout or network: not cached, so the next request tries again */ return new Response("Unavailable", { status: 503 }); }
+    } catch { /* timeout or network: not cached, so the next request tries again */ return new Response("Unavailable", { status: 503, headers: { "Cache-Control": "no-store" } }); }
     cache.set(id, thumb);
   }
   const thumb = cache.get(id);

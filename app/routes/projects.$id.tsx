@@ -53,7 +53,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const description = p.tagline || cleanDescription(raw.description) || "A project built at GrowthX";
   const people = [p.builder, ...(p.creators || [])].filter(b => b.name && b.name !== "Anonymous");
   const byline = people.map(b => b.name).join(", ");
-  const image = projectImage(p, 1200);
+  // JPEG, not format=auto: LinkedIn and WhatsApp previews do not read AVIF/WebP.
+  const image = projectImage(p, 1200)?.replace("format=auto", "format=jpeg");
   const event = eventFor(p.buildathon);
 
   return [

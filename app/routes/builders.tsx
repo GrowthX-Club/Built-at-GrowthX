@@ -13,6 +13,7 @@ import {
   normalizeMember,
   normalizeProject,
   getCompanyLogoUrl,
+  cdnImage,
 } from "@/types";
 import { bxApi } from "@/lib/api";
 
@@ -74,7 +75,9 @@ function Av({ initials, size = 32, role, src, className }: { initials: string; s
     return (
       <img
         ref={ref}
-        src={src}
+        src={cdnImage(src, 96)}
+        loading="lazy"
+        decoding="async"
         className={className}
         onError={() => setBroken(true)}
         alt={initials}
@@ -109,6 +112,7 @@ function CompanyTag({ company, companyLogo }: { company?: string; companyColor?:
       <img
         src={getCompanyLogoUrl(company, companyLogo)}
         alt=""
+        loading="lazy"
         width={16}
         height={16}
         style={{ borderRadius: 4, objectFit: "contain", flexShrink: 0 }}

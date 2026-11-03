@@ -3,6 +3,10 @@ import { demoFromDescription, normalizeProject, projectImage } from "@/types";
 
 export const SITE_URL = "https://built.growthx.club";
 
+/** One of the site's own photos (e.g. /sarvam/…), resized by the CDN, which fetches it from built.growthx.club. */
+export const sitePhoto = (src: string, width: number) =>
+  src.startsWith("/") ? `https://public-cdn.growthx.club/cdn-cgi/image/width=${width},quality=75,format=auto/${SITE_URL}${src}` : src;
+
 // ---- Events / collections ----
 // One registry for every event tag the site shows. Names are the ones the site and GrowthX already use.
 // Build Sprint is one programme across four seasons (BW01–BW04); each season keeps its own tag.
@@ -230,7 +234,7 @@ const qs = (q: ListQuery) =>
 const slim = (p: RawProject): RawProject => {
   const { description, ...rest } = p;
   const demo = demoFromDescription(p.media, description);
-  return demo ? { ...rest, media: [...((p.media as unknown[]) ?? []), demo] } : rest;
+  return demo ? { ...rest, demo } : rest;
 };
 
 export async function fetchProjects(q: ListQuery): Promise<ProjectPage> {

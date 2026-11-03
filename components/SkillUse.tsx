@@ -166,7 +166,7 @@ export function SkillUseBox({ skill, slug }: { skill: ProjectSkill; slug: string
     { key: "mcp", label: "GrowthX MCP" },
   ];
   const [tab, setTab] = useState<Tab>(tabs[0].key);
-  const reviewed = new Date(skill.reviewedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const reviewed = new Date(skill.reviewedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 
   return (
     <div style={{ ...card, marginBottom: 28 }}>

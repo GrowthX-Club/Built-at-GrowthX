@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { getLoomVideoId, getYouTubeVideoId, cdnImage, type MediaItem, type Project } from "@/types";
+import { getLoomVideoId, getYouTubeVideoId, cdnImage, detectMediaType, type MediaItem, type Project } from "@/types";
 import { ProjectMedia, hostOf } from "@/components/ProjectCard";
 
 /**
@@ -24,7 +24,9 @@ const isPicture = (m: MediaItem) => m.type === "image" && /^https:\/\/\S+\.(png|
 // with round arrows on desktop. A project without any keeps the same slot with its title card, linked to the product.
 export default function MediaGallery({ project: p }: { project: Project }) {
   const track = useRef<HTMLDivElement>(null);
-  const items = (p.media ?? []).filter(m => getEmbedSrc(m) || isPicture(m));
+  const own = (p.media ?? []).filter(m => getEmbedSrc(m) || isPicture(m));
+  // No picture or video of its own: the demo video the maker linked in the description, if any.
+  const items = own.length || !p.demo ? own : [{ type: detectMediaType(p.demo), url: p.demo }].filter(m => getEmbedSrc(m));
   const scroll = (dir: 1 | -1) => track.current?.scrollBy({ left: dir * track.current.clientWidth * 0.8, behavior: "smooth" });
 
   // A skill's install box is its picture; a title card above it would say nothing.
