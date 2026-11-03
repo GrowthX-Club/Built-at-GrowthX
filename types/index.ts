@@ -199,6 +199,8 @@ export interface BuilderProfile {
   rep: number;
   shipped: number;
   bio: string;
+  /** Job title (current experience when the backend has it). */
+  title?: string;
   company?: string;
   companyColor?: string;
   companyLogo?: string;
@@ -390,17 +392,16 @@ function normalizeMedia(raw: unknown): MediaItem[] {
     .filter(Boolean) as MediaItem[];
 }
 
-// ---- Buildathon display labels ----
+const CDN = "https://public-cdn.growthx.club/";
 
-/** Map of raw buildathon tags to human-readable display labels. Unknown tags fall back to the raw value. */
-export const BUILDATHON_LABELS: Record<string, string> = {
-  sarvam: "Sarvam Epoch Buildathon by GrowthX",
-  opencode: "OpenCode Buildathon",
-  "ai-weekender": "AI Weekender Buildathon",
-};
-
-export function getBuildathonLabel(tag: string): string {
-  return BUILDATHON_LABELS[tag] ?? tag;
+/**
+ * The project's first screenshot, resized by the CDN (Cloudflare) to `width` px; undefined when it has none.
+ * Only our own CDN's image files count: Drive/Docs links and videos are not pictures we can show.
+ */
+export function projectImage(p: Pick<Project, "media">, width: number): string | undefined {
+  const m = p.media?.find(x => x.type === "image" && x.url.startsWith(CDN) && /\.(png|jpe?g|gif|webp)$/i.test(x.url));
+  if (!m) return undefined;
+  return `${CDN}cdn-cgi/image/width=${width},quality=75,format=auto/${m.url.slice(CDN.length)}`;
 }
 
 /**
@@ -668,6 +669,7 @@ export function normalizeMember(m: Record<string, unknown>): BuilderProfile {
     rep: (m.rep ?? 0) as number,
     shipped: (m.shipped ?? 0) as number,
     bio: (m.bio ?? '') as string,
+    title: ((m.title ?? m.role) || undefined) as string | undefined,
     company: (m.company ?? undefined) as string | undefined,
     companyColor: ((m.companyColor ?? m.company_color ?? (m.company ? generateCompanyColor(m.company as string) : undefined)) as string | undefined),
     companyLogo: ((m.companyLogo ?? m.company_logo ?? undefined) as string | undefined),
@@ -751,28 +753,6 @@ export interface ListApiKeysResponse {
 export interface RevokeApiKeyResponse {
   success: true;
   msg: string;
-}
-
-export interface ActivityItem {
-  id: string;
-  type: 'vote' | 'comment' | 'project';
-  actorName: string;
-  actorAvatar?: string;
-  projectName: string;
-  projectId: string;
-  timestamp: string;
-}
-
-export interface BxNotification {
-  id: string;
-  type: 'vote' | 'comment' | 'reaction';
-  actorName: string;
-  actorAvatar?: string;
-  projectName: string;
-  projectId: string;
-  commentPreview?: string;
-  read: boolean;
-  createdAt: string;
 }
 
 export const ROLE_WEIGHTS: Record<string, number> = {
