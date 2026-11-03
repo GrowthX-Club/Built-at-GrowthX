@@ -1,6 +1,6 @@
 // ---- Typography scale ----
 export const T = {
-  micro: 8, badge: 11, caption: 12, label: 13,
+  micro: 8, badge: 11, caption: 12, label: 14, // label = the 14px meta size of the v2 scale (14 / 16 / 24)
   bodySm: 14, body: 16, bodyLg: 18, subtitle: 20,
   title: 22, logo: 24, heading: 28, headingLg: 32,
   pageTitle: 40, display: 44,
@@ -138,6 +138,8 @@ export interface Project {
   accolade?: ProjectAccolade;
   /** A skill shipped with the project; only set once GrowthX has reviewed it. */
   skill?: ProjectSkill;
+  /** A demo video the maker linked in the description, shown when the project has no picture or video of its own. */
+  demo?: string;
 }
 
 export interface ProjectSkill {
@@ -199,6 +201,8 @@ export interface BuilderProfile {
   rep: number;
   shipped: number;
   bio: string;
+  /** Job title (current experience when the backend has it). */
+  title?: string;
   company?: string;
   companyColor?: string;
   companyLogo?: string;
@@ -281,7 +285,7 @@ const LOGO_DEV_TOKEN = 'pk_RqfvqsxqSGSajjqEOE8sTQ';
 export function getCompanyLogoUrl(company: string, dbLogoUrl?: string): string {
   // logo.dev's growthx.com is a different company; use our own mark (growthx.club apple-touch-icon)
   if (typeof company === 'string' && /^growthx(club)?$/.test(company.toLowerCase().replace(/[^a-z0-9]/g, ''))) return '/growthx-logo.png';
-  if (dbLogoUrl && !dbLogoUrl.includes('cdn.brandfetch.io')) return dbLogoUrl;
+  if (dbLogoUrl && !dbLogoUrl.includes('cdn.brandfetch.io')) return cdnImage(dbLogoUrl, 64);
   if (!company) return '';
   // Strip common suffixes and normalize to a plausible domain
   const cleaned = company
@@ -392,17 +396,60 @@ function normalizeMedia(raw: unknown): MediaItem[] {
     .filter(Boolean) as MediaItem[];
 }
 
-// ---- Buildathon display labels ----
+/** Everyone who made a project: the submitter, co-creators and collaborators, once each. */
+export function teamOf(p: Pick<Project, "builder" | "creators" | "collabs">): { _id?: string; name: string; company?: string; avatar: string; avatarUrl?: string }[] {
+  const seen = new Set<string>();
+  return [p.builder, ...(p.creators || []), ...p.collabs].filter(m => {
+    const key = m._id || m.name;
+    if (!m.name || m.name === "Anonymous" || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
-/** Map of raw buildathon tags to human-readable display labels. Unknown tags fall back to the raw value. */
-export const BUILDATHON_LABELS: Record<string, string> = {
-  sarvam: "Sarvam Epoch Buildathon by GrowthX",
-  opencode: "OpenCode Buildathon",
-  "ai-weekender": "AI Weekender Buildathon",
-};
+const CDN = "https://public-cdn.growthx.club/";
 
-export function getBuildathonLabel(tag: string): string {
-  return BUILDATHON_LABELS[tag] ?? tag;
+/**
+ * The project's first screenshot, resized by the CDN (Cloudflare) to `width` px; undefined when it has none.
+ * Only our own CDN's image files count: Drive/Docs links and videos are not pictures we can show.
+ */
+export function projectImage(p: Pick<Project, "media">, width: number): string | undefined {
+  const m = p.media?.find(x => x.type === "image" && x.url.startsWith(CDN) && /\.(png|jpe?g|gif|webp)$/i.test(x.url));
+  if (!m) return undefined;
+  return cdnImage(m.url, width);
+}
+
+/**
+ * The picture for a project's card: its first screenshot; else a frame from the maker's own demo video (YouTube's
+ * still, or Loom's through /thumb/loom/:id, which looks it up server-side); else none (the card shows its title card).
+ */
+export function projectThumb(p: Pick<Project, "media" | "demo">, width: number): { src: string; video?: "youtube" | "loom" } | undefined {
+  const img = projectImage(p, width);
+  if (img) return { src: img };
+  for (const m of [...(p.media ?? []), ...(p.demo ? [{ type: detectMediaType(p.demo), url: p.demo }] : [])]) {
+    const yt = m.type === "youtube" ? getYouTubeVideoId(m.url) : null;
+    if (yt) return { src: `https://img.youtube.com/vi/${yt}/hqdefault.jpg`, video: "youtube" };
+    const loom = m.type === "loom" ? getLoomVideoId(m.url) : null;
+    if (loom) return { src: `/thumb/loom/${loom}`, video: "loom" };
+  }
+  return undefined;
+}
+
+/**
+ * A demo video the maker linked in the description ("Demo: https://youtu.be/…"), for projects whose media has no
+ * picture or video of their own; null otherwise.
+ */
+export function demoFromDescription(media: unknown, description: unknown): string | null {
+  const items = normalizeMedia(media);
+  if (items.some(m => m.type !== "image" || /\.(png|jpe?g|gif|webp)$/i.test(m.url))) return null;
+  if (typeof description !== "string") return null;
+  const m = description.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=[\w-]{6,}|youtu\.be\/[\w-]{6,}|loom\.com\/share\/[a-zA-Z0-9]{16,})/);
+  return m ? m[0] : null;
+}
+
+/** Our CDN's images resized by Cloudflare to `width` px; any other URL is returned as it is. */
+export function cdnImage(url: string, width: number): string {
+  return url.startsWith(CDN) ? `${CDN}cdn-cgi/image/width=${width},quality=75,format=auto/${url.slice(CDN.length)}` : url;
 }
 
 /**
@@ -413,7 +460,8 @@ export function formatProjectDate(raw: string): string {
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  // A fixed time zone so the server and the browser print the same day (no hydration mismatch).
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 /** Normalize a backend project (with populated creator/collabs) to frontend Project shape */
@@ -482,8 +530,11 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     date: (p.date ?? p.created_at ?? p.createdAt ?? '') as string,
     gallery: (p.gallery ?? []) as GalleryItem[],
     media: normalizeMedia(p.media),
+    // Display only (cards and the gallery), never written back: lists carry it as `demo`, pages find it in the description.
+    demo: (typeof p.demo === "string" ? p.demo : null) ?? demoFromDescription(p.media, p.description) ?? undefined,
     slug: (p.slug ?? undefined) as string | undefined,
-    url: (p.url as string) || undefined,
+    // Only web links become Try it buttons; anything else (javascript:, data:, typos) is dropped here, once.
+    url: typeof p.url === 'string' && /^https?:\/\/\S+$/i.test(p.url.trim()) ? p.url.trim() : undefined,
     buildProcess: (p.buildProcess ?? p.build_process ?? undefined) as string | undefined,
     isDraft: (p.isDraft ?? p.is_draft ?? false) as boolean,
     enabled: (p.enabled !== undefined ? p.enabled : true) as boolean,
@@ -670,6 +721,7 @@ export function normalizeMember(m: Record<string, unknown>): BuilderProfile {
     rep: (m.rep ?? 0) as number,
     shipped: (m.shipped ?? 0) as number,
     bio: (m.bio ?? '') as string,
+    title: ((m.title ?? m.role) || undefined) as string | undefined,
     company: (m.company ?? undefined) as string | undefined,
     companyColor: ((m.companyColor ?? m.company_color ?? (m.company ? generateCompanyColor(m.company as string) : undefined)) as string | undefined),
     companyLogo: ((m.companyLogo ?? m.company_logo ?? undefined) as string | undefined),
@@ -753,16 +805,6 @@ export interface ListApiKeysResponse {
 export interface RevokeApiKeyResponse {
   success: true;
   msg: string;
-}
-
-export interface ActivityItem {
-  id: string;
-  type: 'vote' | 'comment' | 'project';
-  actorName: string;
-  actorAvatar?: string;
-  projectName: string;
-  projectId: string;
-  timestamp: string;
 }
 
 export const ROLE_WEIGHTS: Record<string, number> = {

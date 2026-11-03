@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -9,6 +9,7 @@ import {
   ROLES,
   type BuilderProfile,
   normalizeUser,
+  cdnImage,
 } from "@/types";
 import { bxApi, clearToken } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
@@ -16,13 +17,14 @@ import { useNavOverride } from "@/context/NavContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import { useTheme } from "@/context/ThemeContext";
 import BuiltLogo from "@/components/BuiltLogo";
+import { Link } from "react-router";
 
 function Av({ initials, size = 32, role, src }: { initials: string; size?: number; role?: string; src?: string }) {
   const r = role ? ROLES[role] : undefined;
   if (src && src.startsWith("http")) {
     return (
       <img
-        src={src}
+        src={cdnImage(src, 96)}
         alt={initials}
         style={{
           width: size, height: size, borderRadius: size,
@@ -50,10 +52,22 @@ function Av({ initials, size = 32, role, src }: { initials: string; size?: numbe
 
 const NAV_TABS = [
   { href: "/", label: "Projects" },
-  { href: "/skills", label: "Skills" },
+  { href: "/build-sprint", label: "Build Sprint" },
   { href: "/events", label: "Events" },
+  { href: "/skills", label: "Skills" },
   { href: "/builders", label: "Builders" },
 ];
+
+// Which tab a page belongs to (event pages sit under Events, Build Sprint has its own tab).
+function tabFor(pathname: string): string {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  if (p === "/" || p === "/projects") return "/";
+  if (p.startsWith("/build-sprint")) return "/build-sprint";
+  if (p.startsWith("/events") || p === "/opencode" || p === "/sarvam") return "/events";
+  if (p === "/skills") return "/skills";
+  if (p === "/builders") return "/builders";
+  return "";
+}
 
 export default function AppNav() {
   const router = useRouter();
@@ -71,8 +85,6 @@ export default function AppNav() {
   const [scrolled, setScrolled] = useState(false);
   const [showThemeTooltip, setShowThemeTooltip] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
-  const [underlineStyle, setUnderlineStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
 
   useEffect(() => { setPortalMounted(true); }, []);
 
@@ -106,23 +118,6 @@ export default function AppNav() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const updateUnderline = useCallback(() => {
-    const checkActive = (href: string) => {
-      if (href === "/") return pathname === "/" || pathname === "/projects";
-      return pathname === href;
-    };
-    const activeTab = NAV_TABS.find(t => checkActive(t.href));
-    if (activeTab) {
-      const el = tabsRef.current[activeTab.href];
-      if (el) {
-        setUnderlineStyle({ left: el.offsetLeft, width: el.offsetWidth });
-      }
-    }
-  }, [pathname]);
-
-  useLayoutEffect(() => {
-    updateUnderline();
-  }, [updateUnderline]);
 
   const handleSignIn = () => {
     openLoginDialog(() => {
@@ -137,330 +132,107 @@ export default function AppNav() {
     setShowProfileMenu(false);
   };
 
-  const isTabActive = (href: string) => {
-    if (href === "/") return pathname === "/" || pathname === "/projects";
-    return pathname === href;
-  };
+  const isTabActive = (href: string) => tabFor(pathname) === href;
 
-  if (pathname.replace(/\/+$/, "") === "/sarvam") return null;
+  const moon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>;
+  const sun = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>;
+  const menuItem = (onClick: () => void, label: string, danger = false) => (
+    <button onClick={onClick} style={{
+      width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 16, fontWeight: 500,
+      color: danger ? C.errorText : C.text, textAlign: "left", transition: "background 0.1s",
+    }}
+      onMouseEnter={e => { e.currentTarget.style.background = danger ? C.errorSoft : C.accentSoft; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
+    >{label}</button>
+  );
 
+  // Product Hunt's header: logo, text tabs, then the lights switch, Submit and the account on the right.
+  // Phones: menu (or back on a project page), logo, the lights switch, Submit, account.
   return (
     <>
-      <nav className="responsive-nav" style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: scrolled ? "var(--c-navGlass)" : "var(--c-bg)",
-        backdropFilter: scrolled ? "blur(32px)" : "none",
-        WebkitBackdropFilter: scrolled ? "blur(32px)" : "none",
-        borderBottom: `1px solid ${C.border}`, padding: isMobile ? "0 16px" : "0",
-        transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
-      }}>
-        <div style={{
-          ...(isMobile
-            ? { maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }
-            : {}),
-        }}>
-          {isMobile ? (
-            <>
-              {override ? (
-                <button onClick={() => router.push(override.backHref)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-                </button>
-              ) : (
-                <button onClick={() => setMobileMenuOpen(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
-                </button>
-              )}
-              <BuiltLogo height={36} onClick={() => router.push("/")} />
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {voteState && showVoteInNav ? (
-                  <button
-                    onClick={voteState.onVote}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 5,
-                      padding: "5px 12px", borderRadius: 8,
-                      border: `1.5px solid ${C.accent}`,
-                      background: voteState.hasVoted ? C.accent : C.surface,
-                      cursor: "pointer", fontSize: T.label, fontWeight: 650,
-                      fontFamily: "var(--sans)",
-                      color: voteState.hasVoted ? C.accentFg : C.text,
-                      transition: "all 0.25s",
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                    </svg>
-                    <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => router.push("/?submit=1")}
-                    style={{
-                      height: 32, padding: "0 12px", borderRadius: 32,
-                      border: `1px solid ${C.border}`, background: C.surface,
-                      cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-                      fontSize: T.bodySm, fontWeight: 550, color: C.textSec, fontFamily: "var(--sans)",
-                      transition: "all 0.12s", flexShrink: 0,
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
-                    Submit
-                  </button>
-                )}
-                {userLoading ? (
-                  <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
-                ) : user ? (
-                  <div ref={profileMenuRef} style={{ position: "relative" }}>
-                    <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                      <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                    </button>
-                    {showProfileMenu && (
-                      <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100 }}>
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
-                        </button>
-                        <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/settings"); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: T.body }}>{"\u2699\uFE0F"}</span> Settings
-                        </button>
-                        <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "none", cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.errorText, fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button onClick={handleSignIn} style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, fontSize: T.label, fontWeight: 550, color: C.textSec, cursor: "pointer", fontFamily: "var(--sans)" }}>
-                    Sign in
-                  </button>
-                )}
-              </div>
-            </>
-          ) : (
-            <div style={{ position: "relative", height: 65 }}>
-              {/* Logo — pinned 96px from left */}
-              <div style={{ position: "absolute", left: 96, top: 0, height: 65, display: "flex", alignItems: "center" }}>
-                <BuiltLogo height={40} onClick={() => router.push("/")} />
-              </div>
-              {/* Right items — pinned 96px from right */}
-              <div style={{ position: "absolute", right: 96, top: 0, height: 65, display: "flex", alignItems: "center", gap: 14, zIndex: 1 }}>
-                {/* Vote button in nav — desktop */}
-                {voteState && (
-                  <button
-                    onClick={voteState.onVote}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      padding: "6px 14px", borderRadius: 8,
-                      border: `1.5px solid ${C.accent}`,
-                      background: voteState.hasVoted ? C.accent : C.surface,
-                      cursor: "pointer", fontSize: T.bodySm, fontWeight: 650,
-                      fontFamily: "var(--sans)",
-                      color: voteState.hasVoted ? C.accentFg : C.text,
-                      transition: "all 0.3s ease",
-                      opacity: showVoteInNav ? 1 : 0,
-                      transform: showVoteInNav ? "translateY(0)" : "translateY(-4px)",
-                      pointerEvents: showVoteInNav ? "auto" : "none",
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                    </svg>
-                    <span style={{ lineHeight: 1 }}>{voteState.count.toLocaleString()}</span>
-                  </button>
-                )}
-                {/* Theme toggle — desktop only */}
-                <div style={{ position: "relative" }}>
-                  <button
-                    onClick={triggerFlip}
-                    disabled={isAnimating}
-                    aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-                    style={{
-                      width: 32, height: 32, borderRadius: 32,
-                      border: `1px solid ${C.border}`, background: C.surface,
-                      cursor: isAnimating ? "not-allowed" : "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "border-color 0.15s, opacity 0.15s",
-                      opacity: isAnimating ? 0.5 : 1,
-                      flexShrink: 0, padding: 0,
-                    }}
-                    onMouseEnter={e => { if (!isAnimating) { e.currentTarget.style.borderColor = C.accent; setShowThemeTooltip(true); } }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; setShowThemeTooltip(false); }}
-                  >
-                    {theme === "light" ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="5" />
-                        <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                        <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                      </svg>
-                    )}
-                  </button>
-                  {showThemeTooltip && !isAnimating && (
-                    <div style={{
-                      position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
-                      background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.1)", padding: "8px 14px",
-                      whiteSpace: "nowrap", pointerEvents: "none", zIndex: 100,
-                      fontSize: T.body, fontWeight: 500, color: C.text, fontFamily: "var(--sans)",
-                    }}>
-                      {theme === "light" ? "Turn off the lights" : "Turn on the lights"}
-                    </div>
-                  )}
+      <nav className={`nav-bar${scrolled ? " is-scrolled" : ""}`}>
+        <div className="nav-inner">
+          {isMobile || isTablet ? (
+            override ? (
+              <button className="nav-icon-btn" style={{ border: "none" }} onClick={() => router.push(override.backHref)} aria-label="Back">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+              </button>
+            ) : (
+              <button className="nav-icon-btn" style={{ border: "none" }} onClick={() => setMobileMenuOpen(v => !v)} aria-label="Menu" aria-expanded={mobileMenuOpen}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+              </button>
+            )
+          ) : null}
+          <BuiltLogo height={isMobile ? 34 : 38} onClick={() => router.push("/")} />
+          <div className="nav-tabs">
+            {NAV_TABS.map(t => {
+              const active = isTabActive(t.href);
+              return (
+                <Link key={t.href} to={t.href} prefetch="intent" className={`nav-tab${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => window.scrollTo(0, 0)}>
+                  {t.label}
+                </Link>
+              );
+            })}
+          </div>
+          <div className="nav-right" style={isMobile || isTablet ? { marginLeft: "auto", gap: 8 } : undefined}>
+            {voteState && !isMobile && showVoteInNav && (
+              <button onClick={voteState.onVote} aria-pressed={voteState.hasVoted} className={`nav-pill${voteState.hasVoted ? " is-dark" : ""}`}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={voteState.hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={voteState.hasVoted ? 0 : 2} strokeLinejoin="round" />
+                </svg>
+                {voteState.count.toLocaleString()}
+              </button>
+            )}
+            <div style={{ position: "relative" }}>
+              <button
+                className="nav-icon-btn"
+                onClick={triggerFlip}
+                disabled={isAnimating}
+                aria-label={theme === "light" ? "Turn off the lights" : "Turn on the lights"}
+                onMouseEnter={() => setShowThemeTooltip(true)}
+                onMouseLeave={() => setShowThemeTooltip(false)}
+              >
+                {theme === "light" ? moon : sun}
+              </button>
+              {showThemeTooltip && !isAnimating && !isMobile && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+                  background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.1)", padding: "8px 14px",
+                  whiteSpace: "nowrap", pointerEvents: "none", zIndex: 100, fontSize: 14, fontWeight: 500, color: C.text,
+                }}>
+                  {theme === "light" ? "Turn off the lights" : "Turn on the lights"}
                 </div>
-                <button className="submit-btn" style={{
-                  padding: "8px 18px", borderRadius: 10,
-                  border: `1px solid ${C.border}`, background: C.surface,
-                  fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
-                  cursor: "pointer", fontFamily: "var(--sans)",
-                  transition: "color 0.25s, border-color 0.25s, box-shadow 0.25s",
-                  display: "flex", alignItems: "center", gap: 6,
-                }}
-                  onMouseMove={e => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    e.currentTarget.style.setProperty("--mx", `${e.clientX - rect.left}px`);
-                    e.currentTarget.style.setProperty("--my", `${e.clientY - rect.top}px`);
-                  }}
-                  onClick={() => router.push("/?submit=1")}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
-                  {isTablet ? "" : "Submit"}
-                </button>
-                {userLoading ? (
-                  <div style={{ width: 32, height: 32, borderRadius: 32 }} className="skeleton" />
-                ) : user ? (
-                  <div ref={profileMenuRef} style={{ position: "relative" }}>
-                    <button onClick={() => setShowProfileMenu(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                      <Av initials={user.avatar} size={32} role={user.role} src={user.avatarUrl} />
-                      <span style={{ fontSize: T.label, color: C.textSec, fontWeight: 500, fontFamily: "var(--sans)" }}>{user.name.split(" ")[0]}</span>
-                      <span style={{ fontSize: 9, color: C.textMute, transform: showProfileMenu ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>{"\u25BC"}</span>
-                    </button>
-                    {showProfileMenu && (
-                      <div style={{
-                        position: "absolute", top: "calc(100% + 8px)", right: 0,
-                        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100,
-                      }}>
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/my-projects"); }} style={{
-                          width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
-                          fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                          transition: "background 0.1s",
-                        }}
-                          onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
-                          onMouseLeave={e => e.currentTarget.style.background = "none"}
-                        >
-                          <span style={{ fontSize: T.body }}>{"\u{1F4E6}"}</span> My Projects
-                        </button>
-                        <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={() => { setShowProfileMenu(false); router.push("/settings"); }} style={{
-                          width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.text,
-                          fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                          transition: "background 0.1s",
-                        }}
-                          onMouseEnter={e => e.currentTarget.style.background = C.accentSoft}
-                          onMouseLeave={e => e.currentTarget.style.background = "none"}
-                        >
-                          <span style={{ fontSize: T.body }}>{"\u2699\uFE0F"}</span> Settings
-                        </button>
-                        <div style={{ height: 1, background: C.borderLight }} />
-                        <button onClick={handleSignOut} style={{
-                          width: "100%", padding: "12px 16px", border: "none", background: "none",
-                          cursor: "pointer", fontSize: T.bodySm, fontWeight: 500, color: C.errorText,
-                          fontFamily: "var(--sans)", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
-                          transition: "background 0.1s",
-                        }}
-                          onMouseEnter={e => e.currentTarget.style.background = C.errorSoft}
-                          onMouseLeave={e => e.currentTarget.style.background = "none"}
-                        >
-                          <span style={{ fontSize: T.body }}>{"\u{1F6AA}"}</span> Sign out
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button onClick={handleSignIn} style={{
-                    padding: "8px 18px", borderRadius: 10,
-                    border: `1px solid ${C.border}`, background: C.surface,
-                    fontSize: T.bodySm, fontWeight: 550, color: C.textSec,
-                    cursor: "pointer", fontFamily: "var(--sans)",
-                    transition: "all 0.12s",
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.text; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSec; }}
-                  >
-                    Sign in
-                  </button>
-                )}
-              </div>
-              {/* Tabs or override (back + title) — inside content-aligned container */}
-              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px", height: 65, display: "flex", alignItems: "center", position: "relative" }}>
-                {override ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
-                    <button
-                      onClick={() => router.push(override.backHref)}
-                      style={{
-                        border: "none", background: "none", cursor: "pointer",
-                        fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
-                        fontWeight: 500, display: "flex", alignItems: "center", gap: 6,
-                        padding: 0, transition: "color 0.12s", flexShrink: 0,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.color = C.text}
-                      onMouseLeave={e => e.currentTarget.style.color = C.textSec}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-                      Back
-                    </button>
-                    <span style={{
-                      fontSize: T.body, fontWeight: 550, color: C.text, fontFamily: "var(--sans)",
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      flex: 1, textAlign: "center",
-                    }}>
-                      {override.title}
-                    </span>
-                    {/* Spacer to balance the Back button */}
-                    <div style={{ width: 60, flexShrink: 0 }} />
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display: "flex", gap: 0 }}>
-                      {NAV_TABS.map(t => {
-                        const active = isTabActive(t.href);
-                        return (
-                          <button key={t.href} ref={el => { tabsRef.current[t.href] = el; }} onClick={() => { router.push(t.href); window.scrollTo(0, 0); }} style={{
-                            padding: isTablet ? "18px 12px" : "18px 18px", border: "none", background: "none", cursor: "pointer",
-                            fontSize: T.body,
-                            color: active ? C.text : C.textMute,
-                            fontFamily: "var(--sans)",
-                            transition: "color 0.25s ease",
-                            letterSpacing: "0.005em",
-                            position: "relative",
-                          }}
-                            onMouseEnter={e => { if (!active) e.currentTarget.style.color = C.textSec; }}
-                            onMouseLeave={e => { if (!active) e.currentTarget.style.color = C.textMute; }}
-                          >
-                            <span style={{ fontWeight: 600, visibility: "hidden" }}>{t.label}</span>
-                            <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: active ? 600 : 400 }}>{t.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{
-                      position: "absolute", bottom: 0, height: 2,
-                      background: C.text, borderRadius: 1,
-                      left: underlineStyle.left, width: underlineStyle.width,
-                      transition: "left 0.3s ease, width 0.3s ease",
-                    }} />
-                  </>
-                )}
-              </div>
+              )}
             </div>
-          )}
+            <button className="nav-pill" onClick={() => router.push("/?submit=1")}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+              Submit
+            </button>
+            {userLoading ? (
+              <div style={{ width: 40, height: 40, borderRadius: 40 }} className="skeleton" />
+            ) : user ? (
+              <div ref={profileMenuRef} style={{ position: "relative" }}>
+                <button onClick={() => setShowProfileMenu(v => !v)} aria-label="Your account" aria-expanded={showProfileMenu} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                  <Av initials={user.avatar} size={40} role={user.role} src={user.avatarUrl} />
+                </button>
+                {showProfileMenu && (
+                  <div style={{
+                    position: "absolute", top: "calc(100% + 8px)", right: 0, background: C.surface, border: `1px solid ${C.border}`,
+                    borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", minWidth: 180, overflow: "hidden", zIndex: 100,
+                  }}>
+                    {menuItem(() => { setShowProfileMenu(false); router.push("/my-projects"); }, "My projects")}
+                    <div style={{ height: 1, background: C.borderLight }} />
+                    {menuItem(() => { setShowProfileMenu(false); router.push("/settings"); }, "Settings")}
+                    <div style={{ height: 1, background: C.borderLight }} />
+                    {menuItem(() => { setShowProfileMenu(false); handleSignOut(); }, "Sign out", true)}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button className="nav-pill is-dark" onClick={handleSignIn}>Sign in</button>
+            )}
+          </div>
         </div>
       </nav>
       {/* Spacer to offset fixed nav height */}
@@ -491,13 +263,31 @@ export default function AppNav() {
               {NAV_TABS.map(t => {
                 const active = isTabActive(t.href);
                 return (
-                  <button key={t.href} onClick={() => { setMobileMenuOpen(false); router.push(t.href); window.scrollTo(0, 0); }} style={{
-                    padding: "12px 14px", border: "none", background: active ? C.accentSoft : "none",
-                    borderRadius: 10, cursor: "pointer", fontSize: T.body, fontWeight: active ? 600 : 450,
+                  <Link key={t.href} to={t.href} aria-current={active ? "page" : undefined} onClick={() => { setMobileMenuOpen(false); window.scrollTo(0, 0); }} style={{
+                    padding: "12px 14px", background: active ? C.accentSoft : "none",
+                    borderRadius: 10, fontSize: T.body, fontWeight: active ? 600 : 400, textDecoration: "none",
                     color: active ? C.text : C.textSec, fontFamily: "var(--sans)", textAlign: "left",
-                  }}>{t.label}</button>
+                  }}>{t.label}</Link>
                 );
               })}
+              <div style={{ height: 1, background: C.border, margin: "12px 14px" }} />
+              <button
+                onClick={triggerFlip}
+                disabled={isAnimating}
+                aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+                style={{
+                  padding: "12px 14px", border: "none", background: "none", borderRadius: 10, cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 10, fontSize: T.body, color: C.textSec,
+                  fontFamily: "var(--sans)", textAlign: "left",
+                }}
+              >
+                {theme === "light" ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                )}
+                {theme === "light" ? "Turn off the lights" : "Turn on the lights"}
+              </button>
             </div>
           </div>
         </>, document.body

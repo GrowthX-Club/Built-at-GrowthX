@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { C, T, getLoomVideoId, getYouTubeVideoId, type MediaItem } from "@/types";
+import { useRef } from "react";
+import { getLoomVideoId, getYouTubeVideoId, cdnImage, detectMediaType, type MediaItem, type Project } from "@/types";
+import { ProjectMedia, hostOf } from "@/components/ProjectCard";
 
 /**
- * Build a safe embed URL for a video media item.
- * Returns null when no video id can be extracted — callers must then fall
- * back to image rendering, never iframe the raw URL.
+ * A safe embed URL for a video media item, or null when no video id can be extracted (never iframe the raw URL).
  */
 function getEmbedSrc(item: MediaItem): string | null {
   if (item.type === "loom") {
@@ -18,208 +17,59 @@ function getEmbedSrc(item: MediaItem): string | null {
   return null;
 }
 
-interface MediaGalleryProps {
-  media: MediaItem[];
-}
+/** Pictures we can show: images on our CDN or any https image file; Drive/Docs links are not pictures. */
+const isPicture = (m: MediaItem) => m.type === "image" && /^https:\/\/\S+\.(png|jpe?g|gif|webp|avif)(\?.*)?$/i.test(m.url);
 
-export default function MediaGallery({ media }: MediaGalleryProps) {
-  const [active, setActive] = useState(0);
+// Product Hunt's launch gallery: one row of screenshots and demo videos at the same height, scrolled sideways,
+// with round arrows on desktop. A project without any keeps the same slot with its title card, linked to the product.
+export default function MediaGallery({ project: p }: { project: Project }) {
+  const track = useRef<HTMLDivElement>(null);
+  const own = (p.media ?? []).filter(m => getEmbedSrc(m) || isPicture(m));
+  // No picture or video of its own: the demo video the maker linked in the description, if any.
+  const items = own.length || !p.demo ? own : [{ type: detectMediaType(p.demo), url: p.demo }].filter(m => getEmbedSrc(m));
+  const scroll = (dir: 1 | -1) => track.current?.scrollBy({ left: dir * track.current.clientWidth * 0.8, behavior: "smooth" });
 
-  if (!media.length) return null;
-
-  const current = media[active];
-  const hasMultiple = media.length > 1;
-  const currentEmbedSrc = getEmbedSrc(current);
+  // A skill's install box is its picture; a title card above it would say nothing.
+  if (items.length === 0 && p.skill) return null;
+  if (items.length === 0) {
+    const inner = <div className="pmedia" style={{ borderBottom: 0, height: "100%", aspectRatio: "auto" }}><ProjectMedia p={p} eager /></div>;
+    return (
+      <div className="gallery">
+        <div className="gallery-track">
+          {p.url ? (
+            <a className="gallery-item only is-fallback" href={p.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${hostOf(p.url) || p.name} (opens in a new tab)`}>{inner}</a>
+          ) : <div className="gallery-item only is-fallback">{inner}</div>}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ marginBottom: 28 }}>
-      {/* Main display — 16:9 for video embeds, 5:3 for images (Product Hunt style) */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          paddingBottom: currentEmbedSrc ? "56.25%" : "60%", // 9/16 for video, 3/5 for images
-          borderRadius: 12,
-          overflow: "hidden",
-          background: C.surfaceWarm,
-          border: `1px solid ${C.border}`,
-        }}
-      >
-        {currentEmbedSrc ? (
-          <iframe
-            src={currentEmbedSrc}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              border: "none",
-            }}
-            loading="lazy"
-            allowFullScreen
-            allow="autoplay; fullscreen; picture-in-picture"
-            title={current.type === "loom" ? "Loom video" : "YouTube video"}
-          />
-        ) : (
-          <img
-            src={current.url}
-            alt={`Screenshot ${active + 1}`}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
-        )}
-
-        {/* Prev / Next arrows */}
-        {hasMultiple && (
-          <>
-            <button
-              onClick={() => setActive((a) => (a - 1 + media.length) % media.length)}
-              style={{
-                position: "absolute",
-                left: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: 36,
-                height: 36,
-                borderRadius: 36,
-                border: "none",
-                background: "rgba(0,0,0,0.55)",
-                color: "#fff",
-                fontSize: T.bodyLg,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backdropFilter: "blur(4px)",
-                transition: "opacity 0.15s",
-              }}
-              aria-label="Previous"
-            >
-              &#8249;
-            </button>
-            <button
-              onClick={() => setActive((a) => (a + 1) % media.length)}
-              style={{
-                position: "absolute",
-                right: 10,
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: 36,
-                height: 36,
-                borderRadius: 36,
-                border: "none",
-                background: "rgba(0,0,0,0.55)",
-                color: "#fff",
-                fontSize: T.bodyLg,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backdropFilter: "blur(4px)",
-                transition: "opacity 0.15s",
-              }}
-              aria-label="Next"
-            >
-              &#8250;
-            </button>
-          </>
-        )}
-
-        {/* Counter pill */}
-        {hasMultiple && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: 10,
-              right: 10,
-              background: "rgba(0,0,0,0.55)",
-              color: "#fff",
-              fontSize: T.caption,
-              fontWeight: 600,
-              padding: "3px 10px",
-              borderRadius: 12,
-              fontFamily: "var(--sans)",
-              backdropFilter: "blur(4px)",
-            }}
-          >
-            {active + 1} / {media.length}
-          </div>
-        )}
-      </div>
-
-      {/* Thumbnail strip */}
-      {hasMultiple && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            marginTop: 10,
-            overflowX: "auto",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          {media.map((item, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              style={{
-                width: 64,
-                height: 40,
-                borderRadius: 6,
-                overflow: "hidden",
-                border: i === active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
-                background: C.surfaceWarm,
-                cursor: "pointer",
-                flexShrink: 0,
-                padding: 0,
-                position: "relative",
-                opacity: i === active ? 1 : 0.6,
-                transition: "opacity 0.15s, border-color 0.15s",
-              }}
-            >
-              {getEmbedSrc(item) ? (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: C.accent,
-                    color: C.accentFg,
-                    fontSize: T.caption,
-                    fontWeight: 700,
-                  }}
-                >
-                  &#9654;
-                </div>
+    <div className="gallery">
+      <div className="gallery-track" ref={track}>
+        {items.map((m, i) => {
+          const embed = getEmbedSrc(m);
+          return (
+            <div key={i} className={`gallery-item${embed ? " is-video" : ""}${items.length === 1 ? " only" : ""}`}>
+              {embed ? (
+                <iframe src={embed} loading="lazy" allowFullScreen allow="autoplay; fullscreen; picture-in-picture" title={`${p.name} demo video`} />
               ) : (
-                <img
-                  src={item.url}
-                  alt=""
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
+                <img src={cdnImage(m.url, 1200)} alt={`${p.name} screenshot ${i + 1}`} loading={i < 2 ? "eager" : "lazy"} decoding="async"
+                  onError={e => { e.currentTarget.style.visibility = "hidden"; }} />
               )}
-            </button>
-          ))}
-        </div>
+            </div>
+          );
+        })}
+      </div>
+      {items.length > 1 && (
+        <>
+          <button type="button" className="gallery-arrow prev" aria-label="Previous" onClick={() => scroll(-1)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+          </button>
+          <button type="button" className="gallery-arrow next" aria-label="Next" onClick={() => scroll(1)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
+          </button>
+        </>
       )}
     </div>
   );

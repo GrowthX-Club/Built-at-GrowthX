@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useLoaderData } from "react-router";
 import {
   C,
   T,
@@ -16,9 +16,9 @@ import {
   normalizeThread,
   getCompanyLogoUrl,
   getStackLogoUrl,
-  getBuildathonLabel,
   formatProjectDate,
-  STACK_META,
+  teamOf,
+  cdnImage,
 } from "@/types";
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
@@ -29,7 +29,10 @@ import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
 import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
-import ProjectIcon from "@/components/ProjectIcon";
+import { eventFor, fetchProjects } from "@/lib/collections";
+import { withoutEventFooter } from "@/lib/editor-utils";
+import ProjectCard, { Faces } from "@/components/ProjectCard";
+import { voteBurst } from "@/components/ProjectListView";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -68,7 +71,7 @@ function Av({ initials, size = 32, highlight, role, src }: { initials: string; s
   const r = role ? ROLES[role] : undefined;
   if (src && src.startsWith("http")) {
     return (
-      <img src={src} alt={initials} style={{
+      <img src={cdnImage(src, 96)} alt={initials} loading="lazy" decoding="async" style={{
         width: size, height: size, borderRadius: size,
         flexShrink: 0, objectFit: "cover",
       }} />
@@ -93,14 +96,14 @@ function Badge({ role, size = "sm" }: { role: string; size?: "sm" | "md" }) {
   if (role === "member") return null;
   const r = ROLES[role];
   if (!r) return null;
-  const s = size === "sm" ? { fs: T.badge, px: 6, py: 2 } : { fs: T.caption, px: 8, py: 3 };
+  const s = size === "sm" ? { px: 6, py: 2 } : { px: 8, py: 3 };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 3,
-      fontSize: s.fs, fontWeight: 650, letterSpacing: "0.04em",
+      fontSize: 14, fontWeight: 600,
       padding: `${s.py}px ${s.px}px`, borderRadius: 4,
       color: r.color, background: r.bg,
-      fontFamily: "var(--sans)", textTransform: "uppercase", lineHeight: 1,
+      fontFamily: "var(--sans)", lineHeight: 1.2,
     }}>
       {r.label}
     </span>
@@ -124,7 +127,7 @@ function CompanyTag({ title, company, companyColor, companyLogo }: { title?: str
           fontFamily: "var(--sans)", letterSpacing: "-0.02em", flexShrink: 0,
           overflow: "hidden", position: "relative",
         }}>
-          {company[0]}
+          <span aria-hidden="true">{company[0]}</span>
           <img src={getCompanyLogoUrl(company, companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </span>
         <span style={{ fontWeight: 520 }}>{company}</span>
@@ -177,15 +180,15 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
           padding: "4px 10px", borderRadius: 20,
           border: r.mine ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
           background: r.mine ? C.accentSoft : C.surface,
-          cursor: "pointer", fontSize: T.bodySm, fontFamily: "var(--sans)",
+          cursor: "pointer", fontSize: 16, fontFamily: "var(--sans)",
           color: C.text, transition: "all 0.12s",
         }}>
           <span style={{ fontSize: T.body, color: r.emoji.special ? C.gold : "inherit", fontWeight: r.emoji.special ? 700 : 400 }}>{r.emoji.display}</span>
-          <span style={{ fontSize: T.caption, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
         </button>
       ))}
       <div style={{ position: "relative" }}>
-        <button onClick={() => setPicker(!picker)} style={{
+        <button onClick={() => setPicker(!picker)} aria-label="Add a reaction" style={{
           width: 30, height: 30, borderRadius: 20,
           border: `1px dashed ${C.border}`, background: "transparent",
           cursor: "pointer",
@@ -195,14 +198,14 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
         onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.accentSoft; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "transparent"; }}
         >
-          <span style={{ fontSize: T.body, lineHeight: 1, opacity: 0.55 }}>{"\u{1F642}"}</span>
+          <span aria-hidden="true" style={{ fontSize: T.body, lineHeight: 1, opacity: 0.55 }}>{"\u{1F642}"}</span>
           <span style={{
             position: "absolute", bottom: -1, right: -1,
             width: 12, height: 12, borderRadius: 12,
             background: C.surface, border: `1px solid ${C.border}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 9, fontWeight: 700, color: C.textMute, lineHeight: 1,
-          }}>+</span>
+          }} aria-hidden="true">+</span>
         </button>
         {picker && (
           <div style={{
@@ -276,10 +279,10 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
                     {reply.author.isCreator && (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 14, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                     )}
                     <Badge role={reply.author.role} />
-                    <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
+                    <span style={{ fontSize: 14, color: C.textMute }}>{reply.time}</span>
                   </div>
                   <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
                 </div>
@@ -299,7 +302,11 @@ export default function ProjectDetailPage() {
   const { openLoginDialog } = useLoginDialog();
   const { setNavOverride, clearNavOverride, setVoteState, setShowVoteInNav } = useNavOverride();
   const { isMobile } = useResponsive();
-  const [project, setProject] = useState<Project | null>(null);
+  // The route loader already has the project, so the page is server-rendered with it.
+  // The route loader has the project (server-rendered); the route keys this component by project, so state resets.
+  const loaderData = useLoaderData() as { project?: Record<string, unknown>; more?: Record<string, unknown>[] } | undefined;
+  const [project, setProject] = useState<Project | null>(() => (loaderData?.project ? normalizeProject(loaderData.project) : null));
+  const more = (loaderData?.more ?? []).map(normalizeProject);
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
@@ -321,31 +328,25 @@ export default function ProjectDetailPage() {
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
 
+  const projectId = String(project?._id || project?.id || "");
+  // Whether you've voted for it: every list response carries all your voted ids, so ask for one project only.
+  const loadVoted = () => {
+    fetchProjects({ limit: 1 }).then(d => setHasVoted(d.votedProjectIds.map(String).includes(projectId)));
+  };
+
   useEffect(() => {
-    bxApi(`/projects/${params.id}`)
+    if (!projectId) return;
+    bxApi(`/comments?projectId=${projectId}`)
       .then((r) => r.json())
-      .then((d) => {
-        if (!d.project) return;
-        const p = normalizeProject(d.project);
-        setProject(p);
-        const pid = p._id || p.id;
-        bxApi(`/comments?projectId=${pid}`)
-          .then((r) => r.json())
-          .then((d) => setComments((d.comments || []).map(normalizeComment)));
-        bxApi("/projects?limit=100")
-          .then((r) => r.json())
-          .then((d) => {
-            const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
-            setHasVoted(voted.includes(String(pid)) || voted.includes(Number(pid)));
-          });
-      });
+      .then((d) => setComments((d.comments || []).map(normalizeComment)));
+    loadVoted();
     bxApi("/threads")
       .then((r) => r.json())
       .then((d) => setThreads((d.threads || []).map((t: Record<string, unknown>) => normalizeThread(t))));
     bxApi("/me")
       .then((r) => r.json())
       .then((d) => setUser(normalizeUser(d.user)));
-  }, [params.id]);
+  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (project) {
@@ -378,10 +379,7 @@ export default function ProjectDetailPage() {
 
   const reloadUser = () => {
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
-    bxApi("/projects?limit=100").then((r) => r.json()).then((d) => {
-      const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
-      setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
-    });
+    loadVoted();
   };
 
   const handleVote = async () => {
@@ -391,38 +389,7 @@ export default function ProjectDetailPage() {
     }
     setVoteAnim(true);
     setTimeout(() => setVoteAnim(false), 500);
-    // Burst particles
-    const btn = document.querySelector(isMobile ? "[data-vote-float]" : "[data-vote-detail]") as HTMLElement;
-    if (btn && !hasVoted) {
-      const rect = btn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const container = document.createElement("div");
-      container.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:9999;`;
-      const dots: HTMLElement[] = [];
-      [0, 55, 110, 170, 230, 300].forEach(deg => {
-        const rad = (deg * Math.PI) / 180;
-        const dist = 44 + Math.random() * 20;
-        const dot = document.createElement("div");
-        dot.className = "vote-burst-dot";
-        dot.style.left = `${cx}px`;
-        dot.style.top = `${cy}px`;
-        dot.style.transform = "translate(-50%, -50%) scale(1)";
-        dot.style.opacity = "1";
-        dot.dataset.tx = `${Math.cos(rad) * dist}`;
-        dot.dataset.ty = `${Math.sin(rad) * dist}`;
-        container.appendChild(dot);
-        dots.push(dot);
-      });
-      document.body.appendChild(container);
-      requestAnimationFrame(() => {
-        dots.forEach(dot => {
-          dot.style.transform = `translate(calc(-50% + ${dot.dataset.tx}px), calc(-50% + ${dot.dataset.ty}px)) scale(0)`;
-          dot.style.opacity = "0";
-        });
-      });
-      setTimeout(() => container.remove(), 550);
-    }
+    if (!hasVoted) voteBurst(document.querySelector(isMobile ? "[data-vote-float]" : "[data-vote-detail]"));
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -597,7 +564,7 @@ export default function ProjectDetailPage() {
         overflow: "hidden", maxHeight: 220, overflowY: "auto",
       }}>
         {mentionLoading && mentionResults.length === 0 && (
-          <div style={{ padding: "10px 14px", fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)" }}>
+          <div style={{ padding: "10px 14px", fontSize: 16, color: C.textMute, fontFamily: "var(--sans)" }}>
             Searching...
           </div>
         )}
@@ -615,8 +582,8 @@ export default function ProjectDetailPage() {
           >
             <Av initials={u.avatar} size={26} src={u.avatarUrl} />
             <div>
-              <div style={{ fontSize: T.bodySm, fontWeight: 600, color: C.text }}>{u.name}</div>
-              {u.company && <div style={{ fontSize: T.caption, color: C.textMute }}>{u.company}</div>}
+              <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>{u.name}</div>
+              {u.company && <div style={{ fontSize: 14, color: C.textMute }}>{u.company}</div>}
             </div>
           </button>
         ))}
@@ -673,317 +640,154 @@ export default function ProjectDetailPage() {
 
   const p = project;
   const isOwner = user?._id && (user._id === p.builder._id || p.creators?.some(c => c._id === user._id));
+  // The one filled action: Install for a skill (its box is on this page), else Try it on the product's own site.
+  const primary = p.skill
+    ? { href: "#install", label: "Install", ext: {} }
+    : p.url
+      ? { href: p.url, label: <>Try it <span aria-hidden="true">↗</span></>, ext: { target: "_blank", rel: "noopener noreferrer" } }
+      : null;
+
+  const event = eventFor(p.buildathon);
+  const date = formatProjectDate(p.date);
+  // Everyone who made it (submitter, co-creators, collaborators), once each, with what they do now.
+  const seen = new Set<string>();
+  const people = [p.builder, ...(p.creators || []), ...p.collabs].filter(m => {
+    const key = m._id || m.name;
+    if (!m.name || m.name === "Anonymous" || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const upvoteLabel = `${hasVoted ? "Upvoted" : "Upvote"}${p.weighted > 0 ? ` · ${p.weighted.toLocaleString()}` : ""}`;
+  const upIcon = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
+    </svg>
+  );
 
   return (
-    <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: isMobile ? "48px 32px 140px" : "48px 32px 100px", fontFamily: "var(--sans)" }}>
-        {/* Hero */}
-        <div className="fade-up" style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
-            <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 16 }}>
-              <ProjectIcon title={p.name} description={p.tagline} size={72} iconId={p.icon} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 2, flexWrap: "wrap" }}>
-                  <h1 className="responsive-h1" style={{ fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
-                  {p.featured && (
-                    <span style={{
-                      fontSize: T.badge, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
-                      background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
-                      letterSpacing: "0.06em", textTransform: "uppercase",
-                    }}>{"\u2726"} Featured</span>
-                  )}
-                </div>
-                <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 6px" }}>{p.tagline}</p>
-                {(p.accolade || p.track) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                    {p.accolade && <AccoladeBadge accolade={p.accolade} />}
-                    {p.track && <TrackChip track={p.track} />}
-                  </div>
-                )}
-                {(formatProjectDate(p.date) || p.buildathon) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, flexWrap: "wrap" }}>
-                    {formatProjectDate(p.date) && <span>{formatProjectDate(p.date)}</span>}
-                    {formatProjectDate(p.date) && p.buildathon && <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>}
-                    {p.buildathon && <span>{getBuildathonLabel(p.buildathon)}</span>}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div ref={voteBtnRef} style={{ flexShrink: 0, display: isMobile ? "none" : "flex", gap: 10, alignItems: "center" }}>
-              <button data-vote-detail onClick={handleVote}
-              className={voteAnim ? "vote-pop-active" : ""}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "12px 28px", borderRadius: 12,
-                border: "1.5px solid transparent",
-                background: C.accent,
-                cursor: "pointer", fontSize: T.bodyLg, fontWeight: 700,
-                fontFamily: "var(--sans)", color: C.accentFg,
-                transition: "opacity 0.2s, transform 0.2s",
-                position: "relative", overflow: "visible",
-                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
-                </svg>
-                <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
-              </button>
-              {p.url && (
-                <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
-                  padding: "8px 16px", borderRadius: 8,
-                  border: "none", background: "transparent", color: C.textSec,
-                  fontSize: T.bodySm, fontWeight: 500, cursor: "pointer",
-                  fontFamily: "var(--sans)", transition: "color 0.15s",
-                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.textSec; }}
-                >
-                  Try it {"\u2192"}
-                </a>
-              )}
-              {isOwner && (
-                <Link to="/my-projects" style={{
-                  padding: "8px 16px", borderRadius: 8,
-                  border: "none", background: "transparent", color: C.textSec,
-                  fontSize: T.bodySm, fontWeight: 500, cursor: "pointer",
-                  fontFamily: "var(--sans)", transition: "color 0.15s",
-                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.textSec; }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  Manage
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
+    <div className="detail">
+        {event && (
+          <nav aria-label="Breadcrumb" className="crumbs">
+            <Link to={event.href}>{event.name}</Link><span aria-hidden="true"> / </span><span>{p.name}</span>
+          </nav>
+        )}
 
-        {/* Draft banner */}
-        {p.isDraft && (
-          <div className="fade-up stagger-1" style={{
-            padding: "14px 20px", borderRadius: 12, marginBottom: 24,
-            background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
-            display: "flex", alignItems: "center", gap: 10,
-            fontSize: T.bodySm, fontFamily: "var(--sans)", color: C.text,
-          }}>
-            <span style={{ fontSize: T.bodyLg }}>&#9998;</span>
-            <div>
-              <span style={{ fontWeight: 600 }}>Draft</span>
-              <span style={{ color: C.textSec, fontWeight: 400 }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
+        {/* Product Hunt launch header: name and tagline on the left, the actions on the right; Try it is the filled one */}
+        <header className="detail-head">
+          <div style={{ minWidth: 0, flex: "1 1 420px" }}>
+            <h1 className="detail-name">{p.name}</h1>
+            <p className="detail-tagline">{p.tagline}</p>
+          </div>
+          {!isMobile && (
+            <div ref={voteBtnRef} className="detail-actions">
+              {isOwner && <Link to="/my-projects" className="meta-link" style={{ fontSize: 16, marginRight: 4 }}>Manage</Link>}
+              <button data-vote-detail onClick={handleVote} aria-pressed={hasVoted}
+                className={`${primary ? "btn-outline" : "btn-primary"} btn-lg${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}>
+                {upIcon}{upvoteLabel}
+              </button>
+              {primary && (
+                <a href={primary.href} {...primary.ext} className="btn-primary btn-lg">{primary.label}</a>
+              )}
+            </div>
+          )}
+        </header>
+
+        {(event || p.accolade || p.track || (p.category && p.category !== "Other") || date) && (
+          <div className="detail-meta">
+            {event && <Link to={event.href} className={`event-chip${p.buildathon === "build-sprint" || p.buildathon === "build-week" ? " is-sprint" : ""}`}>{event.name}</Link>}
+            {p.accolade && <AccoladeBadge accolade={p.accolade} />}
+            {p.track && <TrackChip track={p.track} />}
+            {[p.category !== "Other" ? p.category : "", date].filter(Boolean).join(" · ")}
+          </div>
+        )}
+
+        {people.length > 0 && (
+          <div className="team-panel">
+            <b>Built by</b>
+            <div className="team-list">
+              {people.map(m => (
+                <div key={m._id || m.name} className="team-member">
+                  <Faces people={[m]} max={1} />
+                  <div style={{ minWidth: 0 }}>
+                    <b>{m.name}</b>
+                    {(m.title || m.company) && <span>{[m.title, m.company].filter(Boolean).join(" at ")}</span>}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
+        {/* Draft banner */}
+        {p.isDraft && (
+          <div style={{
+            padding: "14px 20px", borderRadius: 12, marginTop: 24,
+            background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
+            fontSize: 16, color: C.text,
+          }}>
+            <span style={{ fontWeight: 600 }}>Draft</span>
+            <span style={{ color: C.textSec }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
+          </div>
+        )}
+
+        <MediaGallery project={p} />
+
         {p.skill && (
-          <div className="fade-up stagger-1">
+          <div id="install" className="detail-section" style={{ scrollMarginTop: 96 }}>
             {/* Keyed by the project, so the chosen tab doesn't carry over to the next skill on client navigation. */}
             <SkillUseBox key={p.slug || String(p.id)} skill={p.skill} slug={p.slug || String(p.id)} />
           </div>
         )}
 
-        {/* Media gallery */}
-        {p.media && p.media.length > 0 && (
-          <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
-            <MediaGallery media={p.media} />
+        <div className="detail-section">
+          <RichTextDisplay description={withoutEventFooter(p.description)} />
+        </div>
+
+        {p.buildProcess && (
+          <div className="detail-section">
+            <h2>How it was built</h2>
+            <RichTextDisplay description={p.buildProcess} />
           </div>
         )}
 
-        {/* Product info */}
-        <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
-          <RichTextDisplay description={p.description} />
+        {/* The full skill, after the maker's own description of it */}
+        {p.skill && <div className="detail-section"><SkillText key={p.slug || String(p.id)} skill={p.skill} /></div>}
 
-          {/* Build process */}
-          {p.buildProcess && (
-            <div style={{ marginTop: 28 }}>
-              <div style={{
-                fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em",
-                textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)",
-              }}>
-                How it was built
-              </div>
-              <RichTextDisplay description={p.buildProcess} />
-            </div>
-          )}
-
-          {/* The full skill, after the maker's own description of it */}
-          {p.skill && <div style={{ marginTop: 28 }}><SkillText key={p.slug || String(p.id)} skill={p.skill} /></div>}
-
-          {/* Creators */}
-          <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
-            <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>
-              {(p.creators || []).length > 0 ? "Creators" : "Creator"}
-            </div>
-            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
-            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
-            <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "10px 16px", borderRadius: 12,
-                background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-              }}>
-                <Av initials={p.builder.avatar} size={34} src={p.builder.avatarUrl} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{p.builder.name}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
-                    <span>{p.builder.title}</span>
-                    {p.builder.company && (
-                      <>
-                        <span style={{
-                          width: 14, height: 14, borderRadius: 4,
-                          background: p.builder.companyColor || C.accent,
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
-                          overflow: "hidden", position: "relative",
-                        }}>
-                          {p.builder.company[0]}
-                          <img src={getCompanyLogoUrl(p.builder.company, p.builder.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                        </span>
-                        <span style={{ fontWeight: 520, color: C.textSec }}>{p.builder.company}</span>
-                      </>
-                    )}
-                    <span style={{ opacity: 0.35, margin: "0 2px" }}>{"\u00B7"}</span>
-                    <span>{p.builder.city}</span>
-                  </div>
-                </div>
-              </div>
-              {(p.creators || []).map((c, i) => (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 16px", borderRadius: 12,
-                  background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-                }}>
-                  <Av initials={c.avatar} size={30} src={c.avatarUrl} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ fontSize: T.bodySm, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
-                    {c.title && c.company && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
-                        <span>{c.title}</span>
-                        <span style={{
-                          width: 13, height: 13, borderRadius: 3,
-                          background: c.companyColor || C.accent,
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
-                          overflow: "hidden", position: "relative",
-                        }}>
-                          {c.company[0]}
-                          <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                        </span>
-                        <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            </div>
-          </div>
-
-          {/* Collaborators */}
-          {p.collabs.length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Collaborators</div>
-              <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
-              {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
-              <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
-                {p.collabs.map((c, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 16px", borderRadius: 12,
-                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-                  }}>
-                    <Av initials={c.avatar} size={30} src={c.avatarUrl} />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span style={{ fontSize: T.bodySm, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
-                      {c.title && c.company && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
-                          <span>{c.title}</span>
-                          <span style={{
-                            width: 13, height: 13, borderRadius: 3,
-                            background: c.companyColor || C.accent,
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
-                            overflow: "hidden", position: "relative",
-                          }}>
-                            {c.company[0]}
-                            <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                          </span>
-                          <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tech stack */}
-          {p.stack.length > 0 && (<div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
-            <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
-            {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
-            <div style={{ display: "flex", gap: 8, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
+        {p.stack.length > 0 && (
+          <div className="detail-section">
+            <h2>Built with</h2>
+            <div className="stack-row">
               {p.stack.map((t, i) => {
-                const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: C.accentFg };
+                // The tool's real logo when there is one; otherwise just its name (no made-up letter tiles).
                 const logoUrl = getStackLogoUrl(t);
                 return (
-                  <div key={i} style={{
-                    display: "inline-flex", alignItems: "center", gap: 8,
-                    padding: "6px 16px 6px 8px", borderRadius: 40,
-                    background: C.surface, border: `1px solid ${C.border}`, flexShrink: 0,
-                  }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: 6,
-                      background: meta.bg, color: meta.color,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: T.badge, fontWeight: 750, fontFamily: "var(--sans)",
-                      flexShrink: 0, letterSpacing: "-0.02em",
-                      position: "relative", overflow: "hidden",
-                    }}>
-                      {meta.icon}
-                      {logoUrl && (
-                        <img
-                          src={logoUrl}
-                          alt={t}
-                          style={{
-                            position: "absolute", top: 0, left: 0,
-                            width: 22, height: 22, borderRadius: 6,
-                            objectFit: "contain", background: "#fff",
-                          }}
-                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      )}
-                    </div>
-                    <span style={{ fontSize: T.bodySm, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
-                  </div>
+                  <span key={i} className="stack-chip" style={logoUrl ? undefined : { paddingLeft: 14 }}>
+                    {logoUrl && (
+                      <i aria-hidden="true">
+                        <img src={logoUrl} alt="" onError={e => { const box = (e.target as HTMLElement).parentElement; if (box) box.style.display = "none"; }} />
+                      </i>
+                    )}
+                    {t}
+                  </span>
                 );
               })}
             </div>
-            </div>
-          </div>)}
-        </div>
+          </div>
+        )}
 
         {/* DISCUSSION */}
-        <div className="fade-up stagger-3" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
+        <div className="detail-section" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ fontSize: T.headingLg, fontWeight: 400, color: C.text, fontFamily: "var(--serif)" }}>Discussion</h2>
+            <h2 className="bx-section-title">Discussion</h2>
           </div>
 
+          {user ? (
           <div style={{
             display: "flex", gap: 14, padding: "18px 20px",
             background: C.surface, border: `1px solid ${C.border}`,
             borderRadius: 14, marginBottom: 4,
           }}>
-            <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} src={user?.avatarUrl} />
+            <Av initials={user.avatar} size={36} role={user.role} src={user.avatarUrl} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ position: "relative" }}>
                 <textarea
@@ -1017,7 +821,7 @@ export default function ProjectDetailPage() {
                     style={{
                       padding: "7px 18px", borderRadius: 8,
                       border: "none", background: C.accent, color: C.accentFg,
-                      fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
+                      fontSize: 16, fontWeight: 600, cursor: "pointer",
                       fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                     }}
                   >
@@ -1027,6 +831,12 @@ export default function ProjectDetailPage() {
               )}
             </div>
           </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", padding: "18px 20px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, marginBottom: 4 }}>
+              <span style={{ fontSize: 16, color: C.textSec }}>Ask the {teamOf(p).length > 1 ? "makers" : "maker"} a question or tell them what you think.</span>
+              <button type="button" className="btn-outline" onClick={() => openLoginDialog(() => { reloadUser(); reloadComments(); })}>Sign in to comment</button>
+            </div>
+          )}
 
           {/* Comments -- threaded */}
           {commentTree.map(({ root, replies }) => {
@@ -1043,7 +853,7 @@ export default function ProjectDetailPage() {
                           {root.authorName || "Anonymous"}
                         </span>
                         {isRootOP && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 14, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                         )}
                         <Badge role={root.authorRole || "member"} />
                         <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
@@ -1097,10 +907,10 @@ export default function ProjectDetailPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                             <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
                             {isReplyOP && (
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 14, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             )}
                             <Badge role={reply.authorRole || "member"} />
-                            <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                            <span style={{ fontSize: 14, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                           </div>
                           <CompanyTag title={isReplyOP ? (reply.authorTitle || p.builder.title) : reply.authorTitle} company={isReplyOP ? (reply.authorCompany || p.builder.company) : reply.authorCompany} companyColor={isReplyOP ? (reply.authorCompanyColor || p.builder.companyColor) : reply.authorCompanyColor} companyLogo={isReplyOP ? (reply.authorCompanyLogo || p.builder.companyLogo) : reply.authorCompanyLogo} />
                         </div>
@@ -1167,58 +977,28 @@ export default function ProjectDetailPage() {
           {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
 
-        {/* Mobile floating bottom bar */}
+        {more.length > 0 && (() => {
+          return (
+            <section className="section" aria-labelledby="more-title">
+              <div className="section-head">
+                <h2 className="bx-section-title" id="more-title">{event ? `More from ${event.name}` : "More projects"}</h2>
+                <Link to={event ? event.href : "/"} className="text-link">All →</Link>
+              </div>
+              <div className="pgrid">{more.slice(0, 3).map(m => <ProjectCard key={m.id} project={m} showEvent={!event} />)}</div>
+            </section>
+          );
+        })()}
+
+        {/* Phone: the actions stay in reach at the bottom; Try it is the filled one */}
         {isMobile && (
-          <div style={{
-            position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
-            background: C.bg, borderTop: `1px solid ${C.border}`,
-            padding: "12px 16px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
-            display: "flex", gap: 10,
-            boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
-          }}>
-            <button
-              data-vote-float
-              onClick={handleVote}
-              className={voteAnim ? "vote-pop-active" : ""}
-              style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "13px 20px", borderRadius: 12, border: "none",
-                background: C.accent, cursor: "pointer",
-                fontSize: T.body, fontWeight: 700, fontFamily: "var(--sans)",
-                color: C.accentFg, transition: "opacity 0.2s",
-                position: "relative", overflow: "visible",
-                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
-              </svg>
-              <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
+          <div className="mobile-cta">
+            {isOwner && <Link to="/my-projects" className="btn-outline">Manage</Link>}
+            <button data-vote-float onClick={handleVote} aria-pressed={hasVoted} aria-label={`${hasVoted ? "Remove upvote" : "Upvote"} (${p.weighted})`}
+              className={`${primary ? "btn-outline" : "btn-primary"}${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
+              style={primary ? undefined : { flex: 1 }}>
+              {upIcon}{primary ? (p.weighted > 0 ? p.weighted.toLocaleString() : "Upvote") : upvoteLabel}
             </button>
-            {p.url && (
-              <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
-                padding: "13px 20px", borderRadius: 12,
-                border: `1px solid ${C.border}`, background: C.surface, color: C.text,
-                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
-                textDecoration: "none", display: "inline-flex", alignItems: "center", whiteSpace: "nowrap",
-              }}>
-                Try it {"\u2192"}
-              </a>
-            )}
-            {isOwner && (
-              <Link to="/my-projects" style={{
-                padding: "13px 20px", borderRadius: 12,
-                border: `1px solid ${C.border}`, background: C.surface, color: C.text,
-                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
-                textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Manage
-              </Link>
-            )}
+            {primary && <a href={primary.href} {...primary.ext} className="btn-primary">{primary.label}</a>}
           </div>
         )}
     </div>

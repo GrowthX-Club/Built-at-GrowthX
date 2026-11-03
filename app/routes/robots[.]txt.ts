@@ -7,6 +7,8 @@ Disallow: /api/
 Disallow: /settings
 Disallow: /my-projects
 Disallow: /login
+Disallow: /skills/new
+Disallow: /skills/review
 
 Sitemap: https://built.growthx.club/sitemap.xml
 `;

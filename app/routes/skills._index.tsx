@@ -1,62 +1,55 @@
-import { type MetaFunction } from "react-router";
-import { C, T } from "@/types";
-import { useResponsive } from "@/hooks/useMediaQuery";
+import { useState } from "react";
+import { Link, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { type SortKey, fetchProjects, listParams } from "@/lib/collections";
+import { pageMeta, itemListLd, breadcrumbLd } from "@/lib/seo";
 import ProjectListView from "@/components/ProjectListView";
+import SearchBox from "@/components/SearchBox";
 import { ConnectCard } from "@/components/SkillUse";
 
 const DESCRIPTION =
   "Skills GrowthX members built to teach AI a job they know. Add any of them to Claude, ChatGPT, Claude Code or Codex.";
+const SORTS: SortKey[] = ["installs", "trending", "new"];
 
-export const meta: MetaFunction = () => [
-  { title: "Skills — Built at GrowthX" },
-  { name: "description", content: DESCRIPTION },
-  { property: "og:title", content: "Skills — Built at GrowthX" },
-  { property: "og:description", content: DESCRIPTION },
-  { property: "og:type", content: "website" },
-  { name: "twitter:card", content: "summary" },
-  { name: "twitter:title", content: "Skills — Built at GrowthX" },
-  { name: "twitter:description", content: DESCRIPTION },
-  { tagName: "link", rel: "canonical", href: "https://built.growthx.club/skills" },
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { sort, q } = listParams(request.url, SORTS);
+  return { list: await fetchProjects({ has_skill: true, sort, limit: 20 }), sort, q };
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => [
+  ...pageMeta({ title: "Skills — Built at GrowthX", description: DESCRIPTION, path: "/skills" }),
+  ...(data ? [{ "script:ld+json": itemListLd("Skills built at GrowthX", "/skills", data.list.projects) }] : []),
+  { "script:ld+json": breadcrumbLd([{ name: "Built at GrowthX", path: "/" }, { name: "Skills", path: "/skills" }]) },
 ];
 
-// Same frame as the home page (_index.tsx): list on the left, side column on desktop.
+// Ported from the Raycast Store: a centred title, search and the one action, then segmented sort tabs over a
+// two-column grid of bordered skill cards with Install on each.
 export default function SkillsPage() {
-  const { isMobile, isTablet } = useResponsive();
-  const narrow = isMobile || isTablet;
-
+  const data = useLoaderData<typeof loader>();
+  const [query, setQuery] = useState(data.q);
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <div style={{
-        maxWidth: narrow ? 960 : 1280,
-        margin: "0 auto",
-        display: narrow ? "block" : "flex",
-        gap: 40,
-        padding: narrow ? "0" : "0 32px",
-      }}>
-        <main className="responsive-main" style={{ flex: 1, maxWidth: 960, padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
-          <ProjectListView
-            headerTitle="Skills the community built"
-            headerSubtitle="Each one teaches your AI a job, the way a GrowthX member does it. GrowthX checks every skill before it's listed."
-            skillsOnly
-            featuredEnabled={false}
-            defaultSort="installs"
-            emptyState={{
-              icon: "🧰",
-              title: "No skills yet",
-              description: "Skills members upload show up here once GrowthX has checked them.",
-            }}
-          />
-          {narrow && <div style={{ marginTop: 32 }}><ConnectCard /></div>}
-        </main>
-
-        {!narrow && (
-          <aside style={{ width: 280, flexShrink: 0 }}>
-            <div style={{ paddingTop: 32, position: "sticky", top: 96 }}>
-              <ConnectCard />
-            </div>
-          </aside>
-        )}
+    <main className="page">
+      <header className="skills-hero">
+        <h1 className="page-title">Skills the community built</h1>
+        <p className="page-sub">Each one teaches your AI a job, the way a GrowthX member does it. GrowthX checks every skill before it's listed.</p>
+        {(data.list.error || data.list.totalCount >= 10) && <SearchBox value={query} onChange={setQuery} placeholder="Search skills" />}
+        <div className="actions">
+          {/* The same Submit chooser as the nav's Submit, opened on "A skill". */}
+          <Link to="/?submit=skill" className="btn-outline">Add your skill</Link>
+        </div>
+      </header>
+      <div style={{ marginTop: 32 }}>
+        <ProjectListView
+          initial={data.list}
+          skillsOnly
+          sorts={SORTS}
+          sort={data.sort}
+          query={query}
+          onClearQuery={() => setQuery("")}
+          emptyState={{ title: "No skills yet", description: "Skills members upload show up here once GrowthX has checked them." }}
+          trailing={<ConnectCard />}
+        />
       </div>
-    </div>
+    </main>
   );
 }

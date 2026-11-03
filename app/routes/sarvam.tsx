@@ -1,8 +1,12 @@
-import type { MetaFunction } from "react-router";
-import { C, type Project } from "@/types";
-import { useResponsive } from "@/hooks/useMediaQuery";
-import ProjectListView, { type FilterTab } from "@/components/ProjectListView";
-import SarvamBuildathonHero from "@/components/SarvamBuildathonHero";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { Project } from "@/types";
+import { COLLECTIONS } from "@/lib/collections";
+import { itemListLd } from "@/lib/seo";
+import type { FilterTab } from "@/components/ProjectListView";
+import CollectionPage, { loadCollection } from "@/components/CollectionPage";
+
+const SARVAM = COLLECTIONS.find(c => c.slug === "sarvam")!;
+export const loader = ({ request }: LoaderFunctionArgs) => loadCollection(request, SARVAM);
 
 const PAGE_URL = "https://built.growthx.club/sarvam";
 const OG_IMAGE_URL = `${PAGE_URL}/og-image.png`;
@@ -49,7 +53,7 @@ const SARVAM_EVENT_SCHEMA = {
   mainEntityOfPage: PAGE_URL,
 };
 
-export const meta: MetaFunction = () => [
+export const meta: MetaFunction<typeof loader> = ({ data }) => [
   { title: PAGE_TITLE },
   { name: "description", content: SOCIAL_DESCRIPTION },
   { name: "robots", content: "index, follow, max-image-preview:large" },
@@ -72,42 +76,11 @@ export const meta: MetaFunction = () => [
   { name: "twitter:image", content: OG_IMAGE_URL },
   { name: "twitter:image:alt", content: OG_IMAGE_ALT },
   { tagName: "link", rel: "canonical", href: PAGE_URL },
+  { "script:ld+json": SARVAM_EVENT_SCHEMA },
+  ...(data ? [{ "script:ld+json": itemListLd("Sarvam Epoch Buildathon projects", "/sarvam", data.list.projects) }] : []),
 ];
 
+// The shared event-page layout (site nav, lights toggle, one photo strip, projects first).
 export default function SarvamPage() {
-  const { isMobile, isTablet } = useResponsive();
-
-  return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(SARVAM_EVENT_SCHEMA) }}
-      />
-      <SarvamBuildathonHero />
-
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: isMobile || isTablet ? 0 : "0 32px" }}>
-        <main
-          id="sarvam-projects"
-          className="responsive-main"
-          style={{
-            scrollMarginTop: 80,
-            padding: isMobile ? "36px 16px 80px" : isTablet ? "48px 32px 100px" : "56px 0 100px",
-          }}
-        >
-          <ProjectListView
-            headerTitle="Sarvam Epoch Buildathon projects"
-            headerSubtitle="The products shipped during the Sarvam Epoch Buildathon by GrowthX."
-            buildathonFilter="sarvam"
-            featuredEnabled={false}
-            customFilters={SARVAM_FILTERS}
-            emptyState={{
-              icon: "🛠️",
-              title: "No projects in this filter",
-              description: "Pick another tab above to see more.",
-            }}
-          />
-        </main>
-      </div>
-    </div>
-  );
+  return <CollectionPage c={SARVAM} customFilters={SARVAM_FILTERS} />;
 }

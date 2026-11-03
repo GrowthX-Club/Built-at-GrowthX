@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams, useLoaderData, Link } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {
   C,
   T,
@@ -13,14 +14,50 @@ import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextEditor from "@/components/RichTextEditor";
-import ActivityFeed from "@/components/ActivityFeed";
-import SarvamBanner from "@/components/SarvamBanner";
 import ProjectListView from "@/components/ProjectListView";
+import SearchBox from "@/components/SearchBox";
+import CollectionCard from "@/components/CollectionCard";
+import SkillsPanel from "@/components/SkillsPanel";
+import {
+  type SortKey, type CollectionStats, BUILD_SPRINT, CATEGORIES,
+  fetchProjects, fetchCollectionStats, fetchMosaics, usefulCategories, listParams, listedCollections, COLLECTIONS,
+} from "@/lib/collections";
+import { itemListLd, pageMeta } from "@/lib/seo";
+import { normalizeProject } from "@/types";
+
+const HOME_SORTS: SortKey[] = ["best", "trending", "new"];
+// Three rows of three, then "Show more", so Skills and Events stay one scroll away.
+const HOME_PAGE = 9;
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { sort, category, q } = listParams(request.url, HOME_SORTS);
+  const [list, stats, skills, mosaics] = await Promise.all([
+    fetchProjects({ sort, category: category || undefined, limit: HOME_PAGE }),
+    fetchCollectionStats(),
+    fetchProjects({ has_skill: true, sort: "installs", limit: 3 }),
+    fetchMosaics(COLLECTIONS),
+  ]);
+  return { list, stats, skills: skills.projects, mosaics, sort, category, q };
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => [
+  ...pageMeta({
+    title: "Built at GrowthX — what the GrowthX community shipped",
+    description: "The best products and AI skills built by GrowthX members, from Build Sprint, buildathons and side projects. Try them, upvote them, see who built them.",
+    path: "/",
+  }),
+  ...(data ? [{ "script:ld+json": itemListLd("Best projects built at GrowthX", "/", data.list.projects) }] : []),
+];
 import { descriptionCharCount } from "@/lib/editor-utils";
 import MediaUpload from "@/components/MediaUpload";
 
 // ---- Main ----
 export default function HomePage() {
+  const data = useLoaderData<typeof loader>();
+  const [query, setQuery] = useState(data.q);
+  const searching = query.trim().length >= 2;
+  const categories = usefulCategories(data.stats.categories);
+  const skills = data.skills.map(normalizeProject);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { openLoginDialog } = useLoginDialog();
@@ -28,11 +65,13 @@ export default function HomePage() {
   const [submitStep, setSubmitStep] = useState(0);
   // One Submit button everywhere: it first asks whether this is a project or a skill.
   const [submitKind, setSubmitKind] = useState<"choose" | "project">("choose");
+  // /?submit=skill (the Skills page's "Add your skill") opens the same chooser with "A skill" picked out.
+  const [submitHint, setSubmitHint] = useState<"skill" | null>(null);
   const [submitData, setSubmitData] = useState({
     name: "", tagline: "", description: "", buildProcess: "",
     stack: [] as string[], stackInput: "",
     team: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string; role: 'creator' | 'collaborator' }[], teamInput: "",
-    url: "", isDraft: false, mediaFiles: [] as { url: string; type: "image" | "loom" | "youtube"; uploading?: boolean; progress?: string }[],
+    url: "", category: "", isDraft: false, mediaFiles: [] as { url: string; type: "image" | "loom" | "youtube"; uploading?: boolean; progress?: string }[],
   });
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +79,7 @@ export default function HomePage() {
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
-  const { isMobile, isTablet } = useResponsive();
+  const { isMobile } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
   const [searchingCollabs, setSearchingCollabs] = useState(false);
@@ -71,7 +110,9 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("submit") !== "1" || !userLoaded) return;
+    const want = searchParams.get("submit");
+    if ((want !== "1" && want !== "skill") || !userLoaded) return;
+    setSubmitHint(want === "skill" ? "skill" : null);
     navigate("/", { replace: true });
     if (!user) {
       openLoginDialog(() => { loadUser(); });
@@ -80,7 +121,7 @@ export default function HomePage() {
     setShowSubmit(true);
     setSubmitKind("choose");
     setSubmitStep(0);
-    setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaFiles: [] });
+    setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", category: "", isDraft: false, mediaFiles: [] });
     setSubmitError("");
   }, [searchParams, user, userLoaded, navigate, openLoginDialog, loadUser]);
 
@@ -177,7 +218,7 @@ export default function HomePage() {
           name: submitData.name.trim(),
           tagline: submitData.tagline.trim(),
           description: submitData.description,
-          category: "AI",
+          category: submitData.category || undefined,
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
           media: submitData.mediaFiles.filter(m => !m.uploading).map(m => m.url),
@@ -188,7 +229,7 @@ export default function HomePage() {
       if (res.ok) {
         setShowSubmit(false);
         setSubmitStep(0);
-        setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaFiles: [] });
+        setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", category: "", isDraft: false, mediaFiles: [] });
         setSubmitError("");
         triggerListRefresh();
       } else {
@@ -211,31 +252,54 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <div style={{
-        maxWidth: isMobile || isTablet ? 960 : 1280,
-        margin: "0 auto",
-        display: isMobile || isTablet ? "block" : "flex",
-        gap: 40,
-        padding: isMobile ? "0" : isTablet ? "0" : "0 32px",
-      }}>
-      <main className="responsive-main" style={{ flex: 1, maxWidth: 960, padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
-        <SarvamBanner isMobile={isMobile} />
-        <ProjectListView
-          headerTitle="What the community shipped"
-          headerSubtitle="Products built by the GrowthX community. Ranked by the people who build."
-          refreshKey={listRefreshKey}
-        />
-      </main>
-
-      {/* Activity Feed Sidebar — desktop only */}
-      {!isMobile && !isTablet && (
-        <aside style={{ width: 280, flexShrink: 0 }}>
-          <div style={{ paddingTop: 32 }}>
-            <ActivityFeed />
+      <main className="page">
+        <header className="home-hero">
+          <div>
+            <h1 className="page-title">The best of what GrowthX members built</h1>
+            <p className="page-sub">Products and AI skills from Build Sprint, the buildathons and side projects.</p>
           </div>
-        </aside>
-      )}
-      </div>
+          <SearchBox value={query} onChange={setQuery} placeholder="Search projects, builders or tools" />
+        </header>
+
+        {!searching && <SprintBand stats={data.stats} />}
+
+        <section aria-labelledby="projects-title">
+          {!searching && (
+            <div className="section-head">
+              <h2 className="bx-section-title" id="projects-title">Projects</h2>
+            </div>
+          )}
+          <ProjectListView
+            initial={data.list}
+            sorts={HOME_SORTS}
+            sort={data.sort}
+            categories={categories}
+            category={data.category}
+            query={query}
+            onClearQuery={() => setQuery("")}
+            refreshKey={listRefreshKey}
+            moreButton
+            pageSize={HOME_PAGE}
+          />
+        </section>
+
+        {!searching && <SkillsPanel skills={skills} />}
+
+        {!searching && (() => {
+          const events = listedCollections(data.stats).filter(c => c !== BUILD_SPRINT);
+          return events.length > 0 && (
+            <section className="section" aria-labelledby="events-title">
+              <div className="section-head">
+                <h2 className="bx-section-title" id="events-title">Buildathons</h2>
+                <Link to="/events" className="text-link">All events →</Link>
+              </div>
+              <div className="events-grid rail-scroll" style={{ gridTemplateColumns: `repeat(${Math.min(events.length, 3)}, minmax(0, 1fr))` }}>
+                {events.map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} blurb mosaic={data.mosaics[c.slug]} />)}
+              </div>
+            </section>
+          );
+        })()}
+      </main>
 
       {/* ---- SUBMIT FLOW ---- */}
       {showSubmit && createPortal(
@@ -305,10 +369,10 @@ export default function HomePage() {
                       go: () => { setShowSubmit(false); navigate("/skills/new"); },
                     },
                   ] as const).map(o => (
-                    <button key={o.key} onClick={o.go} style={{
+                    <button key={o.key} onClick={o.go} autoFocus={submitHint === o.key} style={{
                       display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left",
-                      padding: "16px 18px", borderRadius: 14, border: `1px solid ${C.border}`,
-                      background: C.surface, cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
+                      padding: "16px 18px", borderRadius: 14, border: `1px solid ${submitHint === o.key ? C.accent : C.border}`,
+                      background: submitHint === o.key ? C.surfaceWarm : C.surface, cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.surfaceWarm; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.surface; }}
@@ -430,6 +494,24 @@ export default function HomePage() {
                       value={submitData.url}
                       onChange={e => setSubmitData(d => ({ ...d, url: e.target.value }))}
                     />
+                  </div>
+                  <div>
+                    <label htmlFor="submit-category" style={{
+                      display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
+                      fontFamily: "var(--sans)", marginBottom: 8,
+                    }}>
+                      Category
+                    </label>
+                    <select
+                      id="submit-category"
+                      className="submit-input"
+                      value={submitData.category}
+                      onChange={e => setSubmitData(d => ({ ...d, category: e.target.value }))}
+                      style={{ color: submitData.category ? C.text : C.textMute, cursor: "pointer" }}
+                    >
+                      <option value="">Pick the one that fits best</option>
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                   </div>
                   <MediaUpload
                     value={submitData.mediaFiles}
@@ -922,5 +1004,29 @@ export default function HomePage() {
 
       {/* Sign-in handled via redirect to GrowthX login */}
     </div>
+  );
+}
+
+// Build Sprint, the biggest collection: a dark band with the real Season 04 cover and a chip per season.
+function SprintBand({ stats }: { stats: CollectionStats }) {
+  const seasons = (BUILD_SPRINT.seasons ?? []).filter(x => stats.error || (stats.tags[x.tag]?.count ?? 0) > 0);
+  const newest = seasons[0];
+  const count = newest ? stats.tags[newest.tag]?.count ?? 0 : 0;
+  return (
+    <section className="sprint-band" aria-labelledby="sprint-title">
+      <img src={BUILD_SPRINT.cover} alt="" />
+      <div className="sprint-text">
+        <h2 id="sprint-title"><Link to={BUILD_SPRINT.path} prefetch="intent">Build Sprint</Link></h2>
+        <p>{BUILD_SPRINT.blurb}</p>
+        {newest && <span className="sprint-short">{newest.label} · {count > 0 ? `${count} projects` : newest.when}</span>}
+        <div className="sprint-seasons">
+          {seasons.map((x, i) => (
+            <Link key={x.key} to={`${BUILD_SPRINT.path}?season=${x.key}`} className={i === 0 ? "is-new" : undefined}>
+              {i === 0 ? `${x.label} · ${x.when}` : x.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

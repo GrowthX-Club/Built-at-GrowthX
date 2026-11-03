@@ -95,3 +95,38 @@ export function stripMarkdownLite(text: string): string {
     .filter(line => line.trim() !== '---')
     .join('\n');
 }
+
+// The "**Built for <event>**" footer line the backfills added; the project page already shows the event under the
+// makers. Only a whole line naming one of our events matches, so a builder's own "Built for busy parents…" stays.
+const EVENT_FOOTER = /^\s*\**\s*Built for [^*\n]*(Buildathon|Build Sprint|Build Week|AI Immersion|AI Weekender)[^*\n]*\**\s*$/i;
+
+/** The description without the "Built for <event>" line (and a closing rule left with nothing after it). */
+export function withoutEventFooter(value: string): string {
+  if (!value) return value;
+  if (!isLexicalJson(value)) {
+    const kept = value.split('\n').filter(line => !EVENT_FOOTER.test(line)).join('\n');
+    return kept.replace(/(\n\s*---\s*)+\s*$/, '').trimEnd();
+  }
+  try {
+    const doc = JSON.parse(value);
+    const text = (n: Record<string, unknown>): string =>
+      n.type === 'text' ? String(n.text ?? '') : Array.isArray(n.children) ? (n.children as Record<string, unknown>[]).map(text).join('') : '';
+    const kids = (doc.root.children as Record<string, unknown>[]).filter(n => !EVENT_FOOTER.test(text(n)));
+    while (kids.length && (kids[kids.length - 1].type === 'horizontalrule' || !text(kids[kids.length - 1]).trim())) kids.pop();
+    doc.root.children = kids;
+    return JSON.stringify(doc);
+  } catch {
+    return value;
+  }
+}
+
+/** Assert-based self-check: node --experimental-strip-types lib/editor-utils.ts (no test framework here). */
+export function demoWithoutEventFooter() {
+  const t = (a: string, b: string) => { if (withoutEventFooter(a) !== b) throw new Error(`${JSON.stringify(a)} → ${JSON.stringify(withoutEventFooter(a))}`); };
+  t("Intro\n\n---\n\n**Built for Build Sprint Season 04**", "Intro");
+  t("Intro\n\n---\n\n**Built for Sarvam Epoch Buildathon**\n🎬 Demo: https://x.y", "Intro\n\n---\n\n🎬 Demo: https://x.y");
+  t("**Built for:** busy parents\nMore", "**Built for:** busy parents\nMore");
+  t("Built for people who buy more books than they read.", "Built for people who buy more books than they read.");
+  t("**Built for India's First OpenCode Buildathon**", "");
+  return "ok";
+}

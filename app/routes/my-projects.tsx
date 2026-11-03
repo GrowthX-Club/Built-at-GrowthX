@@ -7,6 +7,7 @@ import {
   type Project,
   type BuilderProfile,
   normalizeProject,
+  detectMediaType,
   normalizeUser,
   getCompanyLogoUrl,
   getStackLogoUrl,
@@ -76,6 +77,7 @@ export default function MyProjectsPage() {
   const { openLoginDialog } = useLoginDialog();
   const { setNavOverride, clearNavOverride } = useNavOverride();
   const [projects, setProjects] = useState<Project[]>([]);
+  const rawById = useRef<Record<string, Record<string, unknown>>>({});
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | number | null>(null);
@@ -100,6 +102,7 @@ export default function MyProjectsPage() {
       setUser(u);
     });
     bxApi("/my-projects").then(r => r.json()).then(d => {
+      rawById.current = Object.fromEntries((d.projects || []).map((p: Record<string, unknown>) => [String(p.id ?? p._id), p]));
       const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
       setProjects(list);
     }).finally(() => setLoading(false));
@@ -157,7 +160,9 @@ export default function MyProjectsPage() {
   };
 
   const startEdit = (p: Project) => {
-    const raw = p as unknown as Record<string, unknown>;
+    // The stored project as the API sent it: the display copy drops non-web links, which saving would then erase.
+    const raw = rawById.current[String(p.id)] ?? (p as unknown as Record<string, unknown>);
+    const rawMedia = Array.isArray(raw.media) ? (raw.media as unknown[]) : (p.media ?? []);
     setEditError("");
     setEditingId(p.id);
     setEditData({
@@ -172,10 +177,11 @@ export default function MyProjectsPage() {
         ...(p.collabs || []).map(c => ({ _id: c._id || '', name: c.name, avatar: c.avatar, company: c.company, companyColor: c.companyColor, role: 'collaborator' as const })),
       ],
       teamInput: "",
-      mediaFiles: (p.media || []).map((m: { url: string; type?: string }) => ({
-        url: m.url,
-        type: (m.type === "loom" || m.type === "youtube" ? m.type : "image") as "image" | "loom" | "youtube",
-      })),
+      mediaFiles: rawMedia.map(m => {
+        const url = typeof m === "string" ? m : String((m as { url?: string })?.url ?? "");
+        const t = detectMediaType(url);
+        return { url, type: (t === "loom" || t === "youtube" ? t : "image") as "image" | "loom" | "youtube" };
+      }).filter(m => m.url),
     });
   };
 

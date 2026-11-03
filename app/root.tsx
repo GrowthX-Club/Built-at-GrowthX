@@ -28,7 +28,7 @@ export const links: LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
   },
   { rel: "icon", href: "/favicon-16.png", sizes: "16x16", type: "image/png" },
   { rel: "icon", href: "/favicon-32.png", sizes: "32x32", type: "image/png" },
@@ -41,28 +41,10 @@ export const links: LinksFunction = () => [
 /* ------------------------------------------------------------------ */
 export const meta: MetaFunction = () => [
   { title: "Built at GrowthX" },
-  {
-    name: "description",
-    content:
-      "Discover what the GrowthX community is shipping — projects, builders, and city stats from India's top product community.",
-  },
-  { property: "og:type", content: "website" },
+  { name: "description", content: "Products and AI skills built by the GrowthX community." },
   { property: "og:site_name", content: "Built at GrowthX" },
-  { property: "og:title", content: "Built at GrowthX" },
-  {
-    property: "og:description",
-    content:
-      "Discover what the GrowthX community is shipping — projects, builders, and city stats.",
-  },
-  { property: "og:image", content: "/built-logo.svg" },
-  { name: "twitter:card", content: "summary" },
-  { name: "twitter:title", content: "Built at GrowthX" },
-  {
-    name: "twitter:description",
-    content:
-      "Discover what the GrowthX community is shipping — projects, builders, and city stats.",
-  },
-  { tagName: "link", rel: "canonical", href: "https://built.growthx.club" },
+  { property: "og:image", content: "https://built.growthx.club/og.png" },
+  { name: "twitter:card", content: "summary_large_image" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -73,8 +55,12 @@ const jsonLd = {
   "@type": "WebSite",
   name: "Built at GrowthX",
   url: "https://built.growthx.club",
-  description:
-    "Discover what the GrowthX community is shipping — projects, builders, and city stats from India's top product community.",
+  description: "Products and AI skills built by the GrowthX community.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://built.growthx.club/?q={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
   publisher: {
     "@type": "Organization",
     name: "GrowthX",

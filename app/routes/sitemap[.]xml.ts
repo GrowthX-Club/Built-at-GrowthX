@@ -1,68 +1,52 @@
-import type { LoaderFunctionArgs } from "react-router";
+import { bxApi } from "@/lib/api";
+import { SITE_URL, fetchAllProjects, fetchCollectionStats, listedCollections, defaultSeason, serverSignal } from "@/lib/collections";
 
-const SITE_URL = "https://built.growthx.club";
-const API_BASE = typeof process !== "undefined" && process.env?.VITE_API_URL
-  ? process.env.VITE_API_URL
-  : "http://localhost:8000/api/v1";
+type Entry = { loc: string; lastmod?: string };
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const staticRoutes = [
-    { url: SITE_URL, changefreq: "daily", priority: "1.0" },
-    { url: `${SITE_URL}/projects`, changefreq: "daily", priority: "0.9" },
-    { url: `${SITE_URL}/skills`, changefreq: "weekly", priority: "0.8" },
-    { url: `${SITE_URL}/builders`, changefreq: "weekly", priority: "0.7" },
-    { url: `${SITE_URL}/building`, changefreq: "daily", priority: "0.6" },
-    { url: `${SITE_URL}/cities`, changefreq: "weekly", priority: "0.5" },
-  ];
-
-  let projectRoutes: Array<{ url: string; lastmod: string; changefreq: string; priority: string }> = [];
+/** Every project slug (+ updated date) from GET /bx/sitemap, else by paging /bx/projects; null if either falls short. */
+async function projectEntries(): Promise<Entry[] | null> {
   try {
-    const res = await fetch(`${API_BASE}/bx/projects?limit=500`);
-    if (res.ok) {
-      const data = await res.json();
-      const projects = data.projects || data || [];
-      projectRoutes = projects.map((p: { slug?: string; _id?: string; id?: string; updatedAt?: string; createdAt?: string }) => ({
-        url: `${SITE_URL}/projects/${p.slug || p._id || p.id}`,
-        lastmod: (p.updatedAt || p.createdAt || new Date().toISOString()).split("T")[0],
-        changefreq: "weekly",
-        priority: "0.8",
-      }));
+    const r = await bxApi("/sitemap", { signal: serverSignal() });
+    if (r.ok) {
+      const d = await r.json();
+      const rows = (d.projects ?? []) as { slug?: string; _id?: string; updated_at?: string }[];
+      if (rows.length) return rows.map(p => ({ loc: `${SITE_URL}/projects/${p.slug || p._id}`, lastmod: p.updated_at }));
     }
-  } catch {
-    // If API is unavailable, return static routes only
+  } catch { /* fall back */ }
+  const all = await fetchAllProjects({ sort: "new" });
+  if (all.error || all.projects.length < all.totalCount || all.totalCount === 0) return null;
+  return all.projects.map(p => ({
+    loc: `${SITE_URL}/projects/${p.slug || p._id}`,
+    lastmod: (p.updated_at || p.created_at) as string | undefined,
+  }));
+}
+
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+export async function loader() {
+  const [projects, stats] = await Promise.all([projectEntries(), fetchCollectionStats()]);
+  // A partial sitemap would tell search engines pages are gone: say "try later" instead.
+  if (!projects || stats.error) {
+    return new Response("Sitemap temporarily unavailable", { status: 503, headers: { "Retry-After": "300", "Cache-Control": "no-store" } });
   }
-
-  const now = new Date().toISOString().split("T")[0];
-
+  const pages: Entry[] = [
+    { loc: SITE_URL },
+    { loc: `${SITE_URL}/events` },
+    { loc: `${SITE_URL}/skills` },
+    { loc: `${SITE_URL}/builders` },
+    ...listedCollections(stats).flatMap(c => [
+      { loc: `${SITE_URL}${c.path}` },
+      // The default season is the collection page itself; only the others get their own URL.
+      ...(c.seasons ?? []).filter(s => s !== defaultSeason(c, stats) && (stats.tags[s.tag]?.count ?? 0) > 0)
+        .map(s => ({ loc: `${SITE_URL}${c.path}?season=${s.key}` })),
+    ]),
+    ...projects,
+  ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticRoutes
-  .map(
-    (r) => `  <url>
-    <loc>${r.url}</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>${r.changefreq}</changefreq>
-    <priority>${r.priority}</priority>
-  </url>`
-  )
-  .join("\n")}
-${projectRoutes
-  .map(
-    (r) => `  <url>
-    <loc>${r.url}</loc>
-    <lastmod>${r.lastmod}</lastmod>
-    <changefreq>${r.changefreq}</changefreq>
-    <priority>${r.priority}</priority>
-  </url>`
-  )
-  .join("\n")}
+${pages.map(p => `  <url><loc>${esc(p.loc)}</loc>${p.lastmod ? `<lastmod>${p.lastmod.slice(0, 10)}</lastmod>` : ""}</url>`).join("\n")}
 </urlset>`;
-
   return new Response(xml, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/xml",
-      "Cache-Control": "public, max-age=3600",
-    },
+    headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" },
   });
 }
