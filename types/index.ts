@@ -394,6 +394,17 @@ function normalizeMedia(raw: unknown): MediaItem[] {
     .filter(Boolean) as MediaItem[];
 }
 
+/** Everyone who made a project: the submitter, co-creators and collaborators, once each. */
+export function teamOf(p: Pick<Project, "builder" | "creators" | "collabs">): { _id?: string; name: string; company?: string; avatar: string; avatarUrl?: string }[] {
+  const seen = new Set<string>();
+  return [p.builder, ...(p.creators || []), ...p.collabs].filter(m => {
+    const key = m._id || m.name;
+    if (!m.name || m.name === "Anonymous" || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 const CDN = "https://public-cdn.growthx.club/";
 
 /**
@@ -414,7 +425,8 @@ export function formatProjectDate(raw: string): string {
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  // A fixed time zone so the server and the browser print the same day (no hydration mismatch).
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 /** Normalize a backend project (with populated creator/collabs) to frontend Project shape */
@@ -484,7 +496,8 @@ export function normalizeProject(p: Record<string, unknown>): Project {
     gallery: (p.gallery ?? []) as GalleryItem[],
     media: normalizeMedia(p.media),
     slug: (p.slug ?? undefined) as string | undefined,
-    url: (p.url as string) || undefined,
+    // Only web links become Try it buttons; anything else (javascript:, data:, typos) is dropped here, once.
+    url: typeof p.url === 'string' && /^https?:\/\/\S+$/i.test(p.url.trim()) ? p.url.trim() : undefined,
     buildProcess: (p.buildProcess ?? p.build_process ?? undefined) as string | undefined,
     isDraft: (p.isDraft ?? p.is_draft ?? false) as boolean,
     enabled: (p.enabled !== undefined ? p.enabled : true) as boolean,

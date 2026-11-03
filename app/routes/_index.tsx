@@ -19,9 +19,10 @@ import SearchBox from "@/components/SearchBox";
 import CollectionCard from "@/components/CollectionCard";
 import SkillsPanel from "@/components/SkillsPanel";
 import {
-  type SortKey, BUILD_SPRINT, COLLECTIONS, CATEGORIES,
-  fetchProjects, fetchCollectionStats, usefulCategories, listParams,
+  type SortKey, BUILD_SPRINT, CATEGORIES,
+  fetchProjects, fetchCollectionStats, usefulCategories, listParams, listedCollections,
 } from "@/lib/collections";
+import { makersLine } from "@/components/ProjectRow";
 import { itemListLd, pageMeta } from "@/lib/seo";
 import { normalizeProject } from "@/types";
 
@@ -29,12 +30,13 @@ const HOME_SORTS: SortKey[] = ["best", "trending", "new"];
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { sort, category, q } = listParams(request.url, HOME_SORTS);
-  const [list, stats, skills] = await Promise.all([
+  const [list, stats, skills, sprint] = await Promise.all([
     fetchProjects({ sort, category: category || undefined, limit: 20 }),
     fetchCollectionStats(),
     fetchProjects({ has_skill: true, sort: "installs", limit: 3 }),
+    fetchProjects({ buildathon: "build-sprint", sort: "new", limit: 8 }),
   ]);
-  return { list, stats, skills: skills.projects, sort, category, q };
+  return { list, stats, skills: skills.projects, sprint, sort, category, q };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
@@ -55,6 +57,7 @@ export default function HomePage() {
   const searching = query.trim().length >= 2;
   const categories = usefulCategories(data.stats.categories);
   const skills = data.skills.map(normalizeProject);
+  const sprint = data.sprint.projects.map(normalizeProject);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { openLoginDialog } = useLoginDialog();
@@ -62,6 +65,8 @@ export default function HomePage() {
   const [submitStep, setSubmitStep] = useState(0);
   // One Submit button everywhere: it first asks whether this is a project or a skill.
   const [submitKind, setSubmitKind] = useState<"choose" | "project">("choose");
+  // /?submit=skill (the Skills page's "Add your skill") opens the same chooser with "A skill" picked out.
+  const [submitHint, setSubmitHint] = useState<"skill" | null>(null);
   const [submitData, setSubmitData] = useState({
     name: "", tagline: "", description: "", buildProcess: "",
     stack: [] as string[], stackInput: "",
@@ -105,7 +110,9 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("submit") !== "1" || !userLoaded) return;
+    const want = searchParams.get("submit");
+    if ((want !== "1" && want !== "skill") || !userLoaded) return;
+    setSubmitHint(want === "skill" ? "skill" : null);
     navigate("/", { replace: true });
     if (!user) {
       openLoginDialog(() => { loadUser(); });
@@ -246,20 +253,25 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
       <main className="page">
-        <header className="page-head">
+        <header>
           <h1 className="page-title">What the community shipped</h1>
-          <p className="page-sub">Products built by the GrowthX community. Ranked by the people who build.</p>
           <SearchBox value={query} onChange={setQuery} placeholder="Search projects, builders or tools" />
         </header>
 
-        {!searching && (
-          <section className="home-section" aria-labelledby="events-title">
+        {!searching && sprint.length > 0 && (
+          <section className="home-strip" aria-labelledby="sprint-title">
             <div className="section-head">
-              <h2 className="bx-section-title" id="events-title">Browse by event</h2>
-              <Link to="/events" className="text-link">All events →</Link>
+              <h2 className="bx-section-title" id="sprint-title">Build Sprint · Season 04</h2>
+              <Link to={BUILD_SPRINT.path} className="text-link">See all {data.sprint.totalCount} →</Link>
             </div>
-            <div className="coll-grid">
-              {COLLECTIONS.slice(0, 3).map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} feature={c === BUILD_SPRINT} />)}
+            <div className="strip-row">
+              {sprint.map(p => (
+                <div key={p.id} className="strip-card">
+                  <Link to={`/projects/${p.slug || p.id}`} prefetch="intent">{p.name}</Link>
+                  <p>{p.tagline}</p>
+                  <span>{makersLine(p)}</span>
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -280,9 +292,23 @@ export default function HomePage() {
               query={query}
               onClearQuery={() => setQuery("")}
               refreshKey={listRefreshKey}
+              moreButton
             />
           </section>
-          {!searching && <aside><SkillsPanel skills={skills} /></aside>}
+          {!searching && (
+            <aside className="home-rail">
+              <section aria-labelledby="events-title">
+                <div className="section-head">
+                  <h2 className="bx-section-title" id="events-title">Events</h2>
+                  <Link to="/events" className="text-link">All →</Link>
+                </div>
+                <div className="rail-events">
+                  {listedCollections(data.stats).map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} />)}
+                </div>
+              </section>
+              <SkillsPanel skills={skills} />
+            </aside>
+          )}
         </div>
       </main>
 
@@ -354,10 +380,10 @@ export default function HomePage() {
                       go: () => { setShowSubmit(false); navigate("/skills/new"); },
                     },
                   ] as const).map(o => (
-                    <button key={o.key} onClick={o.go} style={{
+                    <button key={o.key} onClick={o.go} autoFocus={submitHint === o.key} style={{
                       display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left",
-                      padding: "16px 18px", borderRadius: 14, border: `1px solid ${C.border}`,
-                      background: C.surface, cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
+                      padding: "16px 18px", borderRadius: 14, border: `1px solid ${submitHint === o.key ? C.accent : C.border}`,
+                      background: submitHint === o.key ? C.surfaceWarm : C.surface, cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.background = C.surfaceWarm; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.surface; }}

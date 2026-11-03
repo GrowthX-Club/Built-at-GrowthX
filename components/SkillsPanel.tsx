@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { type Project } from "@/types";
+import { makersLine } from "@/components/ProjectRow";
 
 // The Skills marketplace on the home page: the most-installed skills, each with Install as its action
 // (opens the skill's install box). Submitting stays on the one Submit button in the nav.
@@ -21,7 +22,7 @@ export default function SkillsPanel({ skills }: { skills: Project[] }) {
               <div style={{ minWidth: 0 }}>
                 <Link to={href} className="skill-name" prefetch="intent">{s.name}</Link>
                 <p className="skill-tagline">{s.tagline}</p>
-                <p className="skill-meta">{s.builder.name}{installs >= 10 ? ` · ${installs.toLocaleString()} installs` : ""}</p>
+                <p className="skill-meta">{makersLine(s)}{installs >= 10 ? ` · ${installs.toLocaleString()} installs` : ""}</p>
               </div>
               <Link to={`${href}#install`} className="btn-outline skill-install" aria-label={`Install ${s.name}`}>Install</Link>
             </li>

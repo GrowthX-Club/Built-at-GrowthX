@@ -23,6 +23,12 @@ export interface Collection {
   blurb: string;
   tags: string[];
   seasons?: Season[];
+  /** A real photo or cover GrowthX already uses for the event; cards without one get the typographic cover. */
+  cover?: string;
+  /** Photos for the strip at the top of the event page. */
+  photos?: string[];
+  /** Short name for the typographic cover. */
+  mark?: string;
 }
 
 export const BUILD_SPRINT: Collection = {
@@ -31,6 +37,8 @@ export const BUILD_SPRINT: Collection = {
   name: "Build Sprint",
   blurb: "GrowthX's build programme. Members pick one problem, ship it live and get real users.",
   tags: ["build-sprint", "build-week", "ai-immersion", "ai-weekender"],
+  // The Season 04 cover from growthx.club/build-sprint (its og:image).
+  cover: "https://public-cdn.growthx.club/cdn-cgi/image/width=1600,quality=80,format=auto/gx-assets/build-sprint/og-build-sprint-v2.jpg",
   seasons: [
     { key: "04", tag: "build-sprint", label: "Season 04", when: "Oct 2026" },
     { key: "03", tag: "build-week", label: "Season 03", when: "Aug–Sep 2026", ranAs: "Build Week" },
@@ -45,8 +53,10 @@ export const COLLECTIONS: Collection[] = [
     slug: "sarvam",
     path: "/sarvam",
     name: "Sarvam Epoch Buildathon",
-    blurb: "~600 builders shipping with Sarvam AI in a single day.",
+    blurb: "A one-day buildathon in Bengaluru where members built with Sarvam AI's speech and language models.",
     tags: ["sarvam"],
+    cover: "/sarvam/winners-group.jpg",
+    photos: ["/sarvam/crowd-celebration.jpg", "/sarvam/host-stage.jpg", "/sarvam/winners-group.jpg", "/sarvam/raised-hands.jpg", "/sarvam/original-sign.jpg"],
   },
   {
     slug: "opencode",
@@ -54,6 +64,7 @@ export const COLLECTIONS: Collection[] = [
     name: "OpenCode Buildathon",
     blurb: "India's first OpenCode Buildathon, powered by GrowthX.",
     tags: ["opencode"],
+    mark: "OpenCode",
   },
   {
     slug: "openclaw",
@@ -61,6 +72,7 @@ export const COLLECTIONS: Collection[] = [
     name: "OpenClaw Buildathon",
     blurb: "India's first OpenClaw Buildathon.",
     tags: ["OpenClaw Buildathon"],
+    mark: "OpenClaw",
   },
 ];
 
@@ -72,46 +84,49 @@ export function eventFor(tag: string | null | undefined): { name: string; href: 
     if (season) return { name: `${c.name} · ${season.label}`, href: `${c.path}?season=${season.key}` };
     if (c.tags.includes(tag)) return { name: c.name, href: c.path };
   }
-  if (tag === "OpenCode Buildathon") return { name: "OpenCode Buildathon", href: "/opencode" };
   return null;
+}
+
+/** The pill on Build Sprint rows ("Build Sprint · S04"); Seasons 04 and 03 only. */
+export function sprintPill(tag: string | null | undefined): string | null {
+  return tag === "build-sprint" ? "Build Sprint · S04" : tag === "build-week" ? "Build Sprint · S03" : null;
 }
 
 // ---- Stats per tag and per category ----
 
 export interface TagStat { count: number; firstAt?: string; lastAt?: string }
 export interface CategoryStat { name: string; count: number }
-export interface CollectionStats { tags: Record<string, TagStat>; categories: CategoryStat[] }
+export interface CollectionStats { tags: Record<string, TagStat>; categories: CategoryStat[]; error?: boolean }
 
-type RawTag = { tag?: string; buildathon?: string; count?: number; first_at?: string; last_at?: string };
-type RawCategory = { category?: string; name?: string; count?: number };
+type RawTag = { tag?: string | null; count?: number; first_at?: string; last_at?: string };
+type RawCategory = { category?: string; count?: number };
 
-/**
- * GET /bx/collections ({ buildathons: [{ tag, count, first_at, last_at }], categories: [{ category, count }] }) when it
- * is live; until then, totalCount per tag and no categories (the chip row stays hidden).
- */
+/** Server fetches give up after 2.5 s so a slow API can't hold the page; the client then retries. */
+export const serverSignal = () => (typeof window === "undefined" ? AbortSignal.timeout(2500) : undefined);
+
+// One copy per server instance for 60 s (the API caches it for 60 s too).
+let statsCache: { at: number; data: CollectionStats } | null = null;
+
+/** GET /bx/collections: { buildathons: [{ tag, count, first_at, last_at }], categories: [{ category, count }] }. */
 export async function fetchCollectionStats(): Promise<CollectionStats> {
+  if (statsCache && Date.now() - statsCache.at < 60000) return statsCache.data;
   try {
-    const r = await bxApi("/collections");
-    if (r.ok) {
-      const d = await r.json();
-      const tags: Record<string, TagStat> = {};
-      for (const t of (d.buildathons ?? d.tags ?? []) as RawTag[]) {
-        const tag = t.tag ?? t.buildathon;
-        if (tag) tags[tag] = { count: t.count ?? 0, firstAt: t.first_at, lastAt: t.last_at };
-      }
-      const categories = ((d.categories ?? []) as RawCategory[])
-        .map(c => ({ name: c.category ?? c.name ?? "", count: c.count ?? 0 }))
-        .filter(c => c.name && c.count > 0);
-      return { tags, categories };
+    const r = await bxApi("/collections", { signal: serverSignal() });
+    if (!r.ok) throw new Error(String(r.status));
+    const d = await r.json();
+    const tags: Record<string, TagStat> = {};
+    for (const t of (d.buildathons ?? []) as RawTag[]) {
+      if (t.tag) tags[t.tag] = { count: t.count ?? 0, firstAt: t.first_at, lastAt: t.last_at };
     }
-  } catch { /* fall through */ }
-  const all = COLLECTIONS.flatMap(c => c.tags);
-  const rows = await Promise.all(all.map(async tag => {
-    const d = await bxApi(`/projects?buildathon=${encodeURIComponent(tag)}&limit=1&sort=new`)
-      .then(r => (r.ok ? r.json() : null)).catch(() => null);
-    return [tag, { count: d?.totalCount ?? 0, lastAt: d?.projects?.[0]?.created_at }] as const;
-  }));
-  return { tags: Object.fromEntries(rows), categories: [] };
+    const categories = ((d.categories ?? []) as RawCategory[])
+      .map(c => ({ name: c.category ?? "", count: c.count ?? 0 }))
+      .filter(c => c.name && c.count > 0);
+    const data = { tags, categories };
+    statsCache = { at: Date.now(), data };
+    return data;
+  } catch {
+    return { tags: {}, categories: [], error: true };
+  }
 }
 
 /** The category a builder picks when submitting (the backend files a project without one under "Other"). */
@@ -133,14 +148,23 @@ export function usefulCategories(cats: CategoryStat[]): CategoryStat[] {
 
 export function collectionStat(c: Collection, stats: CollectionStats): TagStat {
   const parts = c.tags.map(t => stats.tags[t]).filter(Boolean) as TagStat[];
-  // Without first_at (older backend), each tag's latest project still bounds the range from below.
-  const firsts = parts.map(p => p.firstAt ?? p.lastAt).filter(Boolean) as string[];
+  const firsts = parts.map(p => p.firstAt).filter(Boolean) as string[];
   const lasts = parts.map(p => p.lastAt).filter(Boolean) as string[];
   return {
     count: parts.reduce((s, p) => s + p.count, 0),
     firstAt: firsts.sort()[0],
     lastAt: lasts.sort().slice(-1)[0],
   };
+}
+
+/** Events worth a card: at least 5 projects (a one-project event page reads as empty). */
+export function listedCollections(stats: CollectionStats): Collection[] {
+  return COLLECTIONS.filter(c => stats.error || collectionStat(c, stats).count >= 5);
+}
+
+/** The season an event page opens on: the newest with projects. */
+export function defaultSeason(c: Collection, stats: CollectionStats): Season | undefined {
+  return c.seasons?.find(s => (stats.tags[s.tag]?.count ?? 0) > 0) ?? c.seasons?.[0];
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -170,7 +194,8 @@ export function isOpen(lastAt?: string): boolean {
 
 export type SortKey = "best" | "trending" | "new" | "top" | "installs";
 export type RawProject = Record<string, unknown>;
-export interface ProjectPage { projects: RawProject[]; totalCount: number; votedProjectIds: string[] }
+/** error = the API didn't answer; the page shows a loading state and the browser asks again. */
+export interface ProjectPage { projects: RawProject[]; totalCount: number; votedProjectIds: string[]; error?: boolean }
 
 export interface ListQuery {
   sort?: SortKey;
@@ -189,19 +214,10 @@ const qs = (q: ListQuery) =>
 // Lists never show the long description; dropping it keeps server-rendered pages light.
 const slim = (p: RawProject): RawProject => { const { description: _d, ...rest } = p; return rest; };
 
-// ponytail: sort=best is new on the backend; until it is live, Best falls back to most upvoted.
-// A 400 is remembered for 10 minutes so each page doesn't ask twice; delete once the backend has it.
-let bestUnsupportedAt = 0;
-
 export async function fetchProjects(q: ListQuery): Promise<ProjectPage> {
   try {
-    if (q.sort === "best" && Date.now() - bestUnsupportedAt < 600000) q = { ...q, sort: "top" };
-    let r = await bxApi(`/projects?${qs(q)}`);
-    if (r.status === 400 && q.sort === "best") {
-      bestUnsupportedAt = Date.now();
-      r = await bxApi(`/projects?${qs({ ...q, sort: "top" })}`);
-    }
-    if (!r.ok) return { projects: [], totalCount: 0, votedProjectIds: [] };
+    const r = await bxApi(`/projects?${qs(q)}`, { signal: serverSignal() });
+    if (!r.ok) throw new Error(String(r.status));
     const d = await r.json();
     return {
       projects: ((d.projects ?? []) as RawProject[]).map(slim),
@@ -209,7 +225,7 @@ export async function fetchProjects(q: ListQuery): Promise<ProjectPage> {
       votedProjectIds: d.votedProjectIds ?? [],
     };
   } catch {
-    return { projects: [], totalCount: 0, votedProjectIds: [] };
+    return { projects: [], totalCount: 0, votedProjectIds: [], error: true };
   }
 }
 
@@ -226,7 +242,7 @@ export async function fetchAllProjects(q: ListQuery): Promise<ProjectPage> {
     seen.add(id);
     return true;
   });
-  return { projects, totalCount: first.totalCount, votedProjectIds: first.votedProjectIds };
+  return { projects, totalCount: first.totalCount, votedProjectIds: first.votedProjectIds, error: [first, ...rest].some(p => p.error) };
 }
 
 /** Keep a list's state in the address bar (shareable, survives reload) without re-running the route loader. */
@@ -243,6 +259,7 @@ export function listParams(url: string, sorts: SortKey[]) {
   const s = sp.get("sort") as SortKey | null;
   return {
     sort: s && sorts.includes(s) ? s : sorts[0],
+    sortAsked: !!s && sorts.includes(s),
     category: sp.get("category") ?? "",
     q: sp.get("q") ?? "",
   };

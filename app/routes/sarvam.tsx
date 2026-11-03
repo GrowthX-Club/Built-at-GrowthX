@@ -1,10 +1,9 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { C, type Project } from "@/types";
+import type { Project } from "@/types";
 import { COLLECTIONS } from "@/lib/collections";
 import { itemListLd } from "@/lib/seo";
 import type { FilterTab } from "@/components/ProjectListView";
 import CollectionPage, { loadCollection } from "@/components/CollectionPage";
-import SarvamBuildathonHero from "@/components/SarvamBuildathonHero";
 
 const SARVAM = COLLECTIONS.find(c => c.slug === "sarvam")!;
 export const loader = ({ request }: LoaderFunctionArgs) => loadCollection(request, SARVAM);
@@ -81,13 +80,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => [
   ...(data ? [{ "script:ld+json": itemListLd("Sarvam Epoch Buildathon projects", "/sarvam", data.list.projects) }] : []),
 ];
 
+// The shared event-page layout (site nav, lights toggle, one photo strip, projects first).
 export default function SarvamPage() {
-  return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <SarvamBuildathonHero />
-      <div id="sarvam-projects" style={{ scrollMarginTop: 24 }}>
-        <CollectionPage c={SARVAM} customFilters={SARVAM_FILTERS} hideTitle />
-      </div>
-    </div>
-  );
+  return <CollectionPage c={SARVAM} customFilters={SARVAM_FILTERS} />;
 }

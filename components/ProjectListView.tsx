@@ -39,14 +39,13 @@ export interface ProjectListViewProps {
   emptyState?: { title: string; description: string };
   /** Bump to reload (e.g. after a submit). */
   refreshKey?: number;
+  /** A "Show more" button instead of infinite scroll, so what follows the list stays reachable (home). */
+  moreButton?: boolean;
 }
 
 const SORT_LABELS: Record<SortKey, string> = {
-  best: "Best", trending: "Trending", new: "New", top: "Top", installs: "Most installed",
+  best: "Best", trending: "Trending", new: "New", top: "Top", installs: "Popular",
 };
-
-const ACCOLADE_PRIORITY: Record<string, number> = { "rank-1": 1, "rank-2": 2, "rank-3": 3, "top-5": 4, "top-15": 5 };
-const rankWeight = (p: Project) => (p.accolade ? ACCOLADE_PRIORITY[p.accolade] ?? 99 : 99);
 
 const PAGE_SIZE = 20;
 
@@ -101,6 +100,7 @@ export function voteBurst(btn: Element | null) {
 export default function ProjectListView({
   initial, tag, skillsOnly = false, sorts = ["best", "trending", "new"], sort: startSort, categories = [],
   category: startCategory = "", query = "", onClearQuery, customFilters, showEvent = true, emptyState, refreshKey = 0,
+  moreButton = false,
 }: ProjectListViewProps) {
   const { openLoginDialog } = useLoginDialog();
   const [sort, setSort] = useState<SortKey>(startSort && sorts.includes(startSort) ? startSort : sorts[0]);
@@ -108,12 +108,17 @@ export default function ProjectListView({
   const [filterKey, setFilterKey] = useState(customFilters?.[0]?.key ?? "");
   const [projects, setProjects] = useState<Project[]>(() => (initial?.projects ?? []).map(normalizeProject));
   const [totalCount, setTotalCount] = useState(initial?.totalCount ?? 0);
-  const [loading, setLoading] = useState(!initial);
+  const usable = !!initial && !initial.error;
+  const [loading, setLoading] = useState(!usable);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [votedIds, setVotedIds] = useState<string[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const skipNextLoad = useRef(!!initial && !customFilters);
+  // The server's first page is reused, unless it failed, a whole-scope view is needed, or the URL asks for a search.
+  const skipNextLoad = useRef(usable && !customFilters && query.trim().length < 2);
+  // Lists under 10 projects don't need sort or category controls (decided once, from the starting view).
+  const small = useRef((initial?.totalCount ?? 10) < 10 && !initial?.error).current;
   const requestId = useRef(0);
 
   const words = query.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
@@ -129,6 +134,7 @@ export default function ProjectListView({
     (wholeScope ? fetchAllCached(q) : fetchProjects({ ...q, limit: PAGE_SIZE, offset: 0 }))
       .then(d => {
         if (id !== requestId.current) return;
+        setFailed(!!d.error && d.projects.length === 0);
         setProjects(d.projects.map(normalizeProject));
         setTotalCount(d.totalCount);
         if (d.votedProjectIds.length) setVotedIds(d.votedProjectIds);
@@ -211,34 +217,35 @@ export default function ProjectListView({
   let shown = projects;
   if (customFilters) {
     const f = customFilters.find(t => t.key === filterKey);
-    shown = [...(f ? shown.filter(f.predicate) : shown)].sort((a, b) => rankWeight(a) - rankWeight(b) || b.weighted - a.weighted);
+    if (f) shown = shown.filter(f.predicate);
   }
   if (searching) shown = shown.filter(p => matches(p, words));
 
   const pill = (active: boolean) => `chip${active ? " is-active" : ""}`;
+  const clearSearch = () => { onClearQuery?.(); replaceParam("q", ""); };
 
   return (
     <div>
-      <div className="list-toolbar">
+      {!small && <div className="list-toolbar">
         {customFilters ? (
-          <div className="chip-row" role="tablist" aria-label="Filter projects">
+          <div className="chip-row" role="group" aria-label="Filter projects">
             {customFilters.map(t => (
-              <button key={t.key} type="button" role="tab" aria-selected={filterKey === t.key} className={pill(filterKey === t.key)} onClick={() => setFilterKey(t.key)}>
+              <button key={t.key} type="button" aria-pressed={filterKey === t.key} className={pill(filterKey === t.key)} onClick={() => setFilterKey(t.key)}>
                 {t.label}
               </button>
             ))}
           </div>
         ) : sorts.length > 1 && (
-          <div className="seg" role="tablist" aria-label="Sort projects">
+          <div className="seg" role="group" aria-label="Sort projects">
             {sorts.map(s => (
-              <button key={s} type="button" role="tab" aria-selected={sort === s} className={`seg-btn${sort === s ? " is-active" : ""}`} onClick={() => pickSort(s)}>
+              <button key={s} type="button" aria-pressed={sort === s} className={`seg-btn${sort === s ? " is-active" : ""}`} onClick={() => pickSort(s)}>
                 {SORT_LABELS[s]}
               </button>
             ))}
           </div>
         )}
         {categories.length > 0 && (
-          <div className="chip-row" aria-label="Categories" ref={chipsRef}>
+          <div className="chip-row" role="group" aria-label="Categories" ref={chipsRef}>
             <button type="button" className={pill(!category)} aria-pressed={!category} onClick={() => pickCategory("")}>All</button>
             {categories.map(c => (
               <button key={c.name} type="button" className={pill(category === c.name)} aria-pressed={category === c.name} onClick={() => pickCategory(c.name)}>
@@ -247,7 +254,7 @@ export default function ProjectListView({
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {searching && !loading && shown.length > 0 && (
         <p className="list-count">
@@ -270,11 +277,16 @@ export default function ProjectListView({
         </div>
       ) : shown.length === 0 ? (
         <div className="empty-state">
-          {searching ? (
+          {failed ? (
+            <>
+              <p className="empty-title">Projects didn't load</p>
+              <button type="button" className="btn-outline" onClick={() => { allCache.clear(); load(); }}>Try again</button>
+            </>
+          ) : searching ? (
             <>
               <p className="empty-title">Nothing here matches “{query.trim()}”</p>
               <p className="empty-body">Try a product name, a builder, a company or a tool like “Claude”.</p>
-              {onClearQuery && <button type="button" className="btn-outline" onClick={onClearQuery}>Clear search</button>}
+              {onClearQuery && <button type="button" className="btn-outline" onClick={clearSearch}>Clear search</button>}
             </>
           ) : category ? (
             <>
@@ -293,11 +305,17 @@ export default function ProjectListView({
           {shown.map(p => (
             <ProjectRow key={p.id} project={p} voted={votedIds.includes(String(p.id))} onVote={() => handleVote(p.id)} showEvent={showEvent} />
           ))}
-          {!wholeScope && projects.length < totalCount && (
-            <div ref={sentinelRef} style={{ padding: "24px 0", textAlign: "center", fontSize: 13, color: C.textMute }}>
+          {!wholeScope && projects.length < totalCount && (moreButton ? (
+            <div style={{ display: "flex", justifyContent: "center", paddingTop: 20 }}>
+              <button type="button" className="btn-outline" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? "Loading…" : "Show more projects"}
+              </button>
+            </div>
+          ) : (
+            <div ref={sentinelRef} style={{ padding: "24px 0", textAlign: "center", fontSize: 13, color: C.textSec }}>
               {loadingMore ? "Loading more projects…" : ""}
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>

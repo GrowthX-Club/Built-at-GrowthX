@@ -1,4 +1,4 @@
-import { SITE_URL, COLLECTIONS, fetchProjects, fetchCollectionStats, collectionStat, dateRange, type RawProject } from "@/lib/collections";
+import { SITE_URL, fetchProjects, fetchCollectionStats, collectionStat, dateRange, listedCollections, type RawProject } from "@/lib/collections";
 
 // For AI answer engines: what Built at GrowthX is, its collections, the best projects and the skills, as plain links.
 const line = (p: RawProject) =>
@@ -11,7 +11,10 @@ export async function loader() {
     fetchProjects({ has_skill: true, sort: "installs", limit: 50 }),
   ]);
 
-  const collections = COLLECTIONS.map(c => {
+  if (stats.error || best.error) {
+    return new Response("Temporarily unavailable", { status: 503, headers: { "Retry-After": "300", "Cache-Control": "no-store" } });
+  }
+  const collections = listedCollections(stats).map(c => {
     const s = collectionStat(c, stats);
     const facts = [dateRange(s.firstAt, s.lastAt), s.count ? `${s.count} ${s.count === 1 ? "project" : "projects"}` : ""].filter(Boolean).join(", ");
     const seasons = (c.seasons ?? [])

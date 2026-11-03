@@ -17,6 +17,7 @@ import {
   getCompanyLogoUrl,
   getStackLogoUrl,
   formatProjectDate,
+  teamOf,
   STACK_META,
 } from "@/types";
 import { bxApi } from "@/lib/api";
@@ -28,7 +29,8 @@ import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
 import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
-import { eventFor } from "@/lib/collections";
+import { eventFor, fetchProjects } from "@/lib/collections";
+import ProjectRow from "@/components/ProjectRow";
 import { voteBurst } from "@/components/ProjectListView";
 
 function timeAgo(dateStr: string): string {
@@ -300,8 +302,10 @@ export default function ProjectDetailPage() {
   const { setNavOverride, clearNavOverride, setVoteState, setShowVoteInNav } = useNavOverride();
   const { isMobile } = useResponsive();
   // The route loader already has the project, so the page is server-rendered with it.
-  const loaderData = useLoaderData() as { project?: Record<string, unknown> } | undefined;
+  // The route loader has the project (server-rendered); the route keys this component by project, so state resets.
+  const loaderData = useLoaderData() as { project?: Record<string, unknown>; more?: Record<string, unknown>[] } | undefined;
   const [project, setProject] = useState<Project | null>(() => (loaderData?.project ? normalizeProject(loaderData.project) : null));
+  const more = (loaderData?.more ?? []).map(normalizeProject);
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
@@ -323,31 +327,25 @@ export default function ProjectDetailPage() {
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
 
+  const projectId = String(project?._id || project?.id || "");
+  // Whether you've voted for it: every list response carries all your voted ids, so ask for one project only.
+  const loadVoted = () => {
+    fetchProjects({ limit: 1 }).then(d => setHasVoted(d.votedProjectIds.map(String).includes(projectId)));
+  };
+
   useEffect(() => {
-    bxApi(`/projects/${params.id}`)
+    if (!projectId) return;
+    bxApi(`/comments?projectId=${projectId}`)
       .then((r) => r.json())
-      .then((d) => {
-        if (!d.project) return;
-        const p = normalizeProject(d.project);
-        setProject(p);
-        const pid = p._id || p.id;
-        bxApi(`/comments?projectId=${pid}`)
-          .then((r) => r.json())
-          .then((d) => setComments((d.comments || []).map(normalizeComment)));
-        bxApi("/projects?limit=100")
-          .then((r) => r.json())
-          .then((d) => {
-            const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
-            setHasVoted(voted.includes(String(pid)) || voted.includes(Number(pid)));
-          });
-      });
+      .then((d) => setComments((d.comments || []).map(normalizeComment)));
+    loadVoted();
     bxApi("/threads")
       .then((r) => r.json())
       .then((d) => setThreads((d.threads || []).map((t: Record<string, unknown>) => normalizeThread(t))));
     bxApi("/me")
       .then((r) => r.json())
       .then((d) => setUser(normalizeUser(d.user)));
-  }, [params.id]);
+  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (project) {
@@ -380,10 +378,7 @@ export default function ProjectDetailPage() {
 
   const reloadUser = () => {
     bxApi("/me").then((r) => r.json()).then((d) => setUser(normalizeUser(d.user)));
-    bxApi("/projects?limit=100").then((r) => r.json()).then((d) => {
-      const voted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
-      setHasVoted(voted.includes(params.id) || voted.includes(Number(params.id)));
-    });
+    loadVoted();
   };
 
   const handleVote = async () => {
@@ -656,7 +651,30 @@ export default function ProjectDetailPage() {
         {/* Hero: name, pitch, where it came from, then Try it as the main action */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
           <h1 className="page-title" style={{ marginBottom: 8 }}>{p.name}</h1>
-          <p style={{ fontSize: 22, color: C.textSec, fontFamily: "var(--serif)", fontStyle: "italic", lineHeight: 1.35, margin: "0 0 12px" }}>{p.tagline}</p>
+          <p style={{ fontSize: 22, color: C.textSec, fontFamily: "var(--serif)", fontStyle: "italic", lineHeight: 1.35, margin: "0 0 14px" }}>{p.tagline}</p>
+          {(() => {
+            // Everyone who made it, right under the pitch: avatars, names, then their companies.
+            const team = teamOf(p);
+            if (team.length === 0) return null;
+            const names = team.map(m => m.name);
+            const said = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+            const companies = Array.from(new Set(team.map(m => m.company).filter(Boolean)));
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+                <span style={{ display: "flex" }} aria-hidden="true">
+                  {team.slice(0, 4).map((m, i) => (
+                    <span key={m._id || m.name} style={{ marginLeft: i ? -8 : 0, borderRadius: 32, boxShadow: `0 0 0 2px ${C.bg}` }}>
+                      <Av initials={m.avatar} size={28} src={m.avatarUrl} />
+                    </span>
+                  ))}
+                </span>
+                <span style={{ fontSize: 16, color: C.text }}>
+                  {said}
+                  {companies.length > 0 && <span style={{ color: C.textSec }}> · {companies.join(", ")}</span>}
+                </span>
+              </div>
+            );
+          })()}
           {(() => {
             const event = eventFor(p.buildathon);
             const date = formatProjectDate(p.date);
@@ -684,7 +702,7 @@ export default function ProjectDetailPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
                 </svg>
-                {hasVoted ? "Upvoted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}
+                {hasVoted ? "Upvoted" : "Upvote"}{p.weighted > 0 ? ` · ${p.weighted.toLocaleString()}` : ""}
               </button>
               {isOwner && (
                 <Link to="/my-projects" className="meta-link" style={{ fontSize: 16, marginLeft: 4 }}>Manage</Link>
@@ -732,7 +750,7 @@ export default function ProjectDetailPage() {
           {/* Build process */}
           {p.buildProcess && (
             <div style={{ marginTop: 28 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>How it was built</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>How it was built</h2>
               <RichTextDisplay description={p.buildProcess} />
             </div>
           )}
@@ -742,7 +760,7 @@ export default function ProjectDetailPage() {
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>
               Built by
             </h2>
             <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
@@ -773,8 +791,7 @@ export default function ProjectDetailPage() {
                         <span style={{ fontWeight: 520, color: C.textSec }}>{p.builder.company}</span>
                       </>
                     )}
-                    <span aria-hidden="true" style={{ margin: "0 2px" }}>{"\u00B7"}</span>
-                    <span>{p.builder.city}</span>
+                    {p.builder.city && <><span aria-hidden="true" style={{ margin: "0 2px" }}>{"\u00B7"}</span><span>{p.builder.city}</span></>}
                   </div>
                 </div>
               </div>
@@ -813,7 +830,7 @@ export default function ProjectDetailPage() {
           {/* Collaborators */}
           {p.collabs.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>With help from</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>With help from</h2>
               <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
               {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
               <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
@@ -852,7 +869,7 @@ export default function ProjectDetailPage() {
 
           {/* Tech stack */}
           {p.stack.length > 0 && (<div style={{ marginBottom: 28 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>Built with</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>Built with</h2>
             <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
             {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
             <div style={{ display: "flex", gap: 8, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
@@ -902,12 +919,13 @@ export default function ProjectDetailPage() {
             <h2 className="bx-section-title">Discussion</h2>
           </div>
 
+          {user ? (
           <div style={{
             display: "flex", gap: 14, padding: "18px 20px",
             background: C.surface, border: `1px solid ${C.border}`,
             borderRadius: 14, marginBottom: 4,
           }}>
-            <Av initials={user?.avatar || "U"} size={36} role={user?.role || "founder"} src={user?.avatarUrl} />
+            <Av initials={user.avatar} size={36} role={user.role} src={user.avatarUrl} />
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ position: "relative" }}>
                 <textarea
@@ -951,6 +969,12 @@ export default function ProjectDetailPage() {
               )}
             </div>
           </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", padding: "18px 20px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, marginBottom: 4 }}>
+              <span style={{ fontSize: 16, color: C.textSec }}>Ask the {teamOf(p).length > 1 ? "makers" : "maker"} a question or tell them what you think.</span>
+              <button type="button" className="btn-outline" onClick={() => openLoginDialog(() => { reloadUser(); reloadComments(); })}>Sign in to comment</button>
+            </div>
+          )}
 
           {/* Comments -- threaded */}
           {commentTree.map(({ root, replies }) => {
@@ -1091,6 +1115,16 @@ export default function ProjectDetailPage() {
           {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
 
+        {more.length > 0 && eventFor(p.buildathon) && (
+          <section style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32, marginTop: 32 }} aria-labelledby="more-title">
+            <div className="section-head">
+              <h2 className="bx-section-title" id="more-title">More from {eventFor(p.buildathon)!.name}</h2>
+              <Link to={eventFor(p.buildathon)!.href} className="text-link">All →</Link>
+            </div>
+            {more.map(m => <ProjectRow key={m.id} project={m} showEvent={false} />)}
+          </section>
+        )}
+
         {/* Phone: the actions stay in reach at the bottom; Try it is the filled one */}
         {isMobile && (
           <div style={{
@@ -1110,7 +1144,7 @@ export default function ProjectDetailPage() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
               </svg>
-              {primary ? p.weighted.toLocaleString() : `${hasVoted ? "Upvoted" : "Upvote"} · ${p.weighted.toLocaleString()}`}
+              {primary ? (p.weighted > 0 ? p.weighted.toLocaleString() : "") : `${hasVoted ? "Upvoted" : "Upvote"}${p.weighted > 0 ? ` · ${p.weighted.toLocaleString()}` : ""}`}
             </button>
             {isOwner && (
               <Link to="/my-projects" className="btn-outline" style={{ minHeight: 48 }}>Manage</Link>

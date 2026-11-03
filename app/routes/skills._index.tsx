@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { type SortKey, fetchProjects, listParams } from "@/lib/collections";
 import { pageMeta, itemListLd, breadcrumbLd } from "@/lib/seo";
@@ -31,7 +31,11 @@ export default function SkillsPage() {
       <header className="page-head">
         <h1 className="page-title">Skills the community built</h1>
         <p className="page-sub">Each one teaches your AI a job, the way a GrowthX member does it. GrowthX checks every skill before it's listed.</p>
-        <SearchBox value={query} onChange={setQuery} placeholder="Search skills" />
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginTop: 16 }}>
+          {/* The same Submit chooser as the nav's Submit, opened on "A skill". */}
+          <Link to="/?submit=skill" className="btn-outline">Add your skill</Link>
+        </div>
+        {(data.list.error || data.list.totalCount >= 10) && <SearchBox value={query} onChange={setQuery} placeholder="Search skills" />}
       </header>
       <div className="home-cols" style={{ marginTop: 8 }}>
         <ProjectListView

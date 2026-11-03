@@ -4,7 +4,7 @@ import { bxApi } from "@/lib/api";
 import ProjectDetailClient from "@/components/ProjectDetailClient";
 import { extractPlainText, stripMarkdownLite } from "@/lib/editor-utils";
 import { normalizeProject, projectImage } from "@/types";
-import { SITE_URL, eventFor } from "@/lib/collections";
+import { SITE_URL, eventFor, fetchProjects, serverSignal } from "@/lib/collections";
 import { pageMeta, breadcrumbLd, DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 /** Plain, marker-free, single-line text for meta/JSON-LD descriptions */
@@ -13,15 +13,18 @@ function cleanDescription(raw: unknown): string {
   return stripMarkdownLite(extractPlainText(raw)).replace(/\s+/g, " ").trim();
 }
 
+/** The project, or null when it doesn't exist. A slow or failing API is a 503 (retryable), never a 404. */
 async function getProject(id: string) {
+  let res: Response;
   try {
-    const res = await bxApi(`/projects/${encodeURIComponent(id)}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.project || data || null;
+    res = await bxApi(`/projects/${encodeURIComponent(id)}`, { signal: serverSignal() });
   } catch {
-    return null;
+    throw new Response("The projects service didn't answer. Try again.", { status: 503 });
   }
+  if (res.status === 404 || res.status === 400) return null;
+  if (!res.ok) throw new Response("The projects service didn't answer. Try again.", { status: 503 });
+  const data = await res.json();
+  return data.project || null;
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -34,7 +37,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw redirect(`/projects/${project.slug}`, 301);
   }
 
-  return { project };
+  // "More from <event>": its best few, without this one.
+  const more = project.buildathon
+    ? (await fetchProjects({ sort: "best", buildathon: project.buildathon, limit: 5 })).projects
+        .filter(m => String(m._id) !== String(project._id)).slice(0, 4)
+    : [];
+  return { project, more };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -87,6 +95,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   ];
 };
 
-export default function ProjectDetailPage() {
-  return <ProjectDetailClient />;
+export default function ProjectDetailPage({ loaderData }: { loaderData: { project: { _id?: string } } }) {
+  // Keyed by project: moving between projects (e.g. "More from") starts fresh state.
+  return <ProjectDetailClient key={String(loaderData.project._id)} />;
 }

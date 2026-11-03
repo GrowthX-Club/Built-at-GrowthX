@@ -10,8 +10,8 @@ const CONNECT_URL = "https://growthx.club/community/mcp";
 const card = {
   background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px",
 } as const;
-const title = { fontSize: T.body, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.3 } as const;
-const body = { fontSize: T.bodySm, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.55 } as const;
+const title = { fontSize: 18, fontWeight: 600, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.3 } as const;
+const body = { fontSize: 16, color: C.textSec, fontFamily: "var(--sans)", lineHeight: 1.55 } as const;
 const meta = { fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", lineHeight: 1.4 } as const;
 // Same weight and colour as the "In Claude Code or Codex" label in the box below.
 const strong = { color: C.text, fontWeight: 600 } as const;
@@ -26,7 +26,7 @@ function ConnectButton() {
       style={{
         // Outlined, like Copy: the downloads stay the main way in.
         display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10,
-        border: `1px solid ${C.border}`, background: C.surface, color: C.text, fontSize: T.bodySm, fontWeight: 600,
+        border: `1px solid ${C.border}`, background: C.surface, color: C.text, fontSize: 16, fontWeight: 600,
         fontFamily: "var(--sans)", textDecoration: "none", transition: "background 0.15s",
       }}
       onMouseEnter={e => { e.currentTarget.style.background = C.surfaceWarm; }}
@@ -127,13 +127,13 @@ function DownloadButton({ href }: { href: string }) {
     <a
       href={href}
       style={{
-        // Primary button: the accent fill of Continue in the home submit flow (_index.tsx).
-        display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 10,
-        background: C.accent, color: C.accentFg, fontSize: T.bodySm, fontWeight: 600,
-        fontFamily: "var(--sans)", textDecoration: "none", transition: "opacity 0.15s",
+        // Outlined: the page's one filled button is Install at the top.
+        display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 18px", borderRadius: 12,
+        border: `1px solid ${C.border}`, background: C.surface, color: C.text, fontSize: 16, fontWeight: 600,
+        fontFamily: "var(--sans)", textDecoration: "none", transition: "border-color 0.15s",
       }}
-      onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = C.text; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}
     >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
       Download skill
@@ -175,12 +175,9 @@ export function SkillUseBox({ skill, slug }: { skill: ProjectSkill; slug: string
       {/* Underlined tabs, as the Projects / Skills tabs in AppNav. On phones they scroll, with the same right-edge
           fade as the creators row in ProjectDetailClient. */}
       <div style={{ position: "relative", marginBottom: 18 }}>
-      {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 1, width: 32, background: `linear-gradient(to left, ${C.surface}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
       <div
-        className="filter-pills-row"
         style={{
-          display: "flex", gap: isMobile ? 18 : 22, borderBottom: `1px solid ${C.borderLight}`,
-          overflowX: "auto", scrollbarWidth: "none", paddingRight: isMobile ? 24 : 0,
+          display: "flex", flexWrap: "wrap", columnGap: isMobile ? 18 : 22, borderBottom: `1px solid ${C.borderLight}`,
         }}
       >
         {tabs.map(t => {
@@ -190,9 +187,9 @@ export function SkillUseBox({ skill, slug }: { skill: ProjectSkill; slug: string
               key={t.key}
               onClick={() => setTab(t.key)}
               style={{
-                padding: "8px 0", marginBottom: -1, background: "none", border: "none",
+                minHeight: 44, padding: "0", marginBottom: -1, background: "none", border: "none",
                 borderBottom: `2px solid ${active ? C.text : "transparent"}`,
-                color: active ? C.text : C.textSec, fontSize: T.bodySm, fontWeight: active ? 600 : 500,
+                color: active ? C.text : C.textSec, fontSize: 16, fontWeight: active ? 600 : 500,
                 fontFamily: "var(--sans)", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
               }}
             >
@@ -257,8 +254,8 @@ export function SkillUseBox({ skill, slug }: { skill: ProjectSkill; slug: string
       )}
 
       <div style={{ ...meta, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${C.borderLight}` }}>
-        {skill.downloads.toLocaleString("en-IN")} download{skill.downloads === 1 ? "" : "s"}
-        {" · "}Checked by GrowthX on {reviewed}
+        {skill.downloads >= 10 && <>{skill.downloads.toLocaleString("en-IN")} downloads · </>}
+        Checked by GrowthX on {reviewed}
         {source && (
           <>
             {" · "}

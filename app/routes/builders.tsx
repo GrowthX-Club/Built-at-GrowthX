@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useLoaderData } from "react-router";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { Await, Link, useLoaderData } from "react-router";
 import type { MetaFunction } from "react-router";
 import { pageMeta, breadcrumbLd } from "@/lib/seo";
 import SearchBox from "@/components/SearchBox";
+import { fetchAllProjects, serverSignal } from "@/lib/collections";
 import {
   C,
   T,
@@ -21,7 +22,7 @@ const DESCRIPTION = "GrowthX members who ship, ranked by projects shipped, with 
 type RawMember = Record<string, unknown>;
 async function fetchMembers(offset: number): Promise<{ members: RawMember[]; totalCount: number }> {
   try {
-    const r = await bxApi(`/members?limit=100&offset=${offset}`);
+    const r = await bxApi(`/members?limit=100&offset=${offset}`, { signal: serverSignal() });
     if (!r.ok) return { members: [], totalCount: 0 };
     const d = await r.json();
     return { members: d.members ?? [], totalCount: d.totalCount ?? 0 };
@@ -30,8 +31,31 @@ async function fetchMembers(offset: number): Promise<{ members: RawMember[]; tot
   }
 }
 
+type TopProject = { name: string; slug: string };
+// Each builder's most-upvoted few projects (creator or co-creator), from one pass over the catalogue;
+// kept 10 minutes per server instance and streamed after the list, so it never holds the page.
+let topCache: { at: number; map: Record<string, TopProject[]> } | null = null;
+async function topProjectsByBuilder(): Promise<Record<string, TopProject[]>> {
+  if (topCache && Date.now() - topCache.at < 600000) return topCache.map;
+  const all = await fetchAllProjects({ sort: "new" });
+  if (all.error) return topCache?.map ?? {};
+  const byVotes = [...all.projects].sort((a, b) => Number(b.weighted_votes ?? 0) - Number(a.weighted_votes ?? 0));
+  const map: Record<string, TopProject[]> = {};
+  for (const p of byVotes) {
+    const ids = [p.creator, ...((p.creators as unknown[]) ?? [])]
+      .map(u => (u && typeof u === "object" ? String((u as { _id?: string })._id ?? "") : String(u ?? "")))
+      .filter(Boolean);
+    for (const id of Array.from(new Set(ids))) {
+      const list = (map[id] ??= []);
+      if (list.length < 3) list.push({ name: String(p.name ?? ""), slug: String(p.slug || p._id) });
+    }
+  }
+  topCache = { at: Date.now(), map };
+  return map;
+}
+
 export async function loader() {
-  return fetchMembers(0);
+  return { ...(await fetchMembers(0)), top: topProjectsByBuilder() };
 }
 
 export const meta: MetaFunction = () => [
@@ -165,21 +189,28 @@ export default function BuildersPage() {
 
         <ol className="builder-list">
           {shown.map(({ b, rank }) => (
-            <li key={b._id || rank}>
-              <button type="button" className="builder-row" onClick={() => openBuilderDialog(b)}>
-                <span className="builder-rank">{rank}</span>
-                <Av initials={b.avatar} size={isMobile ? 40 : 48} role={b.role} src={b.avatarUrl} />
-                <span className="builder-text">
-                  <span className="builder-name">{b.name}</span>
-                  {(b.title || b.company) && (
-                    <span className="builder-work">
-                      {b.title}{b.title && b.company ? " at " : ""}
-                      {b.company && <CompanyTag company={b.company} companyColor={b.companyColor} companyLogo={b.companyLogo} />}
+            <li key={b._id || rank} className="builder-row">
+              <span className="builder-rank">{rank}</span>
+              <Av initials={b.avatar} size={isMobile ? 40 : 48} role={b.role} src={b.avatarUrl} />
+              <span className="builder-text">
+                <button type="button" className="builder-name" onClick={() => openBuilderDialog(b)}>{b.name}</button>
+                {(b.title || b.company) && (
+                  <span className="builder-work">
+                    {b.title}{b.title && b.company ? " at " : ""}
+                    {b.company && <CompanyTag company={b.company} companyColor={b.companyColor} companyLogo={b.companyLogo} />}
+                  </span>
+                )}
+                <span className="builder-meta">{[b.city, `${b.shipped} shipped`].filter(Boolean).join(" · ")}</span>
+              </span>
+              <Suspense fallback={null}>
+                <Await resolve={first.top}>
+                  {(top: Record<string, TopProject[]>) => (top[b._id ?? ""] ?? []).length > 0 && (
+                    <span className="builder-projects">
+                      {top[b._id ?? ""].map(t => <Link key={t.slug} to={`/projects/${t.slug}`} prefetch="intent">{t.name}</Link>)}
                     </span>
                   )}
-                  <span className="builder-meta">{[b.city, `${b.shipped} shipped`].filter(Boolean).join(" · ")}</span>
-                </span>
-              </button>
+                </Await>
+              </Suspense>
             </li>
           ))}
         </ol>
