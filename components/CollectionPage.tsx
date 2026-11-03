@@ -76,7 +76,7 @@ export default function CollectionPage({ c, customFilters }: { c: Collection; cu
       {c.photos ? (
         <div className="photo-strip">{c.photos.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" />)}</div>
       ) : c.cover ? (
-        <img className="coll-hero-img" src={c.cover} alt={`${c.name} cover`} fetchPriority="high" />
+        <img className="coll-hero-img" src={c.cover} alt={`${c.name} cover`} />
       ) : null}
       <nav aria-label="Breadcrumb" className="crumbs"><Link to="/events">Events</Link><span aria-hidden="true"> / </span><span>{c.name}</span></nav>
       <header className="page-head">

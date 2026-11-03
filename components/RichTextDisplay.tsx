@@ -3,13 +3,19 @@
 import dynamic from "next/dynamic";
 import React from "react";
 import { C } from "@/types";
-import { isLexicalJson } from "@/lib/editor-utils";
+import { isLexicalJson, extractPlainText } from "@/lib/editor-utils";
 
 const Editor = dynamic(
   () => import("@growthx-club/gx-editor/richtext/Editor").then((mod) => mod.Editor),
   {
     ssr: false,
-    loading: () => <div style={{ minHeight: 40 }} />,
+    // Server render and the moment before the editor loads: the description as plain paragraphs, so the text is
+    // in the page's HTML (search engines) and nothing jumps much when the editor takes over.
+    loading: (props?: { editorState?: string }) => (
+      <div style={{ minHeight: 40, fontSize: 16, lineHeight: 1.7, color: C.text }}>
+        {extractPlainText(props?.editorState ?? "").split(/\n+/).filter(Boolean).map((t, i) => <p key={i} style={{ margin: "0 0 8px" }}>{t}</p>)}
+      </div>
+    ),
   }
 );
 
