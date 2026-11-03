@@ -1,7 +1,11 @@
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect } from "react-router";
+import { bxApi } from "@/lib/api";
 import ProjectDetailClient from "@/components/ProjectDetailClient";
 import { extractPlainText, stripMarkdownLite } from "@/lib/editor-utils";
+import { normalizeProject, projectImage } from "@/types";
+import { SITE_URL, eventFor } from "@/lib/collections";
+import { pageMeta, breadcrumbLd, DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 /** Plain, marker-free, single-line text for meta/JSON-LD descriptions */
 function cleanDescription(raw: unknown): string {
@@ -9,14 +13,9 @@ function cleanDescription(raw: unknown): string {
   return stripMarkdownLite(extractPlainText(raw)).replace(/\s+/g, " ").trim();
 }
 
-const API_BASE =
-  typeof process !== "undefined" && process.env?.VITE_API_URL
-    ? process.env.VITE_API_URL
-    : "http://localhost:8000/api/v1";
-
 async function getProject(id: string) {
   try {
-    const res = await fetch(`${API_BASE}/bx/projects/${id}`);
+    const res = await bxApi(`/projects/${encodeURIComponent(id)}`);
     if (!res.ok) return null;
     const data = await res.json();
     return data.project || data || null;
@@ -39,56 +38,51 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data?.project) {
-    return [{ title: "Project Not Found" }];
-  }
+  if (!data?.project) return [{ title: "Project not found — Built at GrowthX" }];
 
-  const project = data.project;
-  const title = project.name || "Project";
-  const description =
-    project.tagline || cleanDescription(project.description) || "A project built at GrowthX";
-  const builderName = project.builderName || project.builder?.name || "";
-  const fullDescription = builderName
-    ? `${description} — by ${builderName}`
-    : description;
-
-  const canonicalSlug = project.slug || project._id || project.id;
-
-  // JSON-LD SoftwareApplication schema
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: title,
-    description: cleanDescription(project.description) || project.tagline || "",
-    url: `https://built.growthx.club/projects/${canonicalSlug}`,
-    applicationCategory: project.category || "WebApplication",
-    ...(project.icon ? { image: project.icon } : {}),
-    author: {
-      "@type": "Person",
-      name: builderName || "GrowthX Builder",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "GrowthX",
-      url: "https://growthx.club",
-    },
-  };
+  const raw = data.project;
+  const p = normalizeProject(raw);
+  const slug = p.slug || raw._id || p.id;
+  const path = `/projects/${slug}`;
+  const description = p.tagline || cleanDescription(raw.description) || "A project built at GrowthX";
+  const people = [p.builder, ...(p.creators || [])].filter(b => b.name && b.name !== "Anonymous");
+  const byline = people.map(b => b.name).join(", ");
+  const image = projectImage(p, 1200);
+  const event = eventFor(p.buildathon);
 
   return [
-    { title },
-    { name: "description", content: fullDescription },
-    { property: "og:title", content: `${title} — Built at GrowthX` },
-    { property: "og:description", content: description },
-    { property: "og:type", content: "article" },
-    ...(project.icon
-      ? [{ property: "og:image", content: project.icon }]
-      : [{ property: "og:image", content: "/built-logo.svg" }]),
-    { name: "twitter:card", content: "summary" },
-    { name: "twitter:title", content: `${title} — Built at GrowthX` },
-    { name: "twitter:description", content: description },
-    { tagName: "link", rel: "canonical", href: `https://built.growthx.club/projects/${canonicalSlug}` },
+    ...pageMeta({
+      title: `${p.name} — Built at GrowthX`,
+      description: byline ? `${description} Built by ${byline}.` : description,
+      path,
+      image: image ?? DEFAULT_OG_IMAGE,
+      type: "article",
+    }),
     {
-      "script:ld+json": jsonLd,
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: p.name,
+        headline: p.tagline || undefined,
+        description: cleanDescription(raw.description) || p.tagline || "",
+        url: `${SITE_URL}${path}`,
+        ...(p.url ? { sameAs: p.url, installUrl: p.url } : {}),
+        applicationCategory: p.skill ? "AI skill" : "WebApplication",
+        operatingSystem: "Web",
+        ...(image ? { image } : {}),
+        ...(p.date ? { datePublished: p.date } : {}),
+        ...(p.weighted > 0 ? { interactionStatistic: { "@type": "InteractionCounter", interactionType: "https://schema.org/LikeAction", userInteractionCount: p.weighted } } : {}),
+        author: people.map(b => ({ "@type": "Person", name: b.name, ...(b.company ? { worksFor: { "@type": "Organization", name: b.company } } : {}) })),
+        publisher: { "@type": "Organization", name: "GrowthX", url: "https://growthx.club" },
+        keywords: p.stack.join(", ") || undefined,
+      },
+    },
+    {
+      "script:ld+json": breadcrumbLd([
+        { name: "Built at GrowthX", path: "/" },
+        ...(event ? [{ name: event.name, path: event.href }] : []),
+        { name: p.name, path },
+      ]),
     },
   ];
 };

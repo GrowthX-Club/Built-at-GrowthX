@@ -103,7 +103,7 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
               }}
               aria-label="Previous"
             >
-              &#8249;
+              <span aria-hidden="true">&#8249;</span>
             </button>
             <button
               onClick={() => setActive((a) => (a + 1) % media.length)}
@@ -128,7 +128,7 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
               }}
               aria-label="Next"
             >
-              &#8250;
+              <span aria-hidden="true">&#8250;</span>
             </button>
           </>
         )}
@@ -142,7 +142,7 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
               right: 10,
               background: "rgba(0,0,0,0.55)",
               color: "#fff",
-              fontSize: T.caption,
+              fontSize: 13,
               fontWeight: 600,
               padding: "3px 10px",
               borderRadius: 12,
@@ -197,7 +197,7 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
                     justifyContent: "center",
                     background: C.accent,
                     color: C.accentFg,
-                    fontSize: T.caption,
+                    fontSize: 13,
                     fontWeight: 700,
                   }}
                 >

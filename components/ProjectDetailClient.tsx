@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useLoaderData } from "react-router";
 import {
   C,
   T,
@@ -16,7 +16,6 @@ import {
   normalizeThread,
   getCompanyLogoUrl,
   getStackLogoUrl,
-  getBuildathonLabel,
   formatProjectDate,
   STACK_META,
 } from "@/types";
@@ -29,7 +28,8 @@ import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
 import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
-import ProjectIcon from "@/components/ProjectIcon";
+import { eventFor } from "@/lib/collections";
+import { voteBurst } from "@/components/ProjectListView";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -93,14 +93,14 @@ function Badge({ role, size = "sm" }: { role: string; size?: "sm" | "md" }) {
   if (role === "member") return null;
   const r = ROLES[role];
   if (!r) return null;
-  const s = size === "sm" ? { fs: T.badge, px: 6, py: 2 } : { fs: T.caption, px: 8, py: 3 };
+  const s = size === "sm" ? { px: 6, py: 2 } : { px: 8, py: 3 };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 3,
-      fontSize: s.fs, fontWeight: 650, letterSpacing: "0.04em",
+      fontSize: 13, fontWeight: 600,
       padding: `${s.py}px ${s.px}px`, borderRadius: 4,
       color: r.color, background: r.bg,
-      fontFamily: "var(--sans)", textTransform: "uppercase", lineHeight: 1,
+      fontFamily: "var(--sans)", lineHeight: 1.2,
     }}>
       {r.label}
     </span>
@@ -124,7 +124,7 @@ function CompanyTag({ title, company, companyColor, companyLogo }: { title?: str
           fontFamily: "var(--sans)", letterSpacing: "-0.02em", flexShrink: 0,
           overflow: "hidden", position: "relative",
         }}>
-          {company[0]}
+          <span aria-hidden="true">{company[0]}</span>
           <img src={getCompanyLogoUrl(company, companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
         </span>
         <span style={{ fontWeight: 520 }}>{company}</span>
@@ -177,11 +177,11 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
           padding: "4px 10px", borderRadius: 20,
           border: r.mine ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
           background: r.mine ? C.accentSoft : C.surface,
-          cursor: "pointer", fontSize: T.bodySm, fontFamily: "var(--sans)",
+          cursor: "pointer", fontSize: 16, fontFamily: "var(--sans)",
           color: C.text, transition: "all 0.12s",
         }}>
           <span style={{ fontSize: T.body, color: r.emoji.special ? C.gold : "inherit", fontWeight: r.emoji.special ? 700 : 400 }}>{r.emoji.display}</span>
-          <span style={{ fontSize: T.caption, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
         </button>
       ))}
       <div style={{ position: "relative" }}>
@@ -202,7 +202,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
             background: C.surface, border: `1px solid ${C.border}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 9, fontWeight: 700, color: C.textMute, lineHeight: 1,
-          }}>+</span>
+          }} aria-hidden="true">+</span>
         </button>
         {picker && (
           <div style={{
@@ -276,10 +276,10 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
                     {reply.author.isCreator && (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 13, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                     )}
                     <Badge role={reply.author.role} />
-                    <span style={{ fontSize: T.caption, color: C.textMute }}>{reply.time}</span>
+                    <span style={{ fontSize: 13, color: C.textMute }}>{reply.time}</span>
                   </div>
                   <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
                 </div>
@@ -299,7 +299,9 @@ export default function ProjectDetailPage() {
   const { openLoginDialog } = useLoginDialog();
   const { setNavOverride, clearNavOverride, setVoteState, setShowVoteInNav } = useNavOverride();
   const { isMobile } = useResponsive();
-  const [project, setProject] = useState<Project | null>(null);
+  // The route loader already has the project, so the page is server-rendered with it.
+  const loaderData = useLoaderData() as { project?: Record<string, unknown> } | undefined;
+  const [project, setProject] = useState<Project | null>(() => (loaderData?.project ? normalizeProject(loaderData.project) : null));
   const [threads, setThreads] = useState<ThreadData[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
@@ -391,38 +393,7 @@ export default function ProjectDetailPage() {
     }
     setVoteAnim(true);
     setTimeout(() => setVoteAnim(false), 500);
-    // Burst particles
-    const btn = document.querySelector(isMobile ? "[data-vote-float]" : "[data-vote-detail]") as HTMLElement;
-    if (btn && !hasVoted) {
-      const rect = btn.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      const container = document.createElement("div");
-      container.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:9999;`;
-      const dots: HTMLElement[] = [];
-      [0, 55, 110, 170, 230, 300].forEach(deg => {
-        const rad = (deg * Math.PI) / 180;
-        const dist = 44 + Math.random() * 20;
-        const dot = document.createElement("div");
-        dot.className = "vote-burst-dot";
-        dot.style.left = `${cx}px`;
-        dot.style.top = `${cy}px`;
-        dot.style.transform = "translate(-50%, -50%) scale(1)";
-        dot.style.opacity = "1";
-        dot.dataset.tx = `${Math.cos(rad) * dist}`;
-        dot.dataset.ty = `${Math.sin(rad) * dist}`;
-        container.appendChild(dot);
-        dots.push(dot);
-      });
-      document.body.appendChild(container);
-      requestAnimationFrame(() => {
-        dots.forEach(dot => {
-          dot.style.transform = `translate(calc(-50% + ${dot.dataset.tx}px), calc(-50% + ${dot.dataset.ty}px)) scale(0)`;
-          dot.style.opacity = "0";
-        });
-      });
-      setTimeout(() => container.remove(), 550);
-    }
+    if (!hasVoted) voteBurst(document.querySelector(isMobile ? "[data-vote-float]" : "[data-vote-detail]"));
     const res = await bxApi("/votes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -597,7 +568,7 @@ export default function ProjectDetailPage() {
         overflow: "hidden", maxHeight: 220, overflowY: "auto",
       }}>
         {mentionLoading && mentionResults.length === 0 && (
-          <div style={{ padding: "10px 14px", fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)" }}>
+          <div style={{ padding: "10px 14px", fontSize: 16, color: C.textMute, fontFamily: "var(--sans)" }}>
             Searching...
           </div>
         )}
@@ -615,8 +586,8 @@ export default function ProjectDetailPage() {
           >
             <Av initials={u.avatar} size={26} src={u.avatarUrl} />
             <div>
-              <div style={{ fontSize: T.bodySm, fontWeight: 600, color: C.text }}>{u.name}</div>
-              {u.company && <div style={{ fontSize: T.caption, color: C.textMute }}>{u.company}</div>}
+              <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>{u.name}</div>
+              {u.company && <div style={{ fontSize: 13, color: C.textMute }}>{u.company}</div>}
             </div>
           </button>
         ))}
@@ -676,94 +647,44 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="responsive-main" style={{ maxWidth: 800, margin: "0 auto", padding: isMobile ? "48px 32px 140px" : "48px 32px 100px", fontFamily: "var(--sans)" }}>
-        {/* Hero */}
+        {/* Hero: name, pitch, where it came from, then Try it as the main action */}
         <div className="fade-up" style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
-            <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 16 }}>
-              <ProjectIcon title={p.name} description={p.tagline} size={72} iconId={p.icon} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 2, flexWrap: "wrap" }}>
-                  <h1 className="responsive-h1" style={{ fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>
-                  {p.featured && (
-                    <span style={{
-                      fontSize: T.badge, fontWeight: 700, padding: "3px 10px", borderRadius: 4,
-                      background: C.goldSoft, color: C.gold, border: `1px solid ${C.goldBorder}`,
-                      letterSpacing: "0.06em", textTransform: "uppercase",
-                    }}>{"\u2726"} Featured</span>
-                  )}
-                </div>
-                <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--serif)", fontWeight: 400, lineHeight: 1.4, fontStyle: "italic", margin: "0 0 6px" }}>{p.tagline}</p>
-                {(p.accolade || p.track) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                    {p.accolade && <AccoladeBadge accolade={p.accolade} />}
-                    {p.track && <TrackChip track={p.track} />}
-                  </div>
-                )}
-                {(formatProjectDate(p.date) || p.buildathon) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, flexWrap: "wrap" }}>
-                    {formatProjectDate(p.date) && <span>{formatProjectDate(p.date)}</span>}
-                    {formatProjectDate(p.date) && p.buildathon && <span style={{ opacity: 0.4 }}>{"\u00B7"}</span>}
-                    {p.buildathon && <span>{getBuildathonLabel(p.buildathon)}</span>}
-                  </div>
-                )}
+          <h1 className="page-title" style={{ marginBottom: 8 }}>{p.name}</h1>
+          <p style={{ fontSize: 22, color: C.textSec, fontFamily: "var(--serif)", fontStyle: "italic", lineHeight: 1.35, margin: "0 0 12px" }}>{p.tagline}</p>
+          {(() => {
+            const event = eventFor(p.buildathon);
+            const date = formatProjectDate(p.date);
+            if (!event && !date && !p.accolade && !p.track) return null;
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 13, color: C.textSec }}>
+                {p.accolade && <AccoladeBadge accolade={p.accolade} />}
+                {p.track && <TrackChip track={p.track} />}
+                {event && <Link to={event.href} className="meta-link">{event.name}</Link>}
+                {event && date && <span aria-hidden="true">·</span>}
+                {date && <span>{date}</span>}
               </div>
-            </div>
-            <div ref={voteBtnRef} style={{ flexShrink: 0, display: isMobile ? "none" : "flex", gap: 10, alignItems: "center" }}>
-              <button data-vote-detail onClick={handleVote}
-              className={voteAnim ? "vote-pop-active" : ""}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "12px 28px", borderRadius: 12,
-                border: "1.5px solid transparent",
-                background: C.accent,
-                cursor: "pointer", fontSize: T.bodyLg, fontWeight: 700,
-                fontFamily: "var(--sans)", color: C.accentFg,
-                transition: "opacity 0.2s, transform 0.2s",
-                position: "relative", overflow: "visible",
-                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
-                </svg>
-                <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
-              </button>
+            );
+          })()}
+          {!isMobile && (
+            <div ref={voteBtnRef} style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 24, flexWrap: "wrap" }}>
               {p.url && (
-                <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
-                  padding: "8px 16px", borderRadius: 8,
-                  border: "none", background: "transparent", color: C.textSec,
-                  fontSize: T.bodySm, fontWeight: 500, cursor: "pointer",
-                  fontFamily: "var(--sans)", transition: "color 0.15s",
-                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.textSec; }}
-                >
-                  Try it {"\u2192"}
+                <a href={p.url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ minHeight: 48, padding: "0 24px" }}>
+                  Try it <span aria-hidden="true">↗</span>
                 </a>
               )}
+              <button data-vote-detail onClick={handleVote} aria-pressed={hasVoted}
+                className={`${p.url ? "btn-outline" : "btn-primary"}${hasVoted && p.url ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
+                style={{ minHeight: 48 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
+                </svg>
+                {hasVoted ? "Upvoted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}
+              </button>
               {isOwner && (
-                <Link to="/my-projects" style={{
-                  padding: "8px 16px", borderRadius: 8,
-                  border: "none", background: "transparent", color: C.textSec,
-                  fontSize: T.bodySm, fontWeight: 500, cursor: "pointer",
-                  fontFamily: "var(--sans)", transition: "color 0.15s",
-                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.text; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.textSec; }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  Manage
-                </Link>
+                <Link to="/my-projects" className="meta-link" style={{ fontSize: 16, marginLeft: 4 }}>Manage</Link>
               )}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Draft banner */}
@@ -772,9 +693,9 @@ export default function ProjectDetailPage() {
             padding: "14px 20px", borderRadius: 12, marginBottom: 24,
             background: C.goldSoft, border: `1px solid ${C.goldBorder}`,
             display: "flex", alignItems: "center", gap: 10,
-            fontSize: T.bodySm, fontFamily: "var(--sans)", color: C.text,
+            fontSize: 16, fontFamily: "var(--sans)", color: C.text,
           }}>
-            <span style={{ fontSize: T.bodyLg }}>&#9998;</span>
+            <span aria-hidden="true" style={{ fontSize: 16 }}>&#9998;</span>
             <div>
               <span style={{ fontWeight: 600 }}>Draft</span>
               <span style={{ color: C.textSec, fontWeight: 400 }}> — This project is not yet published. {isOwner ? "Add a product URL and publish to make it visible." : "The creator hasn\u2019t published it yet."}</span>
@@ -785,7 +706,9 @@ export default function ProjectDetailPage() {
         {p.skill && (
           <div className="fade-up stagger-1">
             {/* Keyed by the project, so the chosen tab doesn't carry over to the next skill on client navigation. */}
-            <SkillUseBox key={p.slug || String(p.id)} skill={p.skill} slug={p.slug || String(p.id)} />
+            <div id="install" style={{ scrollMarginTop: 96 }}>
+              <SkillUseBox key={p.slug || String(p.id)} skill={p.skill} slug={p.slug || String(p.id)} />
+            </div>
           </div>
         )}
 
@@ -803,12 +726,7 @@ export default function ProjectDetailPage() {
           {/* Build process */}
           {p.buildProcess && (
             <div style={{ marginTop: 28 }}>
-              <div style={{
-                fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em",
-                textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)",
-              }}>
-                How it was built
-              </div>
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>How it was built</h2>
               <RichTextDisplay description={p.buildProcess} />
             </div>
           )}
@@ -818,9 +736,9 @@ export default function ProjectDetailPage() {
 
           {/* Creators */}
           <div style={{ marginBottom: (p.collabs.length > 0) ? 20 : 28 }}>
-            <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>
-              {(p.creators || []).length > 0 ? "Creators" : "Creator"}
-            </div>
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>
+              Built by
+            </h2>
             <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
             {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
             <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
@@ -843,13 +761,13 @@ export default function ProjectDetailPage() {
                           fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
                           overflow: "hidden", position: "relative",
                         }}>
-                          {p.builder.company[0]}
+                          <span aria-hidden="true">{p.builder.company[0]}</span>
                           <img src={getCompanyLogoUrl(p.builder.company, p.builder.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
                         </span>
                         <span style={{ fontWeight: 520, color: C.textSec }}>{p.builder.company}</span>
                       </>
                     )}
-                    <span style={{ opacity: 0.35, margin: "0 2px" }}>{"\u00B7"}</span>
+                    <span aria-hidden="true" style={{ margin: "0 2px" }}>{"\u00B7"}</span>
                     <span>{p.builder.city}</span>
                   </div>
                 </div>
@@ -862,7 +780,7 @@ export default function ProjectDetailPage() {
                 }}>
                   <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ fontSize: T.bodySm, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
+                    <span style={{ fontSize: 16, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
                     {c.title && c.company && (
                       <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
                         <span>{c.title}</span>
@@ -873,7 +791,7 @@ export default function ProjectDetailPage() {
                           fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
                           overflow: "hidden", position: "relative",
                         }}>
-                          {c.company[0]}
+                          <span aria-hidden="true">{c.company[0]}</span>
                           <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
                         </span>
                         <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
@@ -889,7 +807,7 @@ export default function ProjectDetailPage() {
           {/* Collaborators */}
           {p.collabs.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 14, fontFamily: "var(--sans)" }}>Collaborators</div>
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>With help from</h2>
               <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
               {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
               <div style={{ display: "flex", gap: 10, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
@@ -901,7 +819,7 @@ export default function ProjectDetailPage() {
                   }}>
                     <Av initials={c.avatar} size={30} src={c.avatarUrl} />
                     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span style={{ fontSize: T.bodySm, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
+                      <span style={{ fontSize: 16, fontWeight: 580, color: C.text, fontFamily: "var(--sans)", lineHeight: 1.2 }}>{c.name}</span>
                       {c.title && c.company && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)", fontWeight: 450, lineHeight: 1.2 }}>
                           <span>{c.title}</span>
@@ -912,7 +830,7 @@ export default function ProjectDetailPage() {
                             fontSize: T.micro, fontWeight: 800, color: "#fff", fontFamily: "var(--sans)", flexShrink: 0,
                             overflow: "hidden", position: "relative",
                           }}>
-                            {c.company[0]}
+                            <span aria-hidden="true">{c.company[0]}</span>
                             <img src={getCompanyLogoUrl(c.company, c.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
                           </span>
                           <span style={{ fontWeight: 520, color: C.textSec }}>{c.company}</span>
@@ -928,7 +846,7 @@ export default function ProjectDetailPage() {
 
           {/* Tech stack */}
           {p.stack.length > 0 && (<div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: T.badge, fontWeight: 700, color: C.textMute, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12, fontFamily: "var(--sans)" }}>Tech stack</div>
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: C.text, margin: "0 0 12px", fontFamily: "var(--sans)" }}>Built with</h2>
             <div style={{ position: "relative", ...(isMobile ? { margin: "0 -16px" } : {}) }}>
             {isMobile && <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: `linear-gradient(to left, ${C.bg}, transparent)`, zIndex: 1, pointerEvents: "none" }} />}
             <div style={{ display: "flex", gap: 8, ...(isMobile ? { overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "0 16px" } : { flexWrap: "wrap" }) }}>
@@ -945,7 +863,7 @@ export default function ProjectDetailPage() {
                       width: 22, height: 22, borderRadius: 6,
                       background: meta.bg, color: meta.color,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: T.badge, fontWeight: 750, fontFamily: "var(--sans)",
+                      fontSize: 13, fontWeight: 750, fontFamily: "var(--sans)",
                       flexShrink: 0, letterSpacing: "-0.02em",
                       position: "relative", overflow: "hidden",
                     }}>
@@ -963,7 +881,7 @@ export default function ProjectDetailPage() {
                         />
                       )}
                     </div>
-                    <span style={{ fontSize: T.bodySm, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
+                    <span style={{ fontSize: 16, color: C.text, fontWeight: 500, fontFamily: "var(--sans)", whiteSpace: "nowrap" }}>{t}</span>
                   </div>
                 );
               })}
@@ -975,7 +893,7 @@ export default function ProjectDetailPage() {
         {/* DISCUSSION */}
         <div className="fade-up stagger-3" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ fontSize: T.headingLg, fontWeight: 400, color: C.text, fontFamily: "var(--serif)" }}>Discussion</h2>
+            <h2 className="bx-section-title">Discussion</h2>
           </div>
 
           <div style={{
@@ -1017,7 +935,7 @@ export default function ProjectDetailPage() {
                     style={{
                       padding: "7px 18px", borderRadius: 8,
                       border: "none", background: C.accent, color: C.accentFg,
-                      fontSize: T.bodySm, fontWeight: 600, cursor: "pointer",
+                      fontSize: 16, fontWeight: 600, cursor: "pointer",
                       fontFamily: "var(--sans)", opacity: postingComment ? 0.6 : 1,
                     }}
                   >
@@ -1043,7 +961,7 @@ export default function ProjectDetailPage() {
                           {root.authorName || "Anonymous"}
                         </span>
                         {isRootOP && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 13, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                         )}
                         <Badge role={root.authorRole || "member"} />
                         <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
@@ -1097,10 +1015,10 @@ export default function ProjectDetailPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                             <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
                             {isReplyOP && (
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: T.badge, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 13, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             )}
                             <Badge role={reply.authorRole || "member"} />
-                            <span style={{ fontSize: T.caption, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                            <span style={{ fontSize: 13, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                           </div>
                           <CompanyTag title={isReplyOP ? (reply.authorTitle || p.builder.title) : reply.authorTitle} company={isReplyOP ? (reply.authorCompany || p.builder.company) : reply.authorCompany} companyColor={isReplyOP ? (reply.authorCompanyColor || p.builder.companyColor) : reply.authorCompanyColor} companyLogo={isReplyOP ? (reply.authorCompanyLogo || p.builder.companyLogo) : reply.authorCompanyLogo} />
                         </div>
@@ -1167,57 +1085,29 @@ export default function ProjectDetailPage() {
           {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
 
-        {/* Mobile floating bottom bar */}
+        {/* Phone: the actions stay in reach at the bottom; Try it is the filled one */}
         {isMobile && (
           <div style={{
             position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 40,
             background: C.bg, borderTop: `1px solid ${C.border}`,
             padding: "12px 16px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
             display: "flex", gap: 10,
-            boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
           }}>
-            <button
-              data-vote-float
-              onClick={handleVote}
-              className={voteAnim ? "vote-pop-active" : ""}
-              style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "13px 20px", borderRadius: 12, border: "none",
-                background: C.accent, cursor: "pointer",
-                fontSize: T.body, fontWeight: 700, fontFamily: "var(--sans)",
-                color: C.accentFg, transition: "opacity 0.2s",
-                position: "relative", overflow: "visible",
-                boxShadow: hasVoted ? `0 0 0 3px ${C.accentSoft}` : "none",
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill="currentColor" stroke="none" />
-              </svg>
-              <span style={{ lineHeight: 1 }}>{hasVoted ? "Voted" : "Upvote"} {"\u00B7"} {p.weighted.toLocaleString()}</span>
-            </button>
             {p.url && (
-              <a href={p.url} target="_blank" rel="noopener noreferrer" style={{
-                padding: "13px 20px", borderRadius: 12,
-                border: `1px solid ${C.border}`, background: C.surface, color: C.text,
-                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
-                textDecoration: "none", display: "inline-flex", alignItems: "center", whiteSpace: "nowrap",
-              }}>
-                Try it {"\u2192"}
+              <a href={p.url} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ flex: 1, minHeight: 48 }}>
+                Try it <span aria-hidden="true">↗</span>
               </a>
             )}
+            <button data-vote-float onClick={handleVote} aria-pressed={hasVoted} aria-label={`${hasVoted ? "Remove upvote" : "Upvote"} (${p.weighted})`}
+              className={`${p.url ? "btn-outline" : "btn-primary"}${hasVoted && p.url ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
+              style={{ minHeight: 48, ...(p.url ? {} : { flex: 1 }) }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M10.6 7.4a1.6 1.6 0 0 1 2.8 0l6.4 10.8A1.6 1.6 0 0 1 18.4 20H5.6a1.6 1.6 0 0 1-1.4-2.4L10.6 7.4Z" fill={hasVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={hasVoted ? 0 : 2} strokeLinejoin="round" />
+              </svg>
+              {p.url ? p.weighted.toLocaleString() : `${hasVoted ? "Upvoted" : "Upvote"} · ${p.weighted.toLocaleString()}`}
+            </button>
             {isOwner && (
-              <Link to="/my-projects" style={{
-                padding: "13px 20px", borderRadius: 12,
-                border: `1px solid ${C.border}`, background: C.surface, color: C.text,
-                fontSize: T.body, fontWeight: 600, fontFamily: "var(--sans)",
-                textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Manage
-              </Link>
+              <Link to="/my-projects" className="btn-outline" style={{ minHeight: 48 }}>Manage</Link>
             )}
           </div>
         )}
