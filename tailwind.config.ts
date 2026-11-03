@@ -29,8 +29,8 @@ const config: Config = {
         "blue-soft": "var(--c-blueSoft)",
       },
       fontFamily: {
-        serif: ["Newsreader", "Georgia", "serif"],
-        sans: ["DM Sans", "system-ui", "sans-serif"],
+        serif: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
         mono: ["DM Mono", "JetBrains Mono", "monospace"],
       },
     },

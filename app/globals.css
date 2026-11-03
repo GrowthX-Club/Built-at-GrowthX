@@ -723,7 +723,7 @@ body {
   .home-hero .page-sub { display: none; }
   /* Phone: the cover's art fills the band on the right, the name sits on the dark left half */
   .sprint-band { display: block; height: 104px; margin-bottom: 28px; border-radius: 12px; }
-  .sprint-band img { position: absolute; inset: 0; object-position: 78% 40%; }
+  .sprint-band > img { position: absolute; inset: 0; object-position: 78% 40%; }
   .sprint-text { position: relative; height: 100%; padding: 16px; gap: 2px; background: linear-gradient(90deg, #0B0B0C 48%, rgba(11,11,12,.15) 100%); }
   .sprint-text p, .sprint-seasons { display: none; }
   .sprint-text .sprint-short { display: block; font-size: 14px; line-height: 20px; color: #C8CCD4; }
@@ -954,3 +954,41 @@ body {
   .builder-projects a { height: auto; padding: 0; border: 0; border-radius: 0; background: none; text-decoration: underline; text-decoration-color: var(--c-border); text-underline-offset: 3px; white-space: normal; }
   .builder-projects a:hover { background: none; text-decoration-color: currentColor; }
 }
+/* Plain links inside copy (install steps, descriptions) get a hover too */
+a:not([class]):hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+/* ---- Review round (fresh design review, 3 Nov) ---- */
+/* The event a card came from, under its tagline */
+.pevent { margin: 4px 0 0; font-size: 14px; line-height: 20px; color: var(--c-textSec); font-weight: 500; }
+/* One amber ribbon in both themes (navy vanished on dark screenshots) */
+.ribbon.is-place, [data-theme="dark"] .ribbon.is-place { background: #FDB022; color: #101828; }
+/* Four of an event's best screenshots, where it has no cover */
+.coll-mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; width: 100%; aspect-ratio: 16 / 9; background: var(--c-border); border-bottom: 1px solid var(--c-border); overflow: hidden; }
+.coll-mosaic img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; min-height: 0; }
+.sprint-band .coll-mosaic { aspect-ratio: auto; height: 100%; border-bottom: 0; background: #0B0B0C; }
+/* Phones: the whole poster sits on the right of the band, under the fade, never cut through the words */
+@media (max-width: 640px) {
+  .sprint-band > img, .sprint-band > .coll-mosaic { position: absolute; top: 0; bottom: 0; right: 0; left: auto; width: 58%; height: 100%; }
+  /* zoom into the horse and rider at the foot of the poster, clear of its lettering */
+  .sprint-band > img { object-fit: cover; object-position: 50% 100%; transform: scale(2.3); transform-origin: 46% 100%; }
+  .sprint-text { background: linear-gradient(90deg, #0B0B0C 50%, rgba(11,11,12,.55) 70%, rgba(11,11,12,0) 100%); }
+  .ptagline { min-height: 0; }
+  .mobile-cta { background: var(--c-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+/* Category chips on desktop: arrows when the row runs past the edge */
+.chip-scroll { position: relative; flex: 1 1 0; min-width: 0; display: flex; }
+.chip-scroll .chip-row { flex: 1 1 0; }
+.chip-arrow { position: absolute; top: 0; z-index: 1; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--c-border); background: var(--c-surface); color: var(--c-text);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(16,24,40,.12); }
+.chip-arrow:hover { border-color: var(--c-text); }
+.chip-arrow.next { right: 0; } .chip-arrow.prev { left: 0; }
+@media (max-width: 640px) { .chip-arrow { display: none; } .chip-scroll { flex: none; } }
+/* Project page: the event as a chip in the badge row */
+.event-chip { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 9999px; border: 1px solid var(--c-border); color: var(--c-text); font-size: 14px; font-weight: 600; text-decoration: none; }
+.event-chip:hover { border-color: var(--c-text); background: var(--c-surfaceWarm); }
+.event-chip.is-sprint { background: #0B0B0C; border-color: #0B0B0C; color: #fff; }
+[data-theme="dark"] .event-chip.is-sprint { background: #F5F5F5; border-color: #F5F5F5; color: #0A0A0A; }
+.event-chip.is-sprint:hover { opacity: .85; }
+/* Skills: "How to use them" as the grid's last tile */
+.sgrid > .connect-tile > div { height: 100%; }
+.scard-meta { margin-top: auto; }

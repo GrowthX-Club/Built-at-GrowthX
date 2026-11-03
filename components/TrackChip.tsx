@@ -5,15 +5,15 @@ export interface TrackChipProps {
 }
 
 // Quiet outline pill for an OpenCode track; sits beside the AccoladeBadge without competing with it.
-const LABELS: Record<TrackChipProps['track'], string> = { virality: "Virality", revenue: "Revenue", maas: "MaaS" };
+const LABELS: Record<TrackChipProps['track'], string> = { virality: "Virality track", revenue: "Revenue track", maas: "MaaS track" };
 
 export default function TrackChip({ track }: TrackChipProps) {
   return (
     <span
       style={{
-        display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999,
+        display: "inline-flex", alignItems: "center", height: 28, padding: "0 10px", borderRadius: 999,
         color: C.textSec, border: `1px solid ${C.border}`,
-        fontSize: 13, fontWeight: 500, fontFamily: "var(--sans)", lineHeight: 1.3, whiteSpace: "nowrap",
+        fontSize: 14, fontWeight: 500, fontFamily: "var(--sans)", lineHeight: 1.3, whiteSpace: "nowrap",
       }}
     >
       {LABELS[track]}

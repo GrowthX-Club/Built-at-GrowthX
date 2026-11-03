@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useState, useRef, useEffect } from "react";
 import { type Project, teamOf, projectThumb } from "@/types";
-import { sprintPill } from "@/lib/collections";
+import { sprintPill, eventFor } from "@/lib/collections";
 
 // A project card, ported from Devpost's project gallery: the product's own screenshot on top (every card has the
 // same 16:10 slot; without a screenshot it shows one typographic title card), the judged result as Devpost's corner
@@ -65,10 +65,14 @@ export function hostOf(url?: string): string {
 export function ProjectMedia({ p, width = 800, eager = false }: { p: Project; width?: number; eager?: boolean }) {
   const [failed, setFailed] = useState(false);
   const thumb = failed ? undefined : projectThumb(p, width);
+  const ref = useRef<HTMLImageElement>(null);
+  // A removed or private YouTube video still answers with a 120x90 grey placeholder: treat it as no picture.
+  const check = (i: HTMLImageElement | null) => { if (i && i.complete && (i.naturalWidth === 0 || (thumb?.video === "youtube" && i.naturalWidth <= 120))) setFailed(true); };
+  useEffect(() => check(ref.current)); // eslint-disable-line react-hooks/exhaustive-deps
   return thumb ? (
     <>
-      <img src={thumb.src} className={thumb.video === "youtube" ? "is-yt" : undefined} alt={`${p.name} ${thumb.video ? "demo video" : "screenshot"}`}
-        loading={eager ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} />
+      <img ref={ref} src={thumb.src} className={thumb.video === "youtube" ? "is-yt" : undefined} alt={`${p.name} ${thumb.video ? "demo video" : "screenshot"}`}
+        loading={eager ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} onLoad={e => check(e.currentTarget)} />
       {thumb.video && <span className="play-badge" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z" /></svg>Demo</span>}
     </>
   ) : (
@@ -93,6 +97,7 @@ export default function ProjectCard({
 }) {
   const href = `/projects/${p.slug || p.id}`;
   const pill = showEvent ? sprintPill(p.buildathon) : null;
+  const event = showEvent && !pill ? eventFor(p.buildathon) : null;
   const team = teamOf(p);
   const ribbon = p.accolade ? RIBBON[p.accolade] : null;
 
@@ -106,6 +111,7 @@ export default function ProjectCard({
       <div className="pbody">
         <h3 className="ptitle"><Link to={href} prefetch="intent">{p.name}</Link></h3>
         <p className="ptagline">{p.tagline}</p>
+        {event && <p className="pevent">{event.name}</p>}
       </div>
       <div className="pfoot">
         {team.length > 0 && <Faces people={team} />}

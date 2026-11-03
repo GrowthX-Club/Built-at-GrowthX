@@ -18,7 +18,6 @@ import {
   getStackLogoUrl,
   formatProjectDate,
   teamOf,
-  STACK_META,
 } from "@/types";
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
@@ -100,7 +99,7 @@ function Badge({ role, size = "sm" }: { role: string; size?: "sm" | "md" }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 3,
-      fontSize: 13, fontWeight: 600,
+      fontSize: 14, fontWeight: 600,
       padding: `${s.py}px ${s.px}px`, borderRadius: 4,
       color: r.color, background: r.bg,
       fontFamily: "var(--sans)", lineHeight: 1.2,
@@ -184,7 +183,7 @@ function Reactions({ reactions: initialReactions, onReact }: { reactions: Reacti
           color: C.text, transition: "all 0.12s",
         }}>
           <span style={{ fontSize: T.body, color: r.emoji.special ? C.gold : "inherit", fontWeight: r.emoji.special ? 700 : 400 }}>{r.emoji.display}</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.textSec, minWidth: 8, textAlign: "center" }}>{r.count}</span>
         </button>
       ))}
       <div style={{ position: "relative" }}>
@@ -279,10 +278,10 @@ function ThreadBlock({ thread }: { thread: ThreadData }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.author.name}</span>
                     {reply.author.isCreator && (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 13, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 14, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                     )}
                     <Badge role={reply.author.role} />
-                    <span style={{ fontSize: 13, color: C.textMute }}>{reply.time}</span>
+                    <span style={{ fontSize: 14, color: C.textMute }}>{reply.time}</span>
                   </div>
                   <CompanyTag title={reply.author.title} company={reply.author.company} companyColor={reply.author.companyColor} companyLogo={reply.author.companyLogo} />
                 </div>
@@ -583,7 +582,7 @@ export default function ProjectDetailPage() {
             <Av initials={u.avatar} size={26} src={u.avatarUrl} />
             <div>
               <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>{u.name}</div>
-              {u.company && <div style={{ fontSize: 13, color: C.textMute }}>{u.company}</div>}
+              {u.company && <div style={{ fontSize: 14, color: C.textMute }}>{u.company}</div>}
             </div>
           </button>
         ))}
@@ -692,8 +691,9 @@ export default function ProjectDetailPage() {
           )}
         </header>
 
-        {(p.accolade || p.track || (p.category && p.category !== "Other") || date) && (
+        {(event || p.accolade || p.track || (p.category && p.category !== "Other") || date) && (
           <div className="detail-meta">
+            {event && <Link to={event.href} className={`event-chip${p.buildathon === "build-sprint" || p.buildathon === "build-week" ? " is-sprint" : ""}`}>{event.name}</Link>}
             {p.accolade && <AccoladeBadge accolade={p.accolade} />}
             {p.track && <TrackChip track={p.track} />}
             {[p.category !== "Other" ? p.category : "", date].filter(Boolean).join(" · ")}
@@ -757,14 +757,15 @@ export default function ProjectDetailPage() {
             <h2>Built with</h2>
             <div className="stack-row">
               {p.stack.map((t, i) => {
-                const meta = STACK_META[t] || { icon: t[0], bg: C.accent, color: C.accentFg };
+                // The tool's real logo when there is one; otherwise just its name (no made-up letter tiles).
                 const logoUrl = getStackLogoUrl(t);
                 return (
-                  <span key={i} className="stack-chip">
-                    <i style={{ background: meta.bg, color: meta.color }} aria-hidden="true">
-                      {meta.icon}
-                      {logoUrl && <img src={logoUrl} alt="" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
-                    </i>
+                  <span key={i} className="stack-chip" style={logoUrl ? undefined : { paddingLeft: 14 }}>
+                    {logoUrl && (
+                      <i aria-hidden="true">
+                        <img src={logoUrl} alt="" onError={e => { const box = (e.target as HTMLElement).parentElement; if (box) box.style.display = "none"; }} />
+                      </i>
+                    )}
                     {t}
                   </span>
                 );
@@ -851,7 +852,7 @@ export default function ProjectDetailPage() {
                           {root.authorName || "Anonymous"}
                         </span>
                         {isRootOP && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 13, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 14, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                         )}
                         <Badge role={root.authorRole || "member"} />
                         <span style={{ fontSize: T.label, color: C.textMute, fontFamily: "var(--sans)" }}>
@@ -905,10 +906,10 @@ export default function ProjectDetailPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                             <span style={{ fontSize: T.body, fontWeight: 620, color: C.text }}>{reply.authorName}</span>
                             {isReplyOP && (
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 13, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 14, fontWeight: 650, padding: "2px 8px", borderRadius: 4, background: C.creatorBg, color: C.creator, letterSpacing: "0.02em", fontFamily: "var(--sans)" }}>{"\u2666"} Creator</span>
                             )}
                             <Badge role={reply.authorRole || "member"} />
-                            <span style={{ fontSize: 13, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
+                            <span style={{ fontSize: 14, color: C.textMute }}>{timeAgo(reply.createdAt)}</span>
                           </div>
                           <CompanyTag title={isReplyOP ? (reply.authorTitle || p.builder.title) : reply.authorTitle} company={isReplyOP ? (reply.authorCompany || p.builder.company) : reply.authorCompany} companyColor={isReplyOP ? (reply.authorCompanyColor || p.builder.companyColor) : reply.authorCompanyColor} companyLogo={isReplyOP ? (reply.authorCompanyLogo || p.builder.companyLogo) : reply.authorCompanyLogo} />
                         </div>
@@ -994,7 +995,7 @@ export default function ProjectDetailPage() {
             <button data-vote-float onClick={handleVote} aria-pressed={hasVoted} aria-label={`${hasVoted ? "Remove upvote" : "Upvote"} (${p.weighted})`}
               className={`${primary ? "btn-outline" : "btn-primary"}${hasVoted && primary ? " is-on" : ""}${voteAnim ? " vote-pop-active" : ""}`}
               style={primary ? undefined : { flex: 1 }}>
-              {upIcon}{primary ? (p.weighted > 0 ? p.weighted.toLocaleString() : "") : upvoteLabel}
+              {upIcon}{primary ? (p.weighted > 0 ? p.weighted.toLocaleString() : "Upvote") : upvoteLabel}
             </button>
             {primary && <a href={primary.href} {...primary.ext} className="btn-primary">{primary.label}</a>}
           </div>

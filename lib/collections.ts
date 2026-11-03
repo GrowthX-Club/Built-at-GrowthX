@@ -1,5 +1,5 @@
 import { bxApi } from "@/lib/api";
-import { demoFromDescription } from "@/types";
+import { demoFromDescription, normalizeProject, projectImage } from "@/types";
 
 export const SITE_URL = "https://built.growthx.club";
 
@@ -156,6 +156,19 @@ export function collectionStat(c: Collection, stats: CollectionStats): TagStat {
     firstAt: firsts.sort()[0],
     lastAt: lasts.sort().slice(-1)[0],
   };
+}
+
+/** Four screenshots of a project list's best entries, for an event that has no cover of its own; [] when fewer. */
+export function mosaicOf(projects: RawProject[], width = 480): string[] {
+  const imgs = projects.map(p => projectImage(normalizeProject(p), width)).filter(Boolean) as string[];
+  return imgs.length >= 4 ? imgs.slice(0, 4) : [];
+}
+
+/** Mosaics for the listed events without a cover, keyed by slug (one small request each). */
+export async function fetchMosaics(colls: Collection[]): Promise<Record<string, string[]>> {
+  const bare = colls.filter(c => !c.cover && !c.photos);
+  const lists = await Promise.all(bare.map(c => fetchProjects({ sort: "best", buildathon: c.tags.join(","), limit: 12 })));
+  return Object.fromEntries(bare.map((c, i) => [c.slug, mosaicOf(lists[i].projects)]));
 }
 
 /** Events worth a card: at least 5 projects (a one-project event page reads as empty). */

@@ -46,6 +46,8 @@ export interface ProjectListViewProps {
   pageSize?: number;
   /** Something to put at the end of the toolbar (e.g. a search box). */
   toolbarEnd?: ReactNode;
+  /** A last tile in the grid (e.g. how to use skills). */
+  trailing?: ReactNode;
 }
 
 const SORT_LABELS: Record<SortKey, string> = {
@@ -105,7 +107,7 @@ export function voteBurst(btn: Element | null) {
 export default function ProjectListView({
   initial, tag, skillsOnly = false, sorts = ["best", "trending", "new"], sort: startSort, categories = [],
   category: startCategory = "", query = "", onClearQuery, customFilters, showEvent = true, emptyState, refreshKey = 0,
-  moreButton = false, pageSize = PAGE_SIZE, toolbarEnd,
+  moreButton = false, pageSize = PAGE_SIZE, toolbarEnd, trailing,
 }: ProjectListViewProps) {
   const { openLoginDialog } = useLoginDialog();
   const [sort, setSort] = useState<SortKey>(startSort && sorts.includes(startSort) ? startSort : sorts[0]);
@@ -214,6 +216,13 @@ export default function ProjectListView({
 
   // Phones scroll the chip row sideways: keep the chosen category in view (row only, never the page).
   const chipsRef = useRef<HTMLDivElement>(null);
+  const [chipEdges, setChipEdges] = useState({ start: true, end: true });
+  const readEdges = useCallback(() => {
+    const row = chipsRef.current;
+    if (row) setChipEdges({ start: row.scrollLeft <= 4, end: row.scrollLeft + row.clientWidth >= row.scrollWidth - 4 });
+  }, []);
+  useEffect(() => { readEdges(); window.addEventListener("resize", readEdges); return () => window.removeEventListener("resize", readEdges); }, [readEdges]);
+  const scrollChips = (dir: 1 | -1) => chipsRef.current?.scrollBy({ left: dir * 320, behavior: "smooth" });
   useEffect(() => {
     const row = chipsRef.current;
     const chip = row?.querySelector<HTMLElement>(".chip.is-active");
@@ -254,13 +263,17 @@ export default function ProjectListView({
           </div>
         )}
         {categories.length > 0 && !small && (
-          <div className="chip-row" role="group" aria-label="Categories" ref={chipsRef}>
+          <div className="chip-scroll">
+          {!chipEdges.start && <button type="button" className="chip-arrow prev" aria-label="Earlier categories" onClick={() => scrollChips(-1)}>‹</button>}
+          <div className="chip-row" role="group" aria-label="Categories" ref={chipsRef} onScroll={readEdges}>
             <button type="button" className={pill(!category)} aria-pressed={!category} onClick={() => pickCategory("")}>All</button>
             {categories.map(c => (
               <button key={c.name} type="button" className={pill(category === c.name)} aria-pressed={category === c.name} onClick={() => pickCategory(c.name)}>
                 {c.name}
               </button>
             ))}
+          </div>
+          {!chipEdges.end && <button type="button" className="chip-arrow next" aria-label="More categories" onClick={() => scrollChips(1)}>›</button>}
           </div>
         )}
         {toolbarEnd}
@@ -303,10 +316,11 @@ export default function ProjectListView({
         </div>
       ) : (
         <div aria-busy={loading}>
-          <div className={skillsOnly ? "sgrid" : "pgrid"}>
+          <div className={skillsOnly ? "sgrid three" : "pgrid"}>
             {shown.map((p, i) => skillsOnly
               ? <SkillCard key={p.id} skill={p} />
               : <ProjectCard key={p.id} project={p} voted={votedIds.includes(String(p.id))} onVote={() => handleVote(p.id)} showEvent={showEvent} eager={i < 3} />)}
+            {trailing && !searching && <div className="connect-tile">{trailing}</div>}
           </div>
           {!wholeScope && projects.length < totalCount && (moreButton ? (
             <div style={{ display: "flex", justifyContent: "center", paddingTop: 32 }}>

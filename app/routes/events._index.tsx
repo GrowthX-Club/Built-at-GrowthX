@@ -1,12 +1,12 @@
 import { useLoaderData } from "react-router";
 import type { MetaFunction } from "react-router";
-import { BUILD_SPRINT, SITE_URL, fetchCollectionStats, collectionStat, listedCollections } from "@/lib/collections";
+import { BUILD_SPRINT, COLLECTIONS, SITE_URL, fetchCollectionStats, fetchMosaics, collectionStat, listedCollections } from "@/lib/collections";
 import { pageMeta, breadcrumbLd } from "@/lib/seo";
 import CollectionCard from "@/components/CollectionCard";
 
 export async function loader() {
-  const stats = await fetchCollectionStats();
-  return { stats };
+  const [stats, mosaics] = await Promise.all([fetchCollectionStats(), fetchMosaics(COLLECTIONS)]);
+  return { stats, mosaics };
 }
 
 const DESCRIPTION = "Build Sprint and the GrowthX buildathons, with every project members shipped at each one.";
@@ -25,7 +25,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => [
 ];
 
 export default function EventsPage() {
-  const { stats } = useLoaderData<typeof loader>();
+  const { stats, mosaics } = useLoaderData<typeof loader>();
   // Build Sprint first, then the buildathons by their latest project; events under 5 projects stay off the list.
   const others = listedCollections(stats).filter(c => c !== BUILD_SPRINT)
     .sort((a, b) => (collectionStat(b, stats).lastAt ?? "").localeCompare(collectionStat(a, stats).lastAt ?? ""));
@@ -37,7 +37,7 @@ export default function EventsPage() {
       </header>
       <div className="events-grid">
         <CollectionCard c={BUILD_SPRINT} stats={stats} blurb flagship />
-        {others.map(c => <CollectionCard key={c.slug} c={c} stats={stats} blurb />)}
+        {others.map(c => <CollectionCard key={c.slug} c={c} stats={stats} blurb mosaic={mosaics[c.slug]} />)}
       </div>
     </main>
   );

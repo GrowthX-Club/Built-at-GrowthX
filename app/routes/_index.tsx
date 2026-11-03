@@ -20,7 +20,7 @@ import CollectionCard from "@/components/CollectionCard";
 import SkillsPanel from "@/components/SkillsPanel";
 import {
   type SortKey, type CollectionStats, BUILD_SPRINT, CATEGORIES,
-  fetchProjects, fetchCollectionStats, usefulCategories, listParams, listedCollections,
+  fetchProjects, fetchCollectionStats, fetchMosaics, usefulCategories, listParams, listedCollections, COLLECTIONS,
 } from "@/lib/collections";
 import { itemListLd, pageMeta } from "@/lib/seo";
 import { normalizeProject } from "@/types";
@@ -31,12 +31,13 @@ const HOME_PAGE = 9;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { sort, category, q } = listParams(request.url, HOME_SORTS);
-  const [list, stats, skills] = await Promise.all([
+  const [list, stats, skills, mosaics] = await Promise.all([
     fetchProjects({ sort, category: category || undefined, limit: HOME_PAGE }),
     fetchCollectionStats(),
     fetchProjects({ has_skill: true, sort: "installs", limit: 3 }),
+    fetchMosaics(COLLECTIONS),
   ]);
-  return { list, stats, skills: skills.projects, sort, category, q };
+  return { list, stats, skills: skills.projects, mosaics, sort, category, q };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => [
@@ -292,8 +293,8 @@ export default function HomePage() {
                 <h2 className="bx-section-title" id="events-title">Buildathons</h2>
                 <Link to="/events" className="text-link">All events →</Link>
               </div>
-              <div className="events-grid rail-scroll">
-                {events.map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} blurb />)}
+              <div className="events-grid rail-scroll" style={{ gridTemplateColumns: `repeat(${Math.min(events.length, 3)}, minmax(0, 1fr))` }}>
+                {events.map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} blurb mosaic={data.mosaics[c.slug]} />)}
               </div>
             </section>
           );

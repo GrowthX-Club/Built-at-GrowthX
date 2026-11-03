@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import type { MetaDescriptor } from "react-router";
 import {
   type Collection, type SortKey, type ProjectPage, type CollectionStats, SITE_URL,
-  fetchProjects, fetchCollectionStats, collectionStat, dateRange, isOpen, listParams, defaultSeason,
+  fetchProjects, fetchCollectionStats, collectionStat, dateRange, isOpen, listParams, defaultSeason, mosaicOf,
 } from "@/lib/collections";
 import { pageMeta, itemListLd, breadcrumbLd } from "@/lib/seo";
 import ProjectListView, { type FilterTab } from "@/components/ProjectListView";
@@ -70,15 +70,21 @@ export default function CollectionPage({ c, customFilters }: { c: Collection; cu
   const when = season ? season.when : dateRange(total.firstAt, total.lastAt);
   const count = season ? seasonStat?.count ?? 0 : total.count;
   const small = !data.list.error && data.list.totalCount < 10;
+  const mosaic = mosaicOf(data.list.projects);
+  const art: "cover" | string[] | null = c.photos ? null
+    : c.cover && (!season || season === c.seasons?.[0]) ? "cover"
+    : mosaic.length ? mosaic : null;
 
   return (
     <main className="page">
       <nav aria-label="Breadcrumb" className="crumbs"><Link to="/events">Events</Link><span aria-hidden="true"> / </span><span>{c.name}</span></nav>
       {c.photos && <div className="photo-strip">{c.photos.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" />)}</div>}
-      {/* Devpost's hackathon banner: the event's real cover beside its name (the home page's Build Sprint band) */}
-      <header className={c.cover && !c.photos ? "sprint-band event-band" : "event-head"}>
-        {c.cover && !c.photos && <img src={c.cover} alt={`${c.name} cover`} />}
-        <div className={c.cover && !c.photos ? "sprint-text" : undefined}>
+      {/* Devpost's hackathon banner: the event's real cover beside its name (the home page's Build Sprint band). The
+          Build Sprint cover is Season 04's; other seasons and events without a cover show four of their best screenshots. */}
+      <header className={art ? "sprint-band event-band" : "event-head"}>
+        {art === "cover" && <img src={c.cover} alt={`${c.name} cover`} />}
+        {Array.isArray(art) && <div className="coll-mosaic" aria-hidden="true">{art.map(src => <img key={src} src={src} alt="" />)}</div>}
+        <div className={art ? "sprint-text" : undefined}>
           <h1 className="page-title">{season ? `${c.name} ${season.label}` : c.name}</h1>
           <p className="page-sub">{c.blurb}</p>
           <p className="coll-facts">

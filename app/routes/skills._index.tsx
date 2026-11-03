@@ -47,11 +47,9 @@ export default function SkillsPage() {
           query={query}
           onClearQuery={() => setQuery("")}
           emptyState={{ title: "No skills yet", description: "Skills members upload show up here once GrowthX has checked them." }}
+          trailing={<ConnectCard />}
         />
       </div>
-      <section className="section" style={{ maxWidth: 640 }}>
-        <ConnectCard />
-      </section>
     </main>
   );
 }
