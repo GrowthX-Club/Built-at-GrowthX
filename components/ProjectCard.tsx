@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { type Project, teamOf, projectThumb } from "@/types";
 import { sprintPill } from "@/lib/collections";
 
@@ -34,12 +34,20 @@ export function makersLine(p: Project): string {
   return team.slice(0, 2).map(m => m.name).join(", ") + (team.length > 2 ? ` +${team.length - 2}` : "");
 }
 
+/** A maker's photo, or their initial when there is none or it no longer loads (also when it failed before hydration). */
+export function Face({ src, initials }: { src?: string; initials?: string }) {
+  const [ok, setOk] = useState(true);
+  const ref = useRef<HTMLImageElement>(null);
+  useEffect(() => { const i = ref.current; if (i && i.complete && i.naturalWidth === 0) setOk(false); }, []);
+  return ok && src?.startsWith("http")
+    ? <img ref={ref} className="face" src={src} alt="" loading="lazy" decoding="async" onError={() => setOk(false)} />
+    : <span className="face">{initials?.[0] ?? "?"}</span>;
+}
+
 export function Faces({ people, max = 3 }: { people: { name: string; avatar: string; avatarUrl?: string }[]; max?: number }) {
   return (
     <span className="faces" aria-hidden="true">
-      {people.slice(0, max).map((m, i) => m.avatarUrl?.startsWith("http")
-        ? <img key={i} className="face" src={m.avatarUrl} alt="" loading="lazy" decoding="async" />
-        : <span key={i} className="face">{m.avatar?.[0] ?? "?"}</span>)}
+      {people.slice(0, max).map((m, i) => <Face key={i} src={m.avatarUrl} initials={m.avatar} />)}
     </span>
   );
 }

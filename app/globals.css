@@ -943,3 +943,14 @@ body {
 .gallery-item.only { width: 100%; height: auto; aspect-ratio: 16 / 10; }
 .gallery-item.only.is-video { aspect-ratio: 16 / 9; }
 .gallery-item.only.is-fallback { aspect-ratio: auto; height: 240px; }
+/* Keyboard focus on cards whose link covers the whole card */
+.scard:focus-within, .coll-card:focus-within { border-color: var(--c-brand); }
+.sprint-band:focus-within { outline: 2px solid var(--c-brand); outline-offset: 2px; }
+.scard-name a:focus-visible, .coll-name a:focus-visible, .sprint-text h2 a:focus-visible { outline: none; }
+.page-head .search-box { margin-top: 16px; }
+@media (max-width: 640px) {
+  /* Phones: a builder's projects as one line of links, not a stack of chips */
+  .builder-projects { gap: 4px 12px; }
+  .builder-projects a { height: auto; padding: 0; border: 0; border-radius: 0; background: none; text-decoration: underline; text-decoration-color: var(--c-border); text-underline-offset: 3px; white-space: normal; }
+  .builder-projects a:hover { background: none; text-decoration-color: currentColor; }
+}

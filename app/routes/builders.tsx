@@ -68,9 +68,12 @@ function Av({ initials, size = 32, role, src, className }: { initials: string; s
   const r = role ? ROLES[role] : undefined;
   // A profile photo that no longer exists falls back to the initials.
   const [broken, setBroken] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+  useEffect(() => { const i = ref.current; if (i && i.complete && i.naturalWidth === 0) setBroken(true); }, []);
   if (src && src.startsWith("http") && !broken) {
     return (
       <img
+        ref={ref}
         src={src}
         className={className}
         onError={() => setBroken(true)}
