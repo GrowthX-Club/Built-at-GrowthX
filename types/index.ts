@@ -279,6 +279,8 @@ const LOGO_DEV_TOKEN = 'pk_RqfvqsxqSGSajjqEOE8sTQ';
 
 /** Get company logo URL — uses DB logo if available, falls back to logo.dev domain guess */
 export function getCompanyLogoUrl(company: string, dbLogoUrl?: string): string {
+  // logo.dev's growthx.com is a different company; use our own mark (growthx.club apple-touch-icon)
+  if (typeof company === 'string' && /^growthx(club)?$/.test(company.toLowerCase().replace(/[^a-z0-9]/g, ''))) return '/growthx-logo.png';
   if (dbLogoUrl && !dbLogoUrl.includes('cdn.brandfetch.io')) return dbLogoUrl;
   if (!company) return '';
   // Strip common suffixes and normalize to a plausible domain
