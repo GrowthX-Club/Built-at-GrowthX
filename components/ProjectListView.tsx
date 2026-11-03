@@ -1,159 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router";
-import {
-  C,
-  T,
-  type Project,
-  type BuilderProfile,
-  normalizeProject,
-  normalizeUser,
-  getCompanyLogoUrl,
-} from "@/types";
+import { C, type Project, type BuilderProfile, normalizeProject, normalizeUser } from "@/types";
 import { bxApi } from "@/lib/api";
+import {
+  type SortKey, type CategoryStat, type ProjectPage, type ListQuery,
+  fetchProjects, fetchAllProjects, replaceParam,
+} from "@/lib/collections";
 import { useLoginDialog } from "@/context/LoginDialogContext";
-import { useResponsive } from "@/hooks/useMediaQuery";
-import ProjectIcon from "@/components/ProjectIcon";
-import TrackChip from "@/components/TrackChip";
-import AccoladeBadge from "@/components/AccoladeBadge";
-
-// Renders the accolade + track meta row when either field is set.
-// Returns null when neither is set, so the caller doesn't have to add an empty container.
-function ProjectMetaRow({ project }: { project: Project }) {
-  const accolade = project.accolade;
-  const track = project.track;
-  if (!accolade && !track) return null;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-      {accolade && <AccoladeBadge accolade={accolade} />}
-      {track && <TrackChip track={track} />}
-    </div>
-  );
-}
-
-// ---- Builder cycler (extracted from _index to share between feeds) ----
-
-function BuilderItem({ b }: { b: { name: string; company: string; companyColor: string; companyLogo?: string } }) {
-  return (
-    <div style={{ height: 36, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
-      <div style={{
-        fontSize: T.bodySm, fontWeight: 600, color: C.text,
-        fontFamily: "var(--sans)", marginBottom: 2, lineHeight: 1.2,
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-      }}>
-        {b.name}
-      </div>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 4,
-        fontSize: T.label, fontFamily: "var(--sans)",
-        minWidth: 0,
-      }}>
-        <span style={{
-          width: 12, height: 12, borderRadius: 3,
-          background: b.companyColor || C.accent,
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          fontSize: T.micro, fontWeight: 800, color: "#fff",
-          fontFamily: "var(--sans)", flexShrink: 0,
-          overflow: "hidden", position: "relative",
-        }}>
-          {b.company[0]}
-          {b.company && <img src={getCompanyLogoUrl(b.company, b.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
-        </span>
-        <span style={{ fontWeight: 400, color: C.textMute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.company}</span>
-      </div>
-    </div>
-  );
-}
-
-function BuilderCycler({ builders }: { builders: { name: string; company: string; companyColor: string; companyLogo?: string }[] }) {
-  const [active, setActive] = useState(0);
-  const [sliding, setSliding] = useState(false);
-  const single = builders.length === 1;
-  const ITEM_H = 36;
-
-  useEffect(() => {
-    if (single) return;
-    const t = setInterval(() => {
-      setSliding(true);
-      setTimeout(() => {
-        setActive(a => (a + 1) % builders.length);
-        setSliding(false);
-      }, 300);
-    }, 3000);
-    return () => clearInterval(t);
-  }, [builders.length, single]);
-
-  const next = (active + 1) % builders.length;
-
-  return (
-    <div style={{ textAlign: "left", minWidth: 0, overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ minWidth: 0, overflow: "hidden", height: ITEM_H }}>
-          <div style={{
-            display: "flex", flexDirection: "column",
-            transform: sliding ? `translateY(-${ITEM_H}px)` : "translateY(0)",
-            transition: sliding ? "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
-          }}>
-            <BuilderItem b={builders[active]} />
-            <BuilderItem b={builders[next]} />
-          </div>
-        </div>
-
-        {!single && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 3, marginLeft: 2 }}>
-            {builders.map((_, di) => (
-              <div key={di} style={{
-                width: 4, height: 4, borderRadius: 4,
-                background: di === active ? C.text : C.borderLight,
-                transition: "background 0.3s",
-              }} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---- ProjectListView ----
-
-export interface ProjectListViewProps {
-  headerTitle: string;
-  headerSubtitle: string;
-  /** Optional buildathon tag (e.g. 'ai-weekender') passed as ?buildathon= filter */
-  buildathonFilter?: string;
-  /**
-   * Optional buildathon tag to EXCLUDE (passed as ?exclude_buildathon=).
-   * Ignored when buildathonFilter is set — the backend applies the same
-   * precedence. Used to keep a freshly backfilled batch off the home feed
-   * while its dedicated route stays live.
-   */
-  excludeBuildathon?: string;
-  /** Custom empty-state content shown when API returns no projects */
-  emptyState?: {
-    icon?: string;
-    title: string;
-    description: string;
-  };
-  defaultSort?: "trending" | "new" | "top" | "installs";
-  /** Bump this counter to force a reload (e.g. after a successful submit). */
-  refreshKey?: number;
-  /**
-   * Whether to render the "Host pick this week" card for featured projects.
-   * Defaults to true (main feed). Filtered showcase routes (e.g. /ai-weekender)
-   * pass false — "this week" copy doesn't fit a dedicated buildathon view, and
-   * featured projects then render in the regular list instead of vanishing.
-   */
-  featuredEnabled?: boolean;
-  /**
-   * Replace the default Trending/New/Top sort tabs with custom client-side
-   * filter pills. When provided, the component fetches all matching projects
-   * in 100-project pages, hides the sort tabs, and filters in-memory via the
-   * selected tab's predicate. Used by /opencode and /sarvam.
-   */
-  customFilters?: FilterTab[];
-  /** Only projects that ship a skill GrowthX has reviewed (the Skills tab). */
-  skillsOnly?: boolean;
-}
+import ProjectRow from "@/components/ProjectRow";
 
 export interface FilterTab {
   key: string;
@@ -161,584 +14,284 @@ export interface FilterTab {
   predicate: (project: Project) => boolean;
 }
 
-const ACCOLADE_PRIORITY: Record<string, number> = {
-  "rank-1": 1,
-  "rank-2": 2,
-  "rank-3": 3,
-  "top-5": 4,
-  "top-15": 5,
-};
-function rankWeight(p: Project): number {
-  return p.accolade ? (ACCOLADE_PRIORITY[p.accolade] ?? 99) : 99;
+export interface ProjectListViewProps {
+  /** Server-rendered first page of the starting view, so the HTML carries the project names. */
+  initial?: ProjectPage;
+  /** Event tag (?buildathon=). */
+  tag?: string;
+  /** Only projects that ship a skill GrowthX has reviewed. */
+  skillsOnly?: boolean;
+  /** Sort tabs to offer, first is the default. */
+  sorts?: SortKey[];
+  /** Starting sort (from the URL). */
+  sort?: SortKey;
+  /** Category chips; the row hides when empty. */
+  categories?: CategoryStat[];
+  /** Starting category (from the URL). */
+  category?: string;
+  /** Search text, owned by the page's search box. */
+  query?: string;
+  onClearQuery?: () => void;
+  /** Event-specific pills (Top 15, tracks) filtered on the client over the whole event. */
+  customFilters?: FilterTab[];
+  /** Show which event each project came from (off on an event's own page). */
+  showEvent?: boolean;
+  emptyState?: { title: string; description: string };
+  /** Bump to reload (e.g. after a submit). */
+  refreshKey?: number;
 }
+
+const SORT_LABELS: Record<SortKey, string> = {
+  best: "Best", trending: "Trending", new: "New", top: "Top", installs: "Most installed",
+};
+
+const ACCOLADE_PRIORITY: Record<string, number> = { "rank-1": 1, "rank-2": 2, "rank-3": 3, "top-5": 4, "top-15": 5 };
+const rankWeight = (p: Project) => (p.accolade ? ACCOLADE_PRIORITY[p.accolade] ?? 99 : 99);
 
 const PAGE_SIZE = 20;
 
-const DEFAULT_EMPTY = {
-  icon: "🚀",
-  title: "No projects yet",
-  description: "Be the first to submit your project and show the GrowthX community what you've built.",
-};
+// Whole-scope fetches (search, event pills) are cached per scope for the visit.
+const allCache = new Map<string, Promise<ProjectPage>>();
+function fetchAllCached(q: ListQuery) {
+  const key = JSON.stringify(q);
+  if (!allCache.has(key)) allCache.set(key, fetchAllProjects(q).catch(e => { allCache.delete(key); throw e; }));
+  return allCache.get(key)!;
+}
+
+function matches(p: Project, words: string[]) {
+  const hay = [
+    p.name, p.tagline, p.builder.name, p.builder.company, p.category,
+    ...(p.creators || []).map(c => `${c.name} ${c.company || ""}`),
+    ...p.collabs.map(c => `${c.name} ${c.company || ""}`),
+    ...p.stack,
+  ].join(" ").toLowerCase();
+  return words.every(w => hay.includes(w));
+}
+
+/** Six dots fly out of the vote button. */
+export function voteBurst(btn: Element | null) {
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const container = document.createElement("div");
+  container.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:9999;";
+  const dots = [0, 55, 110, 170, 230, 300].map(deg => {
+    const rad = (deg * Math.PI) / 180;
+    const dist = 44 + Math.random() * 20;
+    const dot = document.createElement("div");
+    dot.className = "vote-burst-dot";
+    dot.style.left = `${cx}px`;
+    dot.style.top = `${cy}px`;
+    dot.style.transform = "translate(-50%, -50%) scale(1)";
+    dot.style.opacity = "1";
+    dot.dataset.tx = `${Math.cos(rad) * dist}`;
+    dot.dataset.ty = `${Math.sin(rad) * dist}`;
+    container.appendChild(dot);
+    return dot;
+  });
+  document.body.appendChild(container);
+  requestAnimationFrame(() => dots.forEach(dot => {
+    dot.style.transform = `translate(calc(-50% + ${dot.dataset.tx}px), calc(-50% + ${dot.dataset.ty}px)) scale(0)`;
+    dot.style.opacity = "0";
+  }));
+  setTimeout(() => container.remove(), 550);
+}
 
 export default function ProjectListView({
-  headerTitle,
-  headerSubtitle,
-  buildathonFilter,
-  excludeBuildathon,
-  emptyState,
-  defaultSort = "trending",
-  refreshKey = 0,
-  featuredEnabled = true,
-  customFilters,
-  skillsOnly = false,
+  initial, tag, skillsOnly = false, sorts = ["best", "trending", "new"], sort: startSort, categories = [],
+  category: startCategory = "", query = "", onClearQuery, customFilters, showEvent = true, emptyState, refreshKey = 0,
 }: ProjectListViewProps) {
-  const navigate = useNavigate();
   const { openLoginDialog } = useLoginDialog();
-  const { isMobile, isTablet } = useResponsive();
-
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<SortKey>(startSort && sorts.includes(startSort) ? startSort : sorts[0]);
+  const [category, setCategory] = useState(startCategory);
+  const [filterKey, setFilterKey] = useState(customFilters?.[0]?.key ?? "");
+  const [projects, setProjects] = useState<Project[]>(() => (initial?.projects ?? []).map(normalizeProject));
+  const [totalCount, setTotalCount] = useState(initial?.totalCount ?? 0);
+  const [loading, setLoading] = useState(!initial);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [votedIds, setVotedIds] = useState<string[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
-  const [votedIds, setVotedIds] = useState<(string | number)[]>([]);
-  const [voteAnimId, setVoteAnimId] = useState<string | number | null>(null);
-  const [sortMode, setSortMode] = useState<"trending" | "new" | "top" | "installs">(defaultSort);
-  const [selectedFilterKey, setSelectedFilterKey] = useState<string>(customFilters?.[0]?.key ?? "");
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const loadingMoreRef = useRef(false);
-  const sortModeRef = useRef(sortMode);
-  sortModeRef.current = sortMode;
-  const usingCustomFilters = !!customFilters && customFilters.length > 0;
+  const skipNextLoad = useRef(!!initial && !customFilters);
+  const requestId = useRef(0);
 
-  const filterSuffix =
-    (buildathonFilter
-      ? `&buildathon=${encodeURIComponent(buildathonFilter)}`
-      : excludeBuildathon
-        ? `&exclude_buildathon=${encodeURIComponent(excludeBuildathon)}`
-        : "") + (skillsOnly ? "&has_skill=true" : "");
+  const words = query.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
+  const searching = query.trim().length >= 2;
+  const wholeScope = searching || !!customFilters;
+  const scope: ListQuery = { sort: customFilters ? "best" : sort, buildathon: tag, category: category || undefined, has_skill: skillsOnly || undefined };
+  const scopeKey = JSON.stringify(scope);
 
-  const loadProjects = useCallback(() => {
-    const requestedSort = sortMode;
+  const load = useCallback(() => {
+    const id = ++requestId.current;
     setLoading(true);
-    setProjects([]);
-    setHasMore(false);
-    loadingMoreRef.current = false;
-    // In custom-filter mode we fetch the full set in 100-project pages and
-    // skip server sort + infinite scroll; the predicates run client-side.
-    // This matters for showcases such as Sarvam, which has more than 100 docs.
-    const limit = usingCustomFilters ? 100 : PAGE_SIZE;
-    const sortParam = usingCustomFilters ? "" : `&sort=${sortMode}`;
-    const fetchProjects = async () => {
-      const firstResponse = await bxApi(`/projects?limit=${limit}&offset=0${sortParam}${filterSuffix}`);
-      const firstPage = await firstResponse.json();
-      const allProjects = [...(firstPage.projects || [])];
-
-      if (usingCustomFilters) {
-        const totalCount = firstPage.totalCount || allProjects.length;
-        for (let offset = limit; offset < totalCount; offset += limit) {
-          const response = await bxApi(`/projects?limit=${limit}&offset=${offset}${filterSuffix}`);
-          const page = await response.json();
-          const nextProjects = page.projects || [];
-          if (nextProjects.length === 0) break;
-          allProjects.push(...nextProjects);
-        }
-      }
-
-      return { ...firstPage, projects: allProjects };
-    };
-
-    fetchProjects()
-      .then((d) => {
-        if (sortModeRef.current !== requestedSort) return;
-        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
-        setProjects(list);
-        setVotedIds(d.votedProjectIds || d.votedIds || d.voted_ids || []);
-        setHasMore(usingCustomFilters ? false : limit < (d.totalCount || 0));
+    const q: ListQuery = JSON.parse(scopeKey);
+    (wholeScope ? fetchAllCached(q) : fetchProjects({ ...q, limit: PAGE_SIZE, offset: 0 }))
+      .then(d => {
+        if (id !== requestId.current) return;
+        setProjects(d.projects.map(normalizeProject));
+        setTotalCount(d.totalCount);
+        if (d.votedProjectIds.length) setVotedIds(d.votedProjectIds);
       })
-      .finally(() => {
-        if (sortModeRef.current === requestedSort) setLoading(false);
-      });
-  }, [sortMode, filterSuffix, usingCustomFilters]);
+      .catch(() => { if (id === requestId.current) setProjects([]); })
+      .finally(() => { if (id === requestId.current) setLoading(false); });
+  }, [scopeKey, wholeScope]);
+
+  useEffect(() => {
+    if (skipNextLoad.current) { skipNextLoad.current = false; return; }
+    load();
+  }, [load, refreshKey]);
 
   const loadMore = useCallback(() => {
-    if (loadingMoreRef.current || !hasMore) return;
-    const requestedSort = sortMode;
-    loadingMoreRef.current = true;
+    if (wholeScope || loadingMore || projects.length >= totalCount) return;
+    const id = requestId.current;
     setLoadingMore(true);
-    bxApi(`/projects?limit=${PAGE_SIZE}&offset=${projects.length}&sort=${sortMode}${filterSuffix}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (sortModeRef.current !== requestedSort) return;
-        const list = (d.projects || []).map((p: Record<string, unknown>) => normalizeProject(p));
-        if (list.length === 0) {
-          setHasMore(false);
-          return;
-        }
-        setProjects((prev) => {
-          const seen = new Set(prev.map((p) => p.id));
-          const deduped = list.filter((p: Project) => !seen.has(p.id));
-          const next = [...prev, ...deduped];
-          setHasMore(next.length < (d.totalCount || 0));
-          return next;
+    fetchProjects({ ...JSON.parse(scopeKey), limit: PAGE_SIZE, offset: projects.length })
+      .then(d => {
+        if (id !== requestId.current) return;
+        setProjects(prev => {
+          const seen = new Set(prev.map(p => String(p.id)));
+          return [...prev, ...d.projects.map(normalizeProject).filter(p => !seen.has(String(p.id)))];
         });
-        const newVoted = d.votedProjectIds || d.votedIds || d.voted_ids || [];
-        if (newVoted.length) setVotedIds((prev) => Array.from(new Set([...prev, ...newVoted])));
+        if (d.projects.length === 0) setTotalCount(projects.length);
       })
-      .finally(() => { loadingMoreRef.current = false; setLoadingMore(false); });
-  }, [hasMore, projects.length, sortMode, filterSuffix]);
-
-  const loadUser = useCallback(() => {
-    bxApi("/me")
-      .then((r) => r.json())
-      .then((d) => setUser(normalizeUser(d.user)))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    loadProjects();
-    loadUser();
-  }, [loadProjects, loadUser, refreshKey]);
-
-  // Refetch user when login completes elsewhere in the app
-  useEffect(() => {
-    const handler = () => loadUser();
-    window.addEventListener("bx:login-success", handler);
-    return () => window.removeEventListener("bx:login-success", handler);
-  }, [loadUser]);
+      .finally(() => setLoadingMore(false));
+  }, [wholeScope, loadingMore, projects.length, totalCount, scopeKey]);
 
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore();
-      },
-      { rootMargin: "200px" }
-    );
+    const observer = new IntersectionObserver(entries => { if (entries[0].isIntersecting) loadMore(); }, { rootMargin: "400px" });
     observer.observe(el);
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const handleSignIn = () => {
-    openLoginDialog(() => { loadUser(); loadProjects(); });
-  };
+  // Who is signed in, and what they have voted for (the server-rendered page can't know).
+  const loadUser = useCallback(() => {
+    bxApi("/me").then(r => r.json()).then(d => {
+      const u = normalizeUser(d.user);
+      setUser(u);
+      if (u) fetchProjects({ limit: 1 }).then(p => setVotedIds(p.votedProjectIds));
+    }).catch(() => {});
+  }, []);
+  useEffect(() => { loadUser(); }, [loadUser]);
+  useEffect(() => {
+    window.addEventListener("bx:login-success", loadUser);
+    return () => window.removeEventListener("bx:login-success", loadUser);
+  }, [loadUser]);
 
   const handleVote = async (projectId: string | number) => {
-    if (!user) {
-      handleSignIn();
-      return;
-    }
-    const res = await bxApi("/votes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId }),
-    });
+    if (!user) { openLoginDialog(() => { loadUser(); }); return; }
+    const res = await bxApi("/votes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId }) });
     if (!res.ok) return;
     const result = await res.json();
+    const pid = String(projectId);
     if (result.voted) {
-      setVotedIds((ids) => [...ids, projectId]);
-      setVoteAnimId(projectId);
-      setTimeout(() => setVoteAnimId(null), 500);
-      const btn = document.querySelector(`[data-vote-id="${projectId}"]`) as HTMLElement;
-      if (btn) {
-        const rect = btn.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const container = document.createElement("div");
-        container.style.cssText = `position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:9999;`;
-        const dots: HTMLElement[] = [];
-        [0, 55, 110, 170, 230, 300].forEach(deg => {
-          const rad = (deg * Math.PI) / 180;
-          const dist = 44 + Math.random() * 20;
-          const dot = document.createElement("div");
-          dot.className = "vote-burst-dot";
-          dot.style.left = `${cx}px`;
-          dot.style.top = `${cy}px`;
-          dot.style.transform = "translate(-50%, -50%) scale(1)";
-          dot.style.opacity = "1";
-          dot.dataset.tx = `${Math.cos(rad) * dist}`;
-          dot.dataset.ty = `${Math.sin(rad) * dist}`;
-          container.appendChild(dot);
-          dots.push(dot);
-        });
-        document.body.appendChild(container);
-        requestAnimationFrame(() => {
-          dots.forEach(dot => {
-            dot.style.transform = `translate(calc(-50% + ${dot.dataset.tx}px), calc(-50% + ${dot.dataset.ty}px)) scale(0)`;
-            dot.style.opacity = "0";
-          });
-        });
-        setTimeout(() => container.remove(), 550);
-      }
+      setVotedIds(ids => [...ids, pid]);
+      voteBurst(document.querySelector(`[data-vote-id="${pid}"]`));
     } else {
-      setVotedIds((ids) => ids.filter((id) => id !== projectId));
+      setVotedIds(ids => ids.filter(id => id !== pid));
     }
     const w = result.weighted ?? result.weighted_votes ?? result.weightedVotes ?? 0;
     const rv = result.raw ?? result.raw_votes ?? result.rawVotes ?? 0;
-    setProjects(prev => {
-      const updated = prev.map(p => p.id === projectId ? { ...p, weighted: w, raw: rv } : p);
-      if (sortMode === "top") {
-        updated.sort((a, b) => b.weighted - a.weighted);
-      }
-      return updated;
-    });
+    setProjects(prev => prev.map(p => (String(p.id) === pid ? { ...p, weighted: w, raw: rv } : p)));
   };
 
-  const baseProjects = featuredEnabled ? projects.filter(p => !p.featured) : projects;
-  const activeFilter = usingCustomFilters
-    ? customFilters!.find(f => f.key === selectedFilterKey)
-    : null;
-  const regularProjects = (() => {
-    if (!usingCustomFilters) return baseProjects;
-    const filtered = activeFilter ? baseProjects.filter(activeFilter.predicate) : baseProjects;
-    // Sort by rank (rank-1 → rank-2 → rank-3 → top-5 → top-15 → unranked),
-    // then by weighted votes desc within each tier.
-    return [...filtered].sort((a, b) => {
-      const r = rankWeight(a) - rankWeight(b);
-      if (r !== 0) return r;
-      return (b.weighted ?? 0) - (a.weighted ?? 0);
-    });
-  })();
-  const empty = emptyState ?? DEFAULT_EMPTY;
+  const pickSort = (s: SortKey) => { setSort(s); replaceParam("sort", s === sorts[0] ? "" : s); };
+  const pickCategory = (c: string) => { setCategory(c); replaceParam("category", c); };
+
+  let shown = projects;
+  if (customFilters) {
+    const f = customFilters.find(t => t.key === filterKey);
+    shown = [...(f ? shown.filter(f.predicate) : shown)].sort((a, b) => rankWeight(a) - rankWeight(b) || b.weighted - a.weighted);
+  }
+  if (searching) shown = shown.filter(p => matches(p, words));
+
+  const pill = (active: boolean) => `chip${active ? " is-active" : ""}`;
 
   return (
-    <>
-      {/* Header */}
-      <div className="fade-up" style={{ marginBottom: 36 }}>
-        <h1 className="responsive-h1 hero-title" style={{
-          fontSize: isMobile ? 28 : isTablet ? 36 : 44, fontWeight: 400,
-          fontFamily: "var(--serif)", lineHeight: 1.15, marginBottom: 10,
-        }}>
-          {headerTitle}
-        </h1>
-        <p style={{ fontSize: T.bodyLg, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400, maxWidth: 560 }}>
-          {headerSubtitle}
+    <div>
+      <div className="list-toolbar">
+        {customFilters ? (
+          <div className="chip-row" role="tablist" aria-label="Filter projects">
+            {customFilters.map(t => (
+              <button key={t.key} type="button" role="tab" aria-selected={filterKey === t.key} className={pill(filterKey === t.key)} onClick={() => setFilterKey(t.key)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        ) : sorts.length > 1 && (
+          <div className="seg" role="tablist" aria-label="Sort projects">
+            {sorts.map(s => (
+              <button key={s} type="button" role="tab" aria-selected={sort === s} className={`seg-btn${sort === s ? " is-active" : ""}`} onClick={() => pickSort(s)}>
+                {SORT_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        )}
+        {categories.length > 0 && (
+          <div className="chip-row" aria-label="Categories">
+            <button type="button" className={pill(!category)} aria-pressed={!category} onClick={() => pickCategory("")}>All</button>
+            {categories.map(c => (
+              <button key={c.name} type="button" className={pill(category === c.name)} aria-pressed={category === c.name} onClick={() => pickCategory(c.name)}>
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {searching && !loading && (
+        <p className="list-count">
+          {shown.length === 0 ? "No projects match" : `${shown.length.toLocaleString()} ${shown.length === 1 ? "project matches" : "projects match"}`} “{query.trim()}”
         </p>
-      </div>
+      )}
 
-      {/* Sort / filter tabs */}
-      <div
-        style={
-          usingCustomFilters
-            ? {
-                display: "flex",
-                gap: 6,
-                marginBottom: 24,
-                overflowX: "auto",
-                WebkitOverflowScrolling: "touch",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-                paddingBottom: 4,
-                margin: isMobile ? "0 -16px 24px" : "0 0 24px",
-                paddingInline: isMobile ? 16 : 0,
-              }
-            : { display: "flex", gap: 6, marginBottom: 24 }
-        }
-        className={usingCustomFilters ? "filter-pills-row" : undefined}
-      >
-        {usingCustomFilters
-          ? customFilters!.map(tab => {
-              const active = selectedFilterKey === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setSelectedFilterKey(tab.key)}
-                  style={{
-                    padding: isMobile ? "6px 14px" : "6px 18px",
-                    borderRadius: 20,
-                    border: active ? "none" : `1px solid ${C.border}`,
-                    background: active ? C.accent : "transparent",
-                    color: active ? C.accentFg : C.textSec,
-                    fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
-                    cursor: "pointer", transition: "all 0.2s",
-                    flexShrink: 0,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {tab.label}
-                </button>
-              );
-            })
-          : ([
-              ...(skillsOnly ? [{ key: "installs" as const, label: isMobile ? "Installs" : "Most installed" }] : []),
-              { key: "trending" as const, label: "Trending" },
-              { key: "new" as const, label: "New" },
-              { key: "top" as const, label: "Top" },
-            ]).map(tab => {
-              const active = sortMode === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setSortMode(tab.key)}
-                  style={{
-                    padding: isMobile ? "6px 14px" : "6px 18px",
-                    borderRadius: 20,
-                    border: active ? "none" : `1px solid ${C.border}`,
-                    background: active ? C.accent : "transparent",
-                    color: active ? C.accentFg : C.textSec,
-                    fontSize: T.bodySm, fontWeight: 550, fontFamily: "var(--sans)",
-                    cursor: "pointer", transition: "all 0.2s",
-                    ...(isMobile ? { flex: 1 } : {}),
-                  }}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-      </div>
-
-      {loading && projects.length === 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {loading && shown.length === 0 ? (
+        <div aria-busy="true">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className={`fade-up stagger-${Math.min(i + 1, 6)} skeleton-card`} style={{
-              padding: "16px 0",
-              borderBottom: `1px solid ${C.borderLight}`,
-            }}>
-              <div className="desktop-tablet-only-block">
-                <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
-                <div className="skeleton" style={{ height: 13, width: "90%" }} />
+            <div key={i} className="prow no-thumb" style={{ pointerEvents: "none" }}>
+              <div className="prow-text">
+                <div className="skeleton" style={{ height: 18, width: "40%", marginBottom: 8 }} />
+                <div className="skeleton" style={{ height: 16, width: "75%" }} />
               </div>
-              <div className="desktop-only-flex" style={{ alignItems: "center", gap: 8 }}>
-                <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
-                <div className="skeleton" style={{ height: 13, width: 80 }} />
-              </div>
-              <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <div className="skeleton" style={{ height: 16, width: "70%", marginBottom: 6 }} />
-                  <div className="skeleton" style={{ height: 13, width: "90%" }} />
-                </div>
-                <div className="skeleton" style={{ width: 48, height: 42, borderRadius: 10, flexShrink: 0 }} />
-              </div>
-              <div className="mobile-only" style={{ alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div className="skeleton" style={{ width: 14, height: 14, borderRadius: 4 }} />
-                  <div className="skeleton" style={{ height: 13, width: 80 }} />
-                </div>
-                <div className="skeleton" style={{ height: 13, width: 70 }} />
-              </div>
-              <div className="desktop-tablet-only">
-                <div className="skeleton" style={{ width: 60, height: 34, borderRadius: 10 }} />
-              </div>
+              <div className="prow-meta"><div className="skeleton" style={{ height: 14, width: 180 }} /></div>
+              <div className="prow-vote"><div className="skeleton" style={{ width: 52, height: 56, borderRadius: 10 }} /></div>
             </div>
           ))}
         </div>
-      ) : projects.length === 0 ? (
-        <div className="fade-up stagger-2 list-item-hover" style={{
-          display: "flex", flexDirection: "column", alignItems: "center",
-          justifyContent: "center", padding: "64px 24px", textAlign: "center",
-        }}>
-          {empty.icon && <div style={{ fontSize: 40, marginBottom: 16 }}>{empty.icon}</div>}
-          <div style={{
-            fontSize: T.title, fontWeight: 500, color: C.text,
-            fontFamily: "var(--serif)", marginBottom: 8,
-          }}>
-            {empty.title}
-          </div>
-          <div style={{
-            fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)",
-            fontWeight: 400, maxWidth: 360, lineHeight: 1.5,
-          }}>
-            {empty.description}
-          </div>
+      ) : shown.length === 0 ? (
+        <div className="empty-state">
+          {searching ? (
+            <>
+              <p className="empty-title">Nothing here matches “{query.trim()}”</p>
+              <p className="empty-body">Try a product name, a builder, a company or a tool like “Claude”.</p>
+              {onClearQuery && <button type="button" className="btn-outline" onClick={onClearQuery}>Clear search</button>}
+            </>
+          ) : category ? (
+            <>
+              <p className="empty-title">No {category} projects here yet</p>
+              <button type="button" className="btn-outline" onClick={() => pickCategory("")}>See all projects</button>
+            </>
+          ) : (
+            <>
+              <p className="empty-title">{emptyState?.title ?? "No projects yet"}</p>
+              <p className="empty-body">{emptyState?.description ?? "Projects show up here once they are submitted."}</p>
+            </>
+          )}
         </div>
       ) : (
-        <>
-          {/* Host picks */}
-          {featuredEnabled && projects.filter(p => p.featured).map(fp => (
-            <div key={fp.id} className="fade-up stagger-2 list-item-hover" style={{
-              padding: "20px 24px", marginBottom: 24,
-              background: C.surface, border: `1px solid ${C.goldBorder}`,
-              borderRadius: 14, cursor: "pointer",
-            }} onClick={() => navigate(`/projects/${fp.slug || fp.id}`)}>
-              <div style={{
-                fontSize: T.badge, fontWeight: 720, color: C.gold,
-                letterSpacing: "0.08em", textTransform: "uppercase",
-                marginBottom: 12, fontFamily: "var(--sans)",
-              }}>
-                {"✦"} Host pick this week
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: T.subtitle, fontWeight: 500, color: C.text, fontFamily: "var(--serif)", marginBottom: 2 }}>
-                    {fp.name}
-                  </div>
-                  <div style={{ fontSize: T.body, color: C.textSec, fontFamily: "var(--sans)", fontWeight: 400 }}>
-                    {fp.tagline}
-                  </div>
-                  {fp.accolade && (
-                    <div style={{ marginTop: 8 }}>
-                      <AccoladeBadge accolade={fp.accolade} />
-                    </div>
-                  )}
-                </div>
-                <div style={{
-                  fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)",
-                }}>
-                  {fp.weighted.toLocaleString()}
-                </div>
-              </div>
-            </div>
+        <div style={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.15s" }}>
+          {shown.map(p => (
+            <ProjectRow key={p.id} project={p} voted={votedIds.includes(String(p.id))} onVote={() => handleVote(p.id)} showEvent={showEvent} />
           ))}
-
-          {/* Project list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-            {regularProjects.map((p, i) => (
-              <div
-                key={p.id}
-                className={`fade-up stagger-${Math.min(i + 3, 6)} list-item-hover project-card`}
-                onClick={() => navigate(`/projects/${p.slug || p.id}`)}
-                style={{
-                  paddingTop: 16, paddingBottom: 16, cursor: "pointer",
-                  borderBottom: `1px solid ${C.borderLight}`,
-                  position: "relative", zIndex: regularProjects.length - i,
-                }}
-              >
-                {/* Desktop/tablet: icon + product name + tagline */}
-                <div className="desktop-tablet-only-block" style={{ minWidth: 0, alignItems: "center", gap: 12 }}>
-                  <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontSize: T.bodyLg, fontWeight: 560, color: C.text,
-                      fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
-                    }}>
-                      {p.name}
-                    </div>
-                    <div style={{
-                      fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
-                      fontWeight: 400, lineHeight: 1.3,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {p.tagline}
-                    </div>
-                    <ProjectMetaRow project={p} />
-                  </div>
-                </div>
-
-                {/* Mobile: icon + name + vote top row */}
-                <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
-                    <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{
-                        fontSize: T.bodyLg, fontWeight: 560, color: C.text,
-                        fontFamily: "var(--sans)", lineHeight: 1.2, marginBottom: 3,
-                      }}>
-                        {p.name}
-                      </div>
-                      <div className="tagline-text" style={{
-                        fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)",
-                        fontWeight: 400, lineHeight: 1.3,
-                      }}>
-                        {p.tagline}
-                      </div>
-                      <ProjectMetaRow project={p} />
-                    </div>
-                  </div>
-                  <div
-                    data-vote-id={p.id}
-                    onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                    className={voteAnimId === p.id ? "vote-pop-active" : ""}
-                    style={{
-                      flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
-                      padding: "8px 12px", borderRadius: 10,
-                      minWidth: 48,
-                      border: votedIds.includes(p.id) ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
-                      background: votedIds.includes(p.id) ? C.accent : C.surface,
-                      color: votedIds.includes(p.id) ? C.accentFg : C.text,
-                      fontFamily: "var(--sans)",
-                      cursor: "pointer",
-                      transition: "border 0.25s, background 0.25s, color 0.25s",
-                      position: "relative", overflow: "visible",
-                    }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                      <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                    </svg>
-                    <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.label }}>{p.weighted.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {/* Mobile: builder info horizontal */}
-                <div className="mobile-only" style={{
-                  alignItems: "center", justifyContent: "space-between", width: "100%",
-                  background: `linear-gradient(135deg, ${C.borderLight}88, ${C.borderLight}44)`,
-                  border: `1px solid ${C.borderLight}`,
-                  borderRadius: 8,
-                  padding: "6px 10px",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{
-                      width: 14, height: 14, borderRadius: 4,
-                      background: p.builder.companyColor || C.accent,
-                      display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      fontSize: T.micro, fontWeight: 800, color: "#fff",
-                      fontFamily: "var(--sans)", flexShrink: 0,
-                      overflow: "hidden", position: "relative",
-                    }}>
-                      {(p.builder.company || "")[0]}
-                      {p.builder.company && <img src={getCompanyLogoUrl(p.builder.company, p.builder.companyLogo)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />}
-                    </span>
-                    <span style={{ fontSize: T.bodySm, fontWeight: 600, color: C.text, fontFamily: "var(--sans)" }}>
-                      {p.builder.company}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: T.bodySm, fontWeight: 400, color: C.textMute, fontFamily: "var(--sans)" }}>
-                      {p.builder.name}
-                    </span>
-                    <div style={{ width: 5, height: 5, borderRadius: 5, background: C.text, flexShrink: 0 }} />
-                  </div>
-                </div>
-
-                {/* Desktop/tablet: cycling builder */}
-                <div className="desktop-only">
-                  {(() => {
-                    const allBuilders = [
-                      { name: p.builder.name, company: p.builder.company || "", companyColor: p.builder.companyColor || C.accent, companyLogo: p.builder.companyLogo },
-                      ...(p.creators || []).filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
-                      ...p.collabs.filter(c => c.name && c.company).map(c => ({ name: c.name, company: c.company || "", companyColor: c.companyColor || C.accent, companyLogo: c.companyLogo })),
-                    ];
-                    return <BuilderCycler builders={allBuilders} />;
-                  })()}
-                </div>
-
-                {/* Desktop/tablet: votes */}
-                <div className="desktop-tablet-only">
-                  <div
-                    data-vote-id={p.id}
-                    onClick={(e) => { e.stopPropagation(); handleVote(p.id); }}
-                    className={voteAnimId === p.id ? "vote-pop-active" : ""}
-                    style={{
-                      flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                      padding: "7px 14px", borderRadius: 10,
-                      minWidth: 72,
-                      border: votedIds.includes(p.id) ? `1.5px solid ${C.accent}` : `1px solid ${C.border}`,
-                      background: votedIds.includes(p.id) ? C.accent : C.surface,
-                      fontSize: T.body, fontWeight: 650,
-                      color: votedIds.includes(p.id) ? C.accentFg : C.text,
-                      fontFamily: "var(--sans)",
-                      cursor: "pointer",
-                      transition: "border 0.25s, background 0.25s, color 0.25s",
-                      position: "relative", overflow: "visible",
-                    }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ display: "block", transition: "all 0.2s" }}>
-                      <path d="M10.6 4.4a1.6 1.6 0 0 1 2.8 0l8.4 14.2A1.6 1.6 0 0 1 20.4 21H3.6a1.6 1.6 0 0 1-1.4-2.4L10.6 4.4Z" fill={votedIds.includes(p.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth={votedIds.includes(p.id) ? 0 : 2} strokeLinejoin="round" strokeLinecap="round" />
-                    </svg>
-                    <span style={{ lineHeight: 1, fontFamily: "var(--mono)", fontWeight: 600, fontSize: T.body }}>{p.weighted.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {hasMore && (
-              <div ref={sentinelRef} style={{ padding: "24px 0", display: "flex", justifyContent: "center" }}>
-                {loadingMore && (
-                  <div style={{ fontSize: T.bodySm, color: C.textMute, fontFamily: "var(--sans)" }}>Loading more projects…</div>
-                )}
-              </div>
-            )}
-          </div>
-        </>
+          {!wholeScope && projects.length < totalCount && (
+            <div ref={sentinelRef} style={{ padding: "24px 0", textAlign: "center", fontSize: 13, color: C.textMute }}>
+              {loadingMore ? "Loading more projects…" : ""}
+            </div>
+          )}
+        </div>
       )}
-    </>
+    </div>
   );
 }
