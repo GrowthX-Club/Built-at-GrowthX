@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { redirect } from "react-router";
 import { bxApi } from "@/lib/api";
 import ProjectDetailClient from "@/components/ProjectDetailClient";
-import { extractPlainText, stripMarkdownLite } from "@/lib/editor-utils";
+import { extractPlainText, stripMarkdownLite, withoutEventFooter } from "@/lib/editor-utils";
 import { normalizeProject, projectImage } from "@/types";
 import { SITE_URL, eventFor, fetchProjects, serverSignal } from "@/lib/collections";
 import { pageMeta, breadcrumbLd, DEFAULT_OG_IMAGE } from "@/lib/seo";
@@ -10,7 +10,7 @@ import { pageMeta, breadcrumbLd, DEFAULT_OG_IMAGE } from "@/lib/seo";
 /** Plain, marker-free, single-line text for meta/JSON-LD descriptions */
 function cleanDescription(raw: unknown): string {
   if (typeof raw !== "string" || !raw) return "";
-  return stripMarkdownLite(extractPlainText(raw)).replace(/\s+/g, " ").trim();
+  return stripMarkdownLite(extractPlainText(withoutEventFooter(raw))).replace(/\s+/g, " ").trim();
 }
 
 /** The project, or null when it doesn't exist. A slow or failing API is a 503 (retryable), never a 404. */

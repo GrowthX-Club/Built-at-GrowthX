@@ -30,6 +30,7 @@ import AccoladeBadge from "@/components/AccoladeBadge";
 import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
 import { eventFor, fetchProjects } from "@/lib/collections";
+import { withoutEventFooter } from "@/lib/editor-utils";
 import ProjectRow from "@/components/ProjectRow";
 import { voteBurst } from "@/components/ProjectListView";
 
@@ -745,7 +746,7 @@ export default function ProjectDetailPage() {
 
         {/* Product info */}
         <div className="fade-up stagger-2" style={{ marginBottom: 0 }}>
-          <RichTextDisplay description={p.description} />
+          <RichTextDisplay description={withoutEventFooter(p.description)} />
 
           {/* Build process */}
           {p.buildProcess && (
