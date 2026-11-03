@@ -115,8 +115,12 @@ export default function ProjectListView({
   const [votedIds, setVotedIds] = useState<string[]>([]);
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  // The server's first page is reused, unless it failed, a whole-scope view is needed, or the URL asks for a search.
-  const skipNextLoad = useRef(usable && !customFilters && query.trim().length < 2);
+  // The server's first page is reused while the view is still the one it was rendered for (unless it failed, a
+  // whole-scope view is needed, or the URL asks for a search). A key, not a one-shot flag, so effects that run
+  // twice (React StrictMode) don't refetch it.
+  const serverKey = useRef(usable && !customFilters && query.trim().length < 2
+    ? JSON.stringify({ sort: startSort && sorts.includes(startSort) ? startSort : sorts[0], category: startCategory })
+    : null).current;
   // Lists under 10 projects don't need sort or category controls (decided once, from the starting view).
   const small = useRef((initial?.totalCount ?? 10) < 10 && !initial?.error).current;
   const requestId = useRef(0);
@@ -144,9 +148,9 @@ export default function ProjectListView({
   }, [scopeKey, wholeScope]);
 
   useEffect(() => {
-    if (skipNextLoad.current) { skipNextLoad.current = false; return; }
+    if (refreshKey === 0 && !wholeScope && serverKey === JSON.stringify({ sort, category })) return;
     load();
-  }, [load, refreshKey]);
+  }, [load, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = useCallback(() => {
     if (wholeScope || loadingMore || projects.length >= totalCount) return;
@@ -301,7 +305,7 @@ export default function ProjectListView({
           )}
         </div>
       ) : (
-        <div style={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.15s" }}>
+        <div aria-busy={loading}>
           {shown.map(p => (
             <ProjectRow key={p.id} project={p} voted={votedIds.includes(String(p.id))} onVote={() => handleVote(p.id)} showEvent={showEvent} />
           ))}
