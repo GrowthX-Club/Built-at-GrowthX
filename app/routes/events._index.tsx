@@ -36,7 +36,8 @@ export default function EventsPage() {
         <p className="page-sub">{DESCRIPTION}</p>
       </header>
       <div className="events-grid">
-        {[BUILD_SPRINT, ...others].map(c => <CollectionCard key={c.slug} c={c} stats={stats} blurb />)}
+        <CollectionCard c={BUILD_SPRINT} stats={stats} blurb flagship />
+        {others.map(c => <CollectionCard key={c.slug} c={c} stats={stats} blurb />)}
       </div>
     </main>
   );

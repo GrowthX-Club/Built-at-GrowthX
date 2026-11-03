@@ -1115,15 +1115,18 @@ export default function ProjectDetailPage() {
           {threads.map(t => <ThreadBlock key={t.id} thread={t} />)}
         </div>
 
-        {more.length > 0 && eventFor(p.buildathon) && (
-          <section style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32, marginTop: 32 }} aria-labelledby="more-title">
-            <div className="section-head">
-              <h2 className="bx-section-title" id="more-title">More from {eventFor(p.buildathon)!.name}</h2>
-              <Link to={eventFor(p.buildathon)!.href} className="text-link">All →</Link>
-            </div>
-            {more.map(m => <ProjectRow key={m.id} project={m} showEvent={false} />)}
-          </section>
-        )}
+        {more.length > 0 && (() => {
+          const event = eventFor(p.buildathon);
+          return (
+            <section style={{ borderTop: `1px solid ${C.border}`, paddingTop: 32, marginTop: 32 }} aria-labelledby="more-title">
+              <div className="section-head">
+                <h2 className="bx-section-title" id="more-title">{event ? `More from ${event.name}` : "More projects"}</h2>
+                <Link to={event ? event.href : "/"} className="text-link">All →</Link>
+              </div>
+              {more.map(m => <ProjectRow key={m.id} project={m} showEvent={!event} />)}
+            </section>
+          );
+        })()}
 
         {/* Phone: the actions stay in reach at the bottom; Try it is the filled one */}
         {isMobile && (

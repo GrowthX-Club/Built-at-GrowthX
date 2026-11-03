@@ -3,12 +3,12 @@ import { type Collection, type CollectionStats, collectionStat, dateRange, isOpe
 
 // An event card: the event's real photo or cover on top (every card without one gets the same typographic cover),
 // then name, newest season, dates and count. The name's link covers the card; the season chip is its own link.
-export default function CollectionCard({ c, stats, blurb = false }: { c: Collection; stats: CollectionStats; blurb?: boolean }) {
+export default function CollectionCard({ c, stats, blurb = false, flagship = false }: { c: Collection; stats: CollectionStats; blurb?: boolean; flagship?: boolean }) {
   const s = collectionStat(c, stats);
   const when = dateRange(s.firstAt, s.lastAt);
   const seasons = (c.seasons ?? []).filter(x => (stats.tags[x.tag]?.count ?? 0) > 0);
   return (
-    <article className="coll-card">
+    <article className={`coll-card${flagship ? " is-flagship" : ""}`}>
       {c.cover
         ? <img className="coll-cover" src={c.cover} alt="" loading="lazy" decoding="async" />
         : <div className="coll-mark" aria-hidden="true">{c.mark ?? c.name}</div>}

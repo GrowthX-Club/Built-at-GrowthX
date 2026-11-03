@@ -704,9 +704,16 @@ body {
 .open-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--c-green); }
 .open-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .events-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+/* The flagship (Build Sprint) gets the first, biggest card: the full row, cover beside the text. */
+.events-grid .coll-card.is-flagship { grid-column: 1 / -1; flex-direction: row; }
+.events-grid .is-flagship .coll-cover { width: 58%; aspect-ratio: auto; min-height: 300px; }
+.events-grid .is-flagship .coll-body { padding: 24px; gap: 12px; }
+.events-grid .is-flagship .coll-name { font-family: var(--serif); font-weight: 400; font-size: 28px; }
 @media (max-width: 960px) { .events-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) {
   .events-grid { grid-template-columns: minmax(0, 1fr); }
+  .events-grid .coll-card.is-flagship { flex-direction: column; }
+  .events-grid .is-flagship .coll-cover { width: 100%; aspect-ratio: 40 / 21; min-height: 0; }
   .coll-mark { font-size: 30px; }
 }
 

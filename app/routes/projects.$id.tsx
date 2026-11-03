@@ -37,11 +37,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw redirect(`/projects/${project.slug}`, 301);
   }
 
-  // "More from <event>": its best few, without this one.
-  const more = project.buildathon
-    ? (await fetchProjects({ sort: "best", buildathon: project.buildathon, limit: 5 })).projects
-        .filter(m => String(m._id) !== String(project._id)).slice(0, 4)
-    : [];
+  // Every project page ends somewhere: the best few from its event, or from the whole site when it has none.
+  const more = (await fetchProjects({ sort: "best", buildathon: project.buildathon || undefined, limit: 5 })).projects
+    .filter(m => String(m._id) !== String(project._id)).slice(0, 4);
   return { project, more };
 }
 
