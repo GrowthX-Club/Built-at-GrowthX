@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams, useLoaderData, Link } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {
   C,
   T,
@@ -13,14 +14,47 @@ import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
 import RichTextEditor from "@/components/RichTextEditor";
-import ActivityFeed from "@/components/ActivityFeed";
-import SarvamBanner from "@/components/SarvamBanner";
 import ProjectListView from "@/components/ProjectListView";
+import SearchBox from "@/components/SearchBox";
+import CollectionCard from "@/components/CollectionCard";
+import SkillsPanel from "@/components/SkillsPanel";
+import {
+  type SortKey, SITE_URL, BUILD_SPRINT, COLLECTIONS,
+  fetchProjects, fetchCollectionStats, usefulCategories, listParams,
+} from "@/lib/collections";
+import { itemListLd, pageMeta } from "@/lib/seo";
+import { normalizeProject } from "@/types";
+
+const HOME_SORTS: SortKey[] = ["best", "trending", "new"];
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { sort, category, q } = listParams(request.url, HOME_SORTS);
+  const [list, stats, skills] = await Promise.all([
+    fetchProjects({ sort, category: category || undefined, limit: 20 }),
+    fetchCollectionStats(),
+    fetchProjects({ has_skill: true, sort: "installs", limit: 3 }),
+  ]);
+  return { list, stats, skills: skills.projects, sort, category, q };
+}
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => [
+  ...pageMeta({
+    title: "Built at GrowthX — what the GrowthX community shipped",
+    description: "The best products and AI skills built by GrowthX members, from Build Sprint, buildathons and side projects. Try them, upvote them, see who built them.",
+    path: "/",
+  }),
+  ...(data ? [{ "script:ld+json": itemListLd("Best projects built at GrowthX", "/", data.list.projects) }] : []),
+];
 import { descriptionCharCount } from "@/lib/editor-utils";
 import MediaUpload from "@/components/MediaUpload";
 
 // ---- Main ----
 export default function HomePage() {
+  const data = useLoaderData<typeof loader>();
+  const [query, setQuery] = useState(data.q);
+  const searching = query.trim().length >= 2;
+  const categories = usefulCategories(data.stats.categories);
+  const skills = data.skills.map(normalizeProject);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { openLoginDialog } = useLoginDialog();
@@ -40,7 +74,7 @@ export default function HomePage() {
   const [user, setUser] = useState<BuilderProfile | null>(null);
   const [userLoaded, setUserLoaded] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
-  const { isMobile, isTablet } = useResponsive();
+  const { isMobile } = useResponsive();
   const [collabResults, setCollabResults] = useState<{ _id: string; name: string; avatar: string; avatarUrl?: string; company: string; role: string }[]>([]);
   const [showCollabDropdown, setShowCollabDropdown] = useState(false);
   const [searchingCollabs, setSearchingCollabs] = useState(false);
@@ -211,31 +245,46 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "var(--sans)" }}>
-      <div style={{
-        maxWidth: isMobile || isTablet ? 960 : 1280,
-        margin: "0 auto",
-        display: isMobile || isTablet ? "block" : "flex",
-        gap: 40,
-        padding: isMobile ? "0" : isTablet ? "0" : "0 32px",
-      }}>
-      <main className="responsive-main" style={{ flex: 1, maxWidth: 960, padding: isMobile ? "20px 16px 80px" : isTablet ? "32px 32px 100px" : "32px 0 100px" }}>
-        <SarvamBanner isMobile={isMobile} />
-        <ProjectListView
-          headerTitle="What the community shipped"
-          headerSubtitle="Products built by the GrowthX community. Ranked by the people who build."
-          refreshKey={listRefreshKey}
-        />
-      </main>
+      <main className="page">
+        <header className="page-head">
+          <h1 className="page-title">What the community shipped</h1>
+          <p className="page-sub">Products built by the GrowthX community. Ranked by the people who build.</p>
+          <SearchBox value={query} onChange={setQuery} placeholder="Search projects, builders, companies or tools" />
+        </header>
 
-      {/* Activity Feed Sidebar — desktop only */}
-      {!isMobile && !isTablet && (
-        <aside style={{ width: 280, flexShrink: 0 }}>
-          <div style={{ paddingTop: 32 }}>
-            <ActivityFeed />
-          </div>
-        </aside>
-      )}
-      </div>
+        {!searching && (
+          <section className="home-section" aria-labelledby="events-title">
+            <div className="section-head">
+              <h2 className="bx-section-title" id="events-title">Browse by event</h2>
+              <Link to="/events" className="text-link">All events →</Link>
+            </div>
+            <div className="coll-grid">
+              {COLLECTIONS.slice(0, 3).map(c => <CollectionCard key={c.slug} c={c} stats={data.stats} feature={c === BUILD_SPRINT} />)}
+            </div>
+          </section>
+        )}
+
+        <div className="home-cols" style={searching ? { gridTemplateColumns: "minmax(0, 1fr)", marginTop: 24 } : undefined}>
+          <section aria-labelledby="projects-title">
+            {!searching && (
+              <div className="section-head">
+                <h2 className="bx-section-title" id="projects-title">Projects</h2>
+              </div>
+            )}
+            <ProjectListView
+              initial={data.list}
+              sorts={HOME_SORTS}
+              sort={data.sort}
+              categories={categories}
+              category={data.category}
+              query={query}
+              onClearQuery={() => setQuery("")}
+              refreshKey={listRefreshKey}
+            />
+          </section>
+          {!searching && <aside><SkillsPanel skills={skills} /></aside>}
+        </div>
+      </main>
 
       {/* ---- SUBMIT FLOW ---- */}
       {showSubmit && createPortal(
