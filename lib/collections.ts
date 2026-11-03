@@ -114,11 +114,21 @@ export async function fetchCollectionStats(): Promise<CollectionStats> {
   return { tags: Object.fromEntries(rows), categories: [] };
 }
 
-/** The category chips are worth showing only once projects are really spread across categories. */
+/** The category a builder picks when submitting (the backend files a project without one under "Other"). */
+export const CATEGORIES = [
+  "Developer tools", "Money", "Sales & marketing", "Business ops", "Learning", "Health", "Productivity", "Home & family",
+  "Work & careers", "Creators & media", "Voice & language", "Legal & government", "Commerce", "Travel & local",
+  "Community & social", "Fun & games", "Other",
+] as const;
+
+/**
+ * Category chips, biggest first. Only once projects are really spread across categories (not the old all-"AI"
+ * field), and never "Other" (mostly hidden test rows).
+ */
 export function usefulCategories(cats: CategoryStat[]): CategoryStat[] {
   const total = cats.reduce((s, c) => s + c.count, 0);
   if (cats.length < 3 || cats.some(c => c.count > total * 0.7)) return [];
-  return [...cats].sort((a, b) => b.count - a.count);
+  return cats.filter(c => c.name !== "Other").sort((a, b) => b.count - a.count);
 }
 
 export function collectionStat(c: Collection, stats: CollectionStats): TagStat {

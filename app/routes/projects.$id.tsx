@@ -29,8 +29,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const project = await getProject(id!);
   if (!project) throw new Response("Not Found", { status: 404 });
 
-  // Redirect ObjectId URLs to slug URLs
-  if (project.slug && /^[0-9a-fA-F]{24}$/.test(id!) && project.slug !== id) {
+  // One URL per project: ObjectId links and old slugs (the backend resolves slug_aliases) go to the canonical slug.
+  if (project.slug && project.slug !== id) {
     throw redirect(`/projects/${project.slug}`, 301);
   }
 

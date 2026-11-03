@@ -19,7 +19,7 @@ import SearchBox from "@/components/SearchBox";
 import CollectionCard from "@/components/CollectionCard";
 import SkillsPanel from "@/components/SkillsPanel";
 import {
-  type SortKey, SITE_URL, BUILD_SPRINT, COLLECTIONS,
+  type SortKey, BUILD_SPRINT, COLLECTIONS, CATEGORIES,
   fetchProjects, fetchCollectionStats, usefulCategories, listParams,
 } from "@/lib/collections";
 import { itemListLd, pageMeta } from "@/lib/seo";
@@ -66,7 +66,7 @@ export default function HomePage() {
     name: "", tagline: "", description: "", buildProcess: "",
     stack: [] as string[], stackInput: "",
     team: [] as { _id: string; name: string; avatar?: string; company?: string; companyColor?: string; role: 'creator' | 'collaborator' }[], teamInput: "",
-    url: "", isDraft: false, mediaFiles: [] as { url: string; type: "image" | "loom" | "youtube"; uploading?: boolean; progress?: string }[],
+    url: "", category: "", isDraft: false, mediaFiles: [] as { url: string; type: "image" | "loom" | "youtube"; uploading?: boolean; progress?: string }[],
   });
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -114,7 +114,7 @@ export default function HomePage() {
     setShowSubmit(true);
     setSubmitKind("choose");
     setSubmitStep(0);
-    setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaFiles: [] });
+    setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", category: "", isDraft: false, mediaFiles: [] });
     setSubmitError("");
   }, [searchParams, user, userLoaded, navigate, openLoginDialog, loadUser]);
 
@@ -211,7 +211,7 @@ export default function HomePage() {
           name: submitData.name.trim(),
           tagline: submitData.tagline.trim(),
           description: submitData.description,
-          category: "AI",
+          category: submitData.category || undefined,
           stack: submitData.stack,
           url: submitData.url?.trim() || undefined,
           media: submitData.mediaFiles.filter(m => !m.uploading).map(m => m.url),
@@ -222,7 +222,7 @@ export default function HomePage() {
       if (res.ok) {
         setShowSubmit(false);
         setSubmitStep(0);
-        setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", isDraft: false, mediaFiles: [] });
+        setSubmitData({ name: "", tagline: "", description: "", buildProcess: "", stack: [], stackInput: "", team: [], teamInput: "", url: "", category: "", isDraft: false, mediaFiles: [] });
         setSubmitError("");
         triggerListRefresh();
       } else {
@@ -479,6 +479,24 @@ export default function HomePage() {
                       value={submitData.url}
                       onChange={e => setSubmitData(d => ({ ...d, url: e.target.value }))}
                     />
+                  </div>
+                  <div>
+                    <label htmlFor="submit-category" style={{
+                      display: "block", fontSize: T.bodySm, fontWeight: 600, color: C.text,
+                      fontFamily: "var(--sans)", marginBottom: 8,
+                    }}>
+                      Category
+                    </label>
+                    <select
+                      id="submit-category"
+                      className="submit-input"
+                      value={submitData.category}
+                      onChange={e => setSubmitData(d => ({ ...d, category: e.target.value }))}
+                      style={{ color: submitData.category ? C.text : C.textMute, cursor: "pointer" }}
+                    >
+                      <option value="">Pick the one that fits best</option>
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                   </div>
                   <MediaUpload
                     value={submitData.mediaFiles}
