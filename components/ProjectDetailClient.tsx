@@ -29,7 +29,6 @@ import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
 import { SkillUseBox, SkillText } from "@/components/SkillUse";
 import MediaGallery from "@/components/MediaGallery";
-import ProjectIcon from "@/components/ProjectIcon";
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
@@ -680,7 +679,6 @@ export default function ProjectDetailPage() {
         <div className="fade-up" style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
             <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 16 }}>
-              <ProjectIcon title={p.name} description={p.tagline} size={72} iconId={p.icon} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 2, flexWrap: "wrap" }}>
                   <h1 className="responsive-h1" style={{ fontSize: T.heading, fontWeight: 400, color: C.text, fontFamily: "var(--serif)", lineHeight: 1.1 }}>{p.name}</h1>

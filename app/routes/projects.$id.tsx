@@ -62,7 +62,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     description: cleanDescription(project.description) || project.tagline || "",
     url: `https://built.growthx.club/projects/${canonicalSlug}`,
     applicationCategory: project.category || "WebApplication",
-    ...(project.icon ? { image: project.icon } : {}),
     author: {
       "@type": "Person",
       name: builderName || "GrowthX Builder",
@@ -80,9 +79,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { property: "og:title", content: `${title} — Built at GrowthX` },
     { property: "og:description", content: description },
     { property: "og:type", content: "article" },
-    ...(project.icon
-      ? [{ property: "og:image", content: project.icon }]
-      : [{ property: "og:image", content: "/built-logo.svg" }]),
+    { property: "og:image", content: "/built-logo.svg" },
     { name: "twitter:card", content: "summary" },
     { name: "twitter:title", content: `${title} — Built at GrowthX` },
     { name: "twitter:description", content: description },

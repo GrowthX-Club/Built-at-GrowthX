@@ -12,7 +12,6 @@ import {
 import { bxApi } from "@/lib/api";
 import { useLoginDialog } from "@/context/LoginDialogContext";
 import { useResponsive } from "@/hooks/useMediaQuery";
-import ProjectIcon from "@/components/ProjectIcon";
 import TrackChip from "@/components/TrackChip";
 import AccoladeBadge from "@/components/AccoladeBadge";
 
@@ -594,9 +593,8 @@ export default function ProjectListView({
                   position: "relative", zIndex: regularProjects.length - i,
                 }}
               >
-                {/* Desktop/tablet: icon + product name + tagline */}
+                {/* Desktop/tablet: product name + tagline */}
                 <div className="desktop-tablet-only-block" style={{ minWidth: 0, alignItems: "center", gap: 12 }}>
-                  <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{
                       fontSize: T.bodyLg, fontWeight: 560, color: C.text,
@@ -615,10 +613,9 @@ export default function ProjectListView({
                   </div>
                 </div>
 
-                {/* Mobile: icon + name + vote top row */}
+                {/* Mobile: name + vote top row */}
                 <div className="mobile-only" style={{ alignItems: "flex-start", justifyContent: "space-between", width: "100%", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
-                    <ProjectIcon title={p.name} description={p.tagline} index={i} size={44} iconId={p.icon} />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontSize: T.bodyLg, fontWeight: 560, color: C.text,
