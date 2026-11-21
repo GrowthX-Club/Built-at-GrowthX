@@ -24,7 +24,7 @@ const UNAVAILABLE = () =>
 async function getProject(id: string) {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/bx/projects/${id}`);
+    res = await fetch(`${API_BASE}/bx/projects/${encodeURIComponent(id)}`);
   } catch {
     throw UNAVAILABLE();
   }
@@ -36,7 +36,7 @@ async function getProject(id: string) {
   } catch {
     throw UNAVAILABLE();
   }
-  return data.project || data || null;
+  return data?.project || data || null;
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
