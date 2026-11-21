@@ -413,7 +413,8 @@ export function formatProjectDate(raw: string): string {
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  // India time, so every visitor (and the server) prints the same day for a project made late in the evening.
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 }
 
 /** Normalize a backend project (with populated creator/collabs) to frontend Project shape */

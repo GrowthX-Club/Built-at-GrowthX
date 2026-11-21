@@ -14,15 +14,29 @@ const API_BASE =
     ? process.env.VITE_API_URL
     : "http://localhost:8000/api/v1";
 
+const UNAVAILABLE = () =>
+  new Response("The projects service didn't answer. Try again.", { status: 503 });
+
+/**
+ * The project, or null when the API says it doesn't exist. A failing or unreachable API is a 503 (try again later),
+ * never a 404: a 404 tells search engines the page is gone.
+ */
 async function getProject(id: string) {
+  let res: Response;
   try {
-    const res = await fetch(`${API_BASE}/bx/projects/${id}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.project || data || null;
+    res = await fetch(`${API_BASE}/bx/projects/${encodeURIComponent(id)}`);
   } catch {
-    return null;
+    throw UNAVAILABLE();
   }
+  if (res.status === 404 || res.status === 400) return null;
+  if (!res.ok) throw UNAVAILABLE();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw UNAVAILABLE();
+  }
+  return data?.project || data || null;
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
