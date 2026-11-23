@@ -23,19 +23,19 @@
     "@lexical/rich-text": "^0.19.0",
     "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.18.0",
-    "@react-router/fs-routes": "^7.13.1",
-    "@react-router/node": "^7",
-    "@react-router/serve": "^7",
+    "@react-router/fs-routes": "~7.18.2",
+    "@react-router/node": "~7.18.2",
+    "@react-router/serve": "~7.18.2",
     "@vercel/react-router": "^1.2.6",
     "isbot": "^5.1.0",
     "lexical": "^0.19.0",
     "react": "^18",
     "react-dom": "^18",
     "react-helmet-async": "^2.0.0",
-    "react-router": "^7"
+    "react-router": "~7.18.2"
   },
   "devDependencies": {
-    "@react-router/dev": "^7",
+    "@react-router/dev": "~7.18.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -43,6 +43,6 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
-    "vite": "^6"
+    "vite": "^6.4.4"
   }
 }
